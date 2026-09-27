@@ -535,11 +535,18 @@ function getFilteredQuestions() {
 searchInput.addEventListener('input', renderTree);
 initCustomSelect(filterDiff, renderTree);
 
+let openFolders = new Set();
+
 function renderTree() {
   const questions = getFilteredQuestions();
 
+  const prevOpen = new Set();
+  treeContainer.querySelectorAll('.tree-folder.open').forEach(f => {
+    prevOpen.add(f.dataset.topic);
+  });
+  if (prevOpen.size) openFolders = prevOpen;
+
   const grouped = {};
-  // include empty folders from subjectTopics
   subjectTopics.forEach(t => { if (!grouped[t]) grouped[t] = []; });
   questions.forEach(q => {
     const topic = q.topic || 'Other';
@@ -560,7 +567,7 @@ function renderTree() {
     const solvedCount = qs.filter(q => q.status === 'solved' || q.status === 'revisit').length;
     const isEmpty = qs.length === 0;
     html += `
-      <div class="tree-folder" data-topic="${esc(topic)}">
+      <div class="tree-folder${openFolders.has(topic) ? ' open' : ''}" data-topic="${esc(topic)}">
         <div class="folder-header">
           <div class="folder-left" onclick="this.parentElement.parentElement.classList.toggle('open')">
             <svg class="folder-chevron" width="12" height="12" viewBox="0 0 12 12" fill="none"><path d="M4.5 2.5l3.5 3.5-3.5 3.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
