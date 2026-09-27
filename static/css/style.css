@@ -524,7 +524,7 @@ a:hover { text-decoration: underline; }
 
 .folder-chevron {
   color: var(--text-3);
-  transition: transform 0.2s var(--spring);
+  transition: transform 0.35s var(--spring-bounce);
   flex-shrink: 0;
 }
 .tree-folder.open .folder-chevron { transform: rotate(90deg); }
@@ -548,11 +548,24 @@ a:hover { text-decoration: underline; }
   flex-shrink: 0;
 }
 
-.folder-body {
-  display: none;
-  border-top: 1px solid var(--border);
+.folder-body-wrap {
+  display: grid;
+  grid-template-rows: 0fr;
+  transition: grid-template-rows 0.35s var(--spring);
 }
-.tree-folder.open .folder-body { display: block; }
+.tree-folder.open .folder-body-wrap {
+  grid-template-rows: 1fr;
+}
+.folder-body {
+  overflow: hidden;
+  opacity: 0;
+  transition: opacity 0.25s ease;
+}
+.tree-folder.open .folder-body {
+  opacity: 1;
+  border-top: 1px solid var(--border);
+  transition: opacity 0.3s ease 0.05s;
+}
 
 .folder-empty {
   padding: 0.8rem 2.6rem;

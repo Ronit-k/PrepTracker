@@ -537,6 +537,18 @@ initCustomSelect(filterDiff, renderTree);
 
 let openFolders = new Set();
 
+function toggleFolder(el) {
+  const folder = el.closest('.tree-folder');
+  const topic = folder.dataset.topic;
+  folder.classList.toggle('open');
+  if (folder.classList.contains('open')) {
+    openFolders.add(topic);
+  } else {
+    openFolders.delete(topic);
+  }
+}
+window.toggleFolder = toggleFolder;
+
 function renderTree() {
   const questions = getFilteredQuestions();
 
@@ -569,7 +581,7 @@ function renderTree() {
     html += `
       <div class="tree-folder${openFolders.has(topic) ? ' open' : ''}" data-topic="${esc(topic)}">
         <div class="folder-header">
-          <div class="folder-left" onclick="this.parentElement.parentElement.classList.toggle('open')">
+          <div class="folder-left" onclick="toggleFolder(this)">
             <svg class="folder-chevron" width="12" height="12" viewBox="0 0 12 12" fill="none"><path d="M4.5 2.5l3.5 3.5-3.5 3.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
             <svg class="folder-icon" width="18" height="18" viewBox="0 0 18 18" fill="none"><path d="M2 4.5A1.5 1.5 0 0 1 3.5 3h3.586a1 1 0 0 1 .707.293L9.5 5H14.5A1.5 1.5 0 0 1 16 6.5v7a1.5 1.5 0 0 1-1.5 1.5h-11A1.5 1.5 0 0 1 2 13.5z" stroke="currentColor" stroke-width="1.3"/></svg>
             <span class="folder-name">${esc(topic)}</span>
@@ -582,9 +594,11 @@ function renderTree() {
             ${isEmpty ? `<button class="btn-icon" onclick="deleteFolder('${esc(topic)}')" title="Delete empty folder"><svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M3 4h8M5.5 4V3a1 1 0 0 1 1-1h1a1 1 0 0 1 1 1v1M4.5 4l.5 8h4l.5-8" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"/></svg></button>` : ''}
           </div>
         </div>
-        <div class="folder-body">
-          ${qs.map(q => renderFileRow(q)).join('')}
-          ${isEmpty ? '<div class="folder-empty">No questions yet</div>' : ''}
+        <div class="folder-body-wrap">
+          <div class="folder-body">
+            ${qs.map(q => renderFileRow(q)).join('')}
+            ${isEmpty ? '<div class="folder-empty">No questions yet</div>' : ''}
+          </div>
         </div>
       </div>`;
   });
