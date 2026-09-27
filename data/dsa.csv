@@ -1,0 +1,921 @@
+id,title,link,platform,difficulty,topic,status,notes,date_solved,date_added,video_link,code
+79edfee5,Find eventual safe states,https://leetcode.com/problems/find-eventual-safe-states/description/,leetcode,medium,Graph,solved,[STRIVER HARD] Just reverse the edges of the directed graph and find the topo Sort using Kahn's algo and return that,2026-09-23,2026-09-23,https://www.youtube.com/watch?v=2gtg3VsDGyc,"class Solution {
+public:
+    vector<int> eventualSafeNodes(vector<vector<int>>& graph) {
+        //reverse the direction of edges also calculate indegree simultaneously
+        vector<int> indegree(graph.size(), 0);
+        vector<vector<int>> reverseGraph(graph.size());
+        for(int from = 0; from < graph.size(); ++from){
+            for(auto& to : graph[from]){
+                reverseGraph[to].push_back(from);
+                indegree[from]++;
+            }
+        }
+
+        //find topo sort of this reverse graph so that we'll get all the nodes connecting to the one with reverse indegree 0 (i.e actual outdegree 0 = terminal nodes) and those are the safe spots and cycle will be left alone here
+
+        vector<int> topoSort;
+        queue<int> q;
+        for(int node = 0; node<indegree.size(); ++node) if (!indegree[node]) q.push(node);
+
+        while(!q.empty()){
+            int node = q.front();
+            q.pop();
+            topoSort.push_back(node);
+
+            // relax the indegrees of the neighbours
+            for(auto& nbr : reverseGraph[node]){
+                if(--indegree[nbr] == 0) q.push({nbr});
+            }
+        }
+        sort(topoSort.begin(), topoSort.end());
+        return topoSort;
+    }
+};"
+47b13e21,Course Schedule I,https://leetcode.com/problems/course-schedule/description/,leetcode,medium,Graph,solved,"[STRIVER HARD] Just form the directed graph and see if there is a cycle or not, return 1 if not",2026-09-23,2026-09-24,https://www.youtube.com/watch?v=WAOfKpxYHR8,"class Solution {
+public:
+    bool canFinish(int numCourses, vector<vector<int>>& prerequisites) {
+
+    vector<vector<int>> adj(numCourses);
+    vector<int> indegree(numCourses, 0);
+
+
+    //detecting cycle using toposort
+    for(auto& prereq : prerequisites){
+        adj[prereq[1]].push_back(prereq[0]);
+        indegree[prereq[0]]++;
+    }
+
+    queue<int> q;
+
+    for(int i = 0; i<numCourses; i++){
+        if(indegree[i] == 0)
+            q.push(i);
+    }
+
+    int cnt = 0;
+    while(!q.empty()){
+        int node = q.front();
+        q.pop();
+        cnt++;
+
+        for(auto& neighbour : adj[node]){
+            indegree[neighbour]--;
+
+            if(indegree[neighbour] == 0)
+                q.push(neighbour);
+        }
+    }
+    return cnt == numCourses;
+}
+};"
+fe19e00c,Word ladder II,https://leetcode.com/problems/word-ladder-ii/description/,leetcode,hard,Graph,solved,"[STRIVER HARD] See the code or video for better understanding - one approach is to save the word seq. as well into the queue (but that gives TLE) - optimised approach handles this by recording what all words occur at each level then if we reached the endWord we stop the bfs, then back track from the last word to see which all words in the prev level is valid and reconstruct the sequence",2026-09-23,2026-09-24,https://www.youtube.com/watch?v=AD4SFl7tu7I,"class Solution {
+private:
+    bool canBeNextWord(string word, string nextWord){
+        int diff = 0;
+        for(int i = 0; i<word.size(); ++i){
+            diff += min(1,abs(word[i] - nextWord[i])); // if same letter then nothing happens else 1 gets added
+            if (diff>1) return false;
+        }
+        return diff;
+    }
+    void dfs(int level, vector<unordered_set<string>>& wordsAtLevel, vector<string> seq, vector<vector<string>>& ans){
+        // we have reached level 0 by tracing out valid words so this is a valid seq
+        if (level == 0){
+            seq.push_back(*wordsAtLevel[0].begin()); // pushing beginWord
+            reverse(seq.begin(), seq.end());
+            ans.push_back(seq);
+            return;
+        }
+
+        for(auto word : wordsAtLevel[level]){
+            if(canBeNextWord(seq.back(), word)){
+                seq.push_back(word);
+                dfs(level-1, wordsAtLevel, seq, ans);
+                seq.pop_back();
+            }
+        }
+        return;
+    }
+
+public:
+    vector<vector<string>> findLadders(string beginWord, string endWord, vector<string>& wordList) {
+        vector<vector<string>> ans;
+
+        //storing in the set for ~O(1) lookup
+        unordered_set<string> words(wordList.begin(), wordList.end());
+        if (words.find(endWord) == words.end()) return ans;
+
+        vector<unordered_set<string>> wordsAtLevel(500); // stores level-> set{words};
+        queue<pair<string, int>> q; // queue for BFS traversal stores {word, level}
+        q.push({beginWord, 0});
+        if(words.find(beginWord)!= words.end()) words.erase(beginWord);
+
+        int prevLevel = 0;
+
+        while(!q.empty()){
+            auto [word, level] = q.front();
+            q.pop();
+            wordsAtLevel[level].insert(word);
+
+            if(level > prevLevel){// we have completely explored all the words at previous level and now clear them from the set
+                ++prevLevel;
+            }
+
+            if (word == endWord) break;
+
+            //search for all possible words for next level form the words at this level
+            for(int i = 0; i<word.size(); ++i){
+                for(char c = 'a'; c<='z'; ++c){
+                    string newWord = word;
+                    newWord[i] = c;
+                    if(words.find(newWord) != words.end()){ // formed a valid word to be inserted
+                        q.push({newWord, level+1});
+                        words.erase(newWord);
+                    }
+                }
+            }
+        }
+
+        // form the final sequences and insert them into the ans
+        if (wordsAtLevel[prevLevel].find(endWord) == wordsAtLevel[prevLevel].end()) return ans; // not enough words in the set to go to the last word
+        vector<string> seq;
+        seq.push_back(endWord);
+        dfs(prevLevel-1, wordsAtLevel, seq, ans);
+
+        return ans;
+    }
+};"
+b4ca4ec6,Course Schedule II,https://leetcode.com/problems/course-schedule-ii/description/,leetcode,medium,Graph,solved,[STRIVER HARD] Just form the adj matrix and return topo sort this time if no cycle present,2026-09-23,2026-09-24,https://www.youtube.com/watch?v=WAOfKpxYHR8,"class Solution {
+public:
+    vector<int> findOrder(int numCourses, vector<vector<int>>& prerequisites) {
+        // form an adj matrix of this directed graph vertex -> {vertices}
+        vector<vector<int>> adj(numCourses);
+        for(int i = 0; i<prerequisites.size(); i++) adj[prerequisites[i][1]].push_back(prerequisites[i][0]);
+
+        //calculate toposort via kahn's algo
+        vector<int> indegree(numCourses, 0);
+        vector<int> topo;
+        queue<int> q;
+
+        for(int i = 0; i<numCourses; i++) for(auto it: adj[i]) indegree[it]++; //populating indegree vector
+        for(int i = 0; i<numCourses; i++) if(!indegree[i]) q.push(i); //pushing all the 0 indegree ones
+
+        while(!q.empty()){
+            int node = q.front();
+            topo.push_back(node);
+            q.pop();
+
+            for(auto it: adj[node]) {
+                indegree[it]--;
+                if (indegree[it] == 0) q.push(it);
+            }
+        }
+
+        if (topo.size() == numCourses) return topo;
+        return {};
+
+    }
+};"
+0404bbb8,Alien Dictionary,https://www.geeksforgeeks.org/problems/alien-dictionary/1,gfg,hard,Graph,solved,"[STRIVER HARD] Main challenge is to form the graph of which letter comes before which letter from the words given, see where the ith and (i+1)th word differs and deduce that the letter in ith word comes before the letter in (i+1)th word - then just return the toposort of the graph if no cycle is present",2026-09-23,2026-09-24,https://www.youtube.com/watch?v=U3N_je7tWAs,"class Solution {
+  public:
+    string findOrder(vector<string> &words) {
+        // code here
+        //creating the adj list to store the directed graph of characters
+        unordered_map<char, vector<char>> adj;
+        // populating this adj matrix
+        for(int i = 0; i<words.size()-1; i++){
+            // find the first point of difference
+            int flag = 1;
+            int j = 0;
+            while(words[i][j] == words[i+1][j]){
+                j++;
+                if (j>words[i].size()-1 || j>words[i+1].size()-1) {flag = 0; break;}
+            }
+            if (flag){
+                adj[words[i][j]].push_back(words[i+1][j]);
+            }
+        }
+
+        //find a toposort for this directed graph of characters
+        queue<char> q;
+        vector<char> topo;
+        unordered_map<char, int> indegree;
+        for(auto word : words) for(auto ch : word) indegree[ch] = 0;
+
+        //populate the indegree matrix
+        for(auto it1: adj) for(auto it2: it1.second) indegree[it2]++;
+        //it1 will be a char in adj
+        //adj[it1] will be the vector for that char and it2 will be the chars in that vector
+
+        for(auto it: indegree) if (it.second == 0) q.push(it.first);
+
+        while(!q.empty()){
+            char node = q.front();
+            topo.push_back(node);
+            q.pop();
+            //relax the degrees
+            for(auto it: adj[node]) if (--indegree[it] == 0) q.push(it);
+        }
+
+        if (topo.size() == indegree.size()) return string(topo.begin(), topo.end());
+        return """";
+    }
+};"
+c979f0e9,Word ladder I,https://leetcode.com/problems/word-ladder/description/,leetcode,medium,Graph,solved,[STRIVER HARD] Store the words in an unordered set and then perform a bfs from beginword by changing every letter with all 26 alphabets for all the letter in the word and if that new word exists in the set then push it into the queue for bfs and MAKE SURE TO ERASE THE NEWWORD FORM THE SET JUST AFTER PUSHING IT INTO THE QUEUE,2026-09-23,2026-09-24,https://www.youtube.com/watch?v=tRPda0rcf8E,"class Solution {
+public:
+    int ladderLength(string beginWord, string endWord, vector<string>& wordList) {
+        // storing the words in a set for faster search
+        unordered_set<string> st(wordList.begin(), wordList.end());
+        if (st.find(endWord) == st.end()) return 0; // word not in wordList so can be reached
+
+        // queue for bfs traversal {word, depth}
+        queue<pair<string,int>> q;
+        q.push({beginWord, 1});
+        while(!q.empty()){
+            string word = q.front().first;
+            int depth = q.front().second;
+            q.pop();
+
+            if (word == endWord) return depth;
+
+            for(int i = 0; i<word.size(); i++){
+                for(int j = 0; j<26; j++){
+                    string nword = word;
+                    nword[i] = 'a'+j;
+                    if (st.find(nword)!=st.end()){//valid word according to the dictionary provided
+                        q.push({nword, depth+1});
+                        st.erase(nword);
+                    }
+                }
+            }
+        }
+        return 0;
+    }
+};"
+becf32be,Cheapest flight with K stops,https://leetcode.com/problems/cheapest-flights-within-k-stops/description/,leetcode,hard,Graph,solved,"[STRIVER HARD] For Cheapest Flights Within K Stops, use a BFS-like queue where each state is (node, cost, flights_used). Normal Dijkstra with a single dist[node] is not directly suitable because reaching the same node with a cheaper cost but more flights can be less useful than a more expensive path with fewer flights. The FIFO queue processes states level-by-level in terms of number of flights, so we can maintain a single price[node] to decide whether a newly found cheaper state should be enqueued. When relaxing edges, always use the cur_price stored in the queue, not price[node], because price[node] may have been updated after that particular state was inserted. If there are at most k stops, we can use at most k+1 flights; therefore, when a state has stops == k+1, we must not expand it further. Because the queue is FIFO and states are processed in increasing number of flights, once such a state is reached, all states with fewer flights have already been processed, and all valid paths with exactly k+1 flights have already been generated and their costs considered.",2026-09-23,2026-09-24,https://www.youtube.com/watch?v=9XybHVqTHcQ,"class Solution {
+public:
+    int findCheapestPrice(int n, vector<vector<int>>& flights, int src, int dst, int k) {
+        //make an adj list for this flights array
+        vector<vector<pair<int,int>>> adj(n); // from->{to, price},...
+        for(int i = 0; i<flights.size(); i++) adj[flights[i][0]].push_back({flights[i][1], flights[i][2]});
+
+        queue< pair<pair<int,int>,int>> pq; //{{price, node}, stop}
+        vector<int> price(n, 1e9); price[src] = 0;
+
+        pq.push({{0, src}, 0});
+
+        //djkistra
+        while(!pq.empty()){
+            int cur_price = pq.front().first.first;
+            int from = pq.front().first.second;
+            int stops = pq.front().second;
+            pq.pop();
+            if (stops == k+1) break;
+
+            for(auto& [to, prc]: adj[from]){
+                if (price[to] > cur_price + prc){
+                    price[to] = cur_price + prc;
+                    pq.push({{price[to], to}, stops+1});
+                }
+            }
+        }
+        return (price[dst] == 1e9)? -1:price[dst];
+    }
+};
+
+// 1. We cannot use a normal Dijkstra (PriorityQueue ordered by cost) with a single dist[] array.
+//    Reason:
+//    - A cheaper path to a node may already have used all K stops.
+//    - A more expensive path to the same node with fewer stops remaining may still be able to reach the destination.
+//    - If we only keep dist[node], the expensive-but-useful state gets discarded.
+
+// 2. Instead, use a Queue (BFS by stops).
+//    Queue state = (node, cost, stops)
+
+// 3. The queue processes states in increasing order of stops:
+//    0 stops -> 1 stop -> 2 stops -> ... -> K stops
+//    This monotonic property is the reason a single dist[] works.
+
+// 4. If a node is reached with fewer stops but higher cost, it is processed first.
+//    It propagates to all possible neighbors before any later state with more stops reaches that node.
+//    Hence, we do not lose any valid paths requiring more remaining stop budget.
+
+// 5. Later, if the same node is reached with more stops but lower cost, we update dist[] and enqueue it.
+//    This state has less remaining stop budget, so it cannot discover any new paths that the earlier (fewer stops) state couldn't already explore. It can only improve costs.
+
+// 6. Always use the cost stored in the queue state while relaxing neighbors, NOT dist[node].
+//    Reason:
+//    dist[node] may have been updated after the state was enqueued.
+//    Using dist[node] would incorrectly combine the cost from one path with the stop count from another path, creating a state that never actually existed.
+
+// Summary:
+// - Queue ordering by stops is the key invariant.
+// - dist[] is only used to decide whether to enqueue a better-cost state.
+// - Expansion must always use the cost stored in the queue entry."
+6a753e20,Minimum multiplications to reach end,https://www.geeksforgeeks.org/problems/minimum-multiplications-to-reach-end/1,gfg,medium,Graph,solved,[STRIVER HARD] Use a normal bfs to explore all possibilities and since you are taking a mod 1000 there can be only 1000 nodes so keep track of which nodes got used using a bool array and end can be less than start since you are taking modulo1000 after multiplication,2026-09-23,2026-09-24,https://www.youtube.com/watch?v=_BvEJ3VIDWw&list=PLgUwDviBIf0oE3gA41TKO2H5bHpPd7fzn&index=40,"class Solution {
+  public:
+    int minSteps(vector<int>& arr, int start, int end) {
+        
+        //prforming bfs starting from start
+        vector<bool> used(1000, false);
+        queue<pair<int,int>> q;
+        
+        q.push({start, 0});
+        used[start] = true;
+        
+        while (!q.empty()) {
+            auto [num, steps] = q.front();
+            q.pop();
+        
+            if (num == end)
+                return steps;
+        
+            for (int factor : arr) {
+                int newNum = (num * factor) % 1000;
+        
+                if (!used[newNum]) {
+                    used[newNum] = true;
+                    q.push({newNum, steps + 1});
+                }
+            }
+        }
+        
+        return -1;
+    }
+};"
+8adf14cb,Number of Ways to Arrive at Destination,https://leetcode.com/problems/number-of-ways-to-arrive-at-destination/description/,leetcode,hard,Graph,solved,"[STRIVER HARD] For Count Shortest Paths, use Dijkstra with a min-heap because the graph is weighted, and maintain dist[] for the minimum distance and ways[] for the number of shortest paths to each node. Initialize dist[src] = 0 and ways[src] = 1, since there is one way to reach the source. During relaxation, if newDist < dist[nbr], update dist[nbr] = newDist and set ways[nbr] = ways[node]; if newDist == dist[nbr], add ways[node] to ways[nbr] because another shortest path has been found. Use the distance stored in the priority queue entry (currDist) rather than dist[node], and skip stale entries with if (currDist > dist[node]) continue. Since the number of paths can become extremely large, take modulo 1e9+7 during every addition, not only at the end. Similarly, use a safe finite INF = 1e18 instead of LLONG_MAX, so currDist + weight cannot overflow. My mistakes were: using a normal queue instead of Dijkstra's priority queue, forgetting ways[src] = 1, writing ways[nbr] = ways[node] + 1 instead of ways[nbr] = ways[node], and initially allowing ways/dist values to overflow because I only applied modulo at the end and used LLONG_MAX as infinity.",2026-09-24,2026-09-24,https://www.youtube.com/watch?v=_-0mx0SmYxA,"class Solution {
+public:
+    int countPaths(int n, vector<vector<int>>& roads) {
+
+        vector<vector<pair<int,int>>> adj(n);
+
+        for(auto& road : roads){
+            adj[road[0]].push_back({road[1], road[2]});
+            adj[road[1]].push_back({road[0], road[2]});
+        }
+
+        int start = 0;
+        int end = n - 1;
+
+        vector<long long> ways(n, 0);
+        vector<long long> dist(n, LLONG_MAX);
+
+        // Dijkstra: {distance, node}
+        priority_queue<
+            pair<long long,int>,
+            vector<pair<long long,int>>,
+            greater<pair<long long,int>>
+                                        > pq;
+
+        dist[start] = 0;
+        ways[start] = 1;
+        pq.push({0, start});
+
+        while(!pq.empty()){
+
+            auto [currDist, node] = pq.top();
+            pq.pop();
+
+            // Ignore stale entry
+            if(currDist != dist[node])
+                continue;
+
+            for(auto& [nbr, d] : adj[node]){
+                long long newDist = currDist + d;
+
+                if(dist[nbr] > newDist){
+                    dist[nbr] = newDist;
+                    ways[nbr] = ways[node];
+                    pq.push({dist[nbr], nbr});
+                }
+
+                else if(dist[nbr] == newDist){
+                    // Another shortest path to nbr
+                    ways[nbr] = (ways[nbr] + ways[node])%(1000000007);
+                }
+            }
+        }
+
+        return ways[end];
+    }
+};"
+5b290248,Bellman Ford Algorithm,https://www.geeksforgeeks.org/problems/distance-from-the-source-bellman-ford-algorithm/1,gfg,medium,Graph,solved,"[STRIVER HARD] this algo gives the min distance from the src to all the other nodes, just iterate through all the edge {from, to wt} pairs and ""relax them"" (see the code below), this algo can also be used to detect -ve cycles (see the code below)",2026-09-24,2026-09-25,https://www.youtube.com/watch?v=0vVofAhAYjc,"class Solution {
+  public:
+    vector<int> bellmanFord(int V, vector<vector<int>>& edges, int src) {
+        // Code here
+        vector<int> dist(V, 1e8);
+        dist[src] = 0;
+        
+        for(int i = 0; i<V-1; ++i){
+            //relaxing all the edges V-1 times
+            for(auto& edge : edges){
+                int u = edge[0];
+                int v = edge[1];
+                int w = edge[2];
+                if(dist[u]!=1e8 && dist[u] + w < dist[v]) dist[v] = dist[u] + w;
+            }
+        }
+        
+        //checking for -ve cycle
+        for(auto& edge : edges){
+            int u = edge[0];
+            int v = edge[1];
+            int w = edge[2];
+            if(dist[u]!=1e8 && dist[u] + w < dist[v]) return {-1};
+        }
+        
+        return dist;
+    }
+};
+"
+1c0803a6,Floyd Warshall Algorithm,https://www.geeksforgeeks.org/problems/implementing-floyd-warshall2042/1,gfg,medium,Graph,solved,"[STRIVER HARD] used to find the shortest paths between all pairs of vertices in a weighted directed or undirected graph (multi source shortest path algo), also detects -ve cycles ( adjList[i][i]<0 => -ve cycle) Adjency matrix is used.",2026-09-24,2026-09-24,https://www.youtube.com/watch?v=YbY8cVwWAvw&list=PLgUwDviBIf0oE3gA41TKO2H5bHpPd7fzn&index=43,"class Solution {
+  public:
+    void floydWarshall(vector<vector<int>> &dist) {
+        // Code here
+        int n = dist.size();
+        
+        for(int via = 0; via<n; ++via){
+            for(int from = 0; from<n; ++from){
+                for(int to = 0; to<n; ++to){
+                    if (!(dist[from][via] == 1e8 || dist[via][to] == 1e8)){
+                        dist[from][to] = min(dist[from][to],dist[from][via] + dist[via][to]);
+                    }
+                }
+            }
+        }
+    }
+};"
+373093b4,Find the City With the Smallest Number of Neighbours at a Threshold Distance,https://leetcode.com/problems/find-the-city-with-the-smallest-number-of-neighbors-at-a-threshold-distance/description/,leetcode,medium,Graph,solved,"[STRIVER HARD] can be done using Djikstra as well, but we used floyd warshal algo to find distance from every city to every city, then simply check for every ith city see the distance from jth city if it is below the threshold - inc the counter - take the city with min value of the counter",2026-09-24,2026-09-24,https://www.youtube.com/watch?v=PwMVNSJ5SLI,"class Solution {
+public:
+    int findTheCity(int n, vector<vector<int>>& edges, int distanceThreshold) {
+        //using flloyd warshal algo
+
+        //creating an adj Matrix *note the graph is undirected
+        vector<vector<int>> adjMatrix(n, vector<int>(n, 1e9));
+        for(int i = 0; i<n; ++i) adjMatrix[i][i] = 0; //dist to reach from i to i is 0
+        for(auto& edge : edges) {
+            adjMatrix[edge[0]][edge[1]] = edge[2];
+            adjMatrix[edge[1]][edge[0]] = edge[2];
+        }
+
+        //flloyd warshal
+        for(int via = 0; via<n; ++via){
+            for(int from = 0; from<n; ++from){
+                for(int to = 0; to<n; ++to){
+                    if(adjMatrix[from][via] == 1e9 || adjMatrix[via][to] == 1e9) continue;
+                    adjMatrix[from][to] = min(adjMatrix[from][to],
+                                              adjMatrix[from][via] + adjMatrix[via][to]);
+                }
+            }
+        }
+
+        // count how many cities are below the threshold for a fiven city
+        int cnt_min = INT_MAX;
+        int max_city_with_cnt_min;
+        for(int i = 0; i<n; i++){
+            int cnt_i = 0;
+            for(int j = 0; j<n; j++) if (adjMatrix[i][j] <= distanceThreshold) cnt_i++;
+            if (cnt_min >= cnt_i){
+                cnt_min = cnt_i;
+                max_city_with_cnt_min = i;
+            }
+        }
+        return max_city_with_cnt_min;
+    }
+};"
+487b083b,Swim in Rising Water,https://leetcode.com/problems/swim-in-rising-water/description/,leetcode,hard,Graph,solved,"[STRIVER HARD] solev it using djikstra - greedily explore that path first which has the min max_pat_height, The important change is that the priority-queue value must represent the maximum height encountered on the entire path so far, not just the current cell's height. Therefore, when moving to a neighbour, we store max(pathHeight, grid[new_r][new_c]) in the priority queue,
+priority queue finally stores - {path_max_height, node}",2026-09-24,2026-09-24,https://www.youtube.com/watch?v=amvrKlMLuGY,"class Solution {
+public:
+    int swimInWater(vector<vector<int>>& grid) {
+        int n = grid.size();
+
+        // we want to find the path with the smallest max path height (max path height is the max height encountered in that path)
+        // dijkstra
+        vector<vector<bool>> vis(n, vector<bool>(n, false));
+
+        priority_queue<
+            pair<int,int>,
+            vector<pair<int,int>>,
+            greater<pair<int,int>>
+        > q; // {path_max_height, node_no. = (n*i+j)}
+
+        q.push({grid[0][0], 0});
+        vis[0][0] = true;
+
+        vector<pair<int,int>> directions(4);
+        directions[0] = {-1,0};
+        directions[1] = {1,0};
+        directions[2] = {0,-1};
+        directions[3] = {0,1};
+
+        while(!q.empty()) {
+            auto [pathHeight, nodeNum] = q.top();
+            q.pop();
+
+            int r = nodeNum/n;
+            int c = nodeNum%n;
+
+            if(r == n-1 && c == n-1) return pathHeight; // we reached the destination
+
+            for(auto& [d_r, d_c] : directions) {
+
+                int new_r = r + d_r;
+                int new_c = c + d_c;
+
+                //checking validity
+                if(new_r < 0 || new_r >= n || new_c < 0 || new_c >= n || vis[new_r][new_c]) continue;
+
+                int newPathHeight = max(pathHeight, grid[new_r][new_c]);
+                q.push({newPathHeight, n * new_r + new_c});
+                vis[new_r][new_c] = true;
+            }
+        }
+        return -1;
+    }
+};"
+c0a9b647,Number of Island II,https://www.naukri.com/code360/problems/number-of-islands-ii_1266048,naukri.com,hard,Graph,solved,"[STRIVER HARD] The Number of Islands II problem is solved efficiently using DSU (Disjoint Set Union). Initially, every cell is treated as a separate component, but only cells that are converted to land are considered active. For each query, we turn the cell into land and increase the island count by 1. Then we check its four neighbouring cells; if a neighbour is already land and belongs to a different DSU component, we union the two components and decrease the island count by 1. Path compression and union by rank keep DSU operations nearly constant time, giving an overall complexity of approximately O(Q · α(NM)), where Q is the number of queries and α is the inverse Ackermann function.",2026-09-25,2026-09-25,https://www.youtube.com/watch?v=Rn6B-Q4SNyA,"class DSU {
+	private:
+		vector<int> parent, rank;
+	public:
+		//constructor
+		DSU(int n) {
+			rank.resize(n, 0);
+			parent.resize(n);
+			for(int i = 0; i<n; i++) parent[i] = i;
+		}
+		int ultimateParent(int node){
+			if (node == parent[node]) return node;
+			return parent[node] = ultimateParent(parent[node]);
+		}
+		bool unionByRank(int u, int v){
+			int ultimateParentU = ultimateParent(u);
+			int ultimateParentV = ultimateParent(v);
+			if (ultimateParentU == ultimateParentV) return 0; //already in same grp
+
+			//rank of u should always be less
+			if(rank[ultimateParentU] > rank[ultimateParentV]) return unionByRank(v, u);
+			
+			//since rank of u is small it'll get attached to v
+			parent[ultimateParentU] = ultimateParentV;
+			//increase the rank of V grp if equally big chunk gets attached
+			if (rank[ultimateParentU] == rank[ultimateParentV]) rank[ultimateParentV]++;
+			return 1;
+		}
+};
+
+vector<int> numOfIslandsII(int n, int m, vector<vector<int>> &q){
+	DSU dsu(n*m);
+	vector<vector<bool>> grid(n, vector<bool>(m, 0));
+
+	vector<int> ans;
+	int cntIslands = 0;
+
+	//lambda functrions to help 
+	auto isValidLand = [n,m,&grid](int r, int c){ return (r>=0 && r<n && c>=0 && c<m && grid[r][c]); };
+	auto node = [m](int r, int c){ return (r*m + c); };
+
+	for(auto& query : q){
+		int r = query[0];
+		int c = query[1];
+		grid[r][c] = 1;
+		cntIslands++;
+		//this node is now land
+
+		//check if there is any land in the neighbour, if there then club them
+		if (isValidLand(r-1,c) && dsu.unionByRank(node(r-1,c), node(r,c))) cntIslands--; //up
+		if (isValidLand(r+1,c) && dsu.unionByRank(node(r+1,c), node(r,c))) cntIslands--; //down
+		if (isValidLand(r,c-1) && dsu.unionByRank(node(r,c-1), node(r,c))) cntIslands--; //left
+		if (isValidLand(r,c+1) && dsu.unionByRank(node(r,c+1), node(r,c))) cntIslands--; //right
+
+		ans.push_back(cntIslands);
+	}
+	return ans;
+}"
+fe18bb80,Making a Large Island,https://leetcode.com/problems/making-a-large-island/,leetcode,hard,Graph,solved,"[STRIVER HARD] The Largest Island problem is solved using DSU (Disjoint Set Union). First, all adjacent 1s are merged into connected components using union by size and path compression. Then, for every 0, we simulate flipping it to 1 and calculate the resulting island size by adding the sizes of its unique neighbouring components using a set of parent IDs. We take the maximum such size. If the grid contains no 0, the answer is n².",2026-09-25,2026-09-26,https://www.youtube.com/watch?v=lgiz0Oup6gM,"class DSU {
+	private:
+		vector<int> parent, size;
+	public:
+		//constructor
+		DSU(int n) {
+			size.resize(n, 1); //size represents the no. of members in that grp - initially only one - just itself
+			parent.resize(n);
+			for(int i = 0; i<n; i++) parent[i] = i;
+		}
+		int ultimateParent(int node){
+			if (node == parent[node]) return node;
+			return parent[node] = ultimateParent(parent[node]);
+		}
+		bool unionBySize(int u, int v){
+			int ultimateParentU = ultimateParent(u);
+			int ultimateParentV = ultimateParent(v);
+			if (ultimateParentU == ultimateParentV) return 0; //already in same grp - no union needed
+
+			//size of u-grp should always be less
+			if(size[ultimateParentU] > size[ultimateParentV]) return unionBySize(v, u);
+			
+			//since size of u is small or equal it'll get attached to v
+			parent[ultimateParentU] = ultimateParentV;
+            size[ultimateParentV] += size[ultimateParentU];
+			return 1;
+		}
+        int getSize(int node){
+            return size[node];
+        }
+};
+
+class Solution {
+public:
+    int largestIsland(vector<vector<int>>& grid) {
+        //1st we will input the grid into our dsu dataset
+
+        int n = grid.size();
+        DSU dsu(n*n);
+
+        //defining lambda functions dir vector to help 
+        auto isValidLand = [n,&grid](int r, int c){ return (r>=0 && r<n && c>=0 && c<n && grid[r][c]); };
+        auto node = [n](int r, int c){ return (r*n + c); };
+        vector<pair<int,int>> dir = {{-1,0},{1,0},{0,-1},{0,1}};
+
+        for(int r = 0; r<n; r++){
+            for(int c = 0; c<n; c++){
+                if(!grid[r][c]) continue;
+                //check if there is any land in the neighbour, if there then club them
+                for(auto& [dr, dc] : dir) if(isValidLand(r+dr, c+dc)) dsu.unionBySize(node(r+dr, c+dc), node(r, c));
+            }
+        }
+
+        //now lets calculate the maxSize that we can get by flipping
+        int maxIsland = 0;
+
+        for(int r = 0; r<n; r++){
+            for(int c = 0; c<n; c++){
+                if(grid[r][c]) continue;
+
+                //if the cell is '0' and get the ""land"" neighbours' size and add them
+                int island = 1;
+                unordered_set<int> usedParents;
+                for(auto& [dr, dc] : dir){
+                    if(isValidLand(r+dr, c+dc)){
+                        int parent = dsu.ultimateParent(node(r+dr, c+dc));
+                        if(usedParents.find(parent) == usedParents.end()){
+                            island += dsu.getSize(parent);
+                            usedParents.insert(parent);
+                        }
+                    }
+                }
+
+                maxIsland = max(maxIsland, island);
+            }
+        }
+        return (maxIsland)? maxIsland:n*n;
+    }
+};"
+f4d04e75,Most Stones Removed with Same Row or Column,https://leetcode.com/problems/most-stones-removed-with-same-row-or-column/description/,leetcode,hard,Graph,solved,"[STRIVER HARD] the main idea is to take rows and columns as nodes and grp them based on the stones position, if stone's on x,y -> group row x and col y, then you can remove all the stones in a grp leaving just one - like this if you'll sum all the removed stones you'll get total stones - total grps as ans",2026-09-26,2026-09-27,https://www.youtube.com/watch?v=OwMNX8SPavM,"class DSU {
+	private:
+		vector<int> parent, rank;
+	public:
+		//constructor
+		DSU(int n) {
+			rank.resize(n, 0);
+			parent.resize(n);
+			for(int i = 0; i<n; i++) parent[i] = i;
+		}
+		int ultimateParent(int node){
+			if (node == parent[node]) return node;
+			return parent[node] = ultimateParent(parent[node]);
+		}
+		bool unionByRank(int u, int v){
+			int ultimateParentU = ultimateParent(u);
+			int ultimateParentV = ultimateParent(v);
+			if (ultimateParentU == ultimateParentV) return 0; //already in same grp
+
+			//rank of u should always be less
+			if(rank[ultimateParentU] > rank[ultimateParentV]) return unionByRank(v, u);
+			
+			//since rank of u is small it'll get attached to v
+			parent[ultimateParentU] = ultimateParentV;
+			//increase the rank of V grp if equally big chunk gets attached
+			if (rank[ultimateParentU] == rank[ultimateParentV]) rank[ultimateParentV]++;
+			return 1;
+		}
+        int getTotalGroups(){
+            //only those ultimate parents with rank>0 is a grp
+            int cnt = 0;
+            for(int i = 0; i<parent.size(); ++i) if(parent[i] == i && rank[i]>0) cnt++;
+            return cnt;
+        }
+};
+class Solution {
+public:
+    int removeStones(vector<vector<int>>& stones) {
+        //the idea is to make nodes of rows and columns and then how they'll be grouped will be decided by the position of stones
+        //first we need to find the dimensions of rows and columns
+        int m = 0, n=0; //rows x cols
+        for(auto& stone : stones){
+            m = max(m, stone[0]);
+            n = max(n, stone[1]);
+        }
+
+        DSU dsu(n+m+2); // rows 0-m -> 0-m || cols 0-n -> m+1 - m+n+1
+
+        for(auto& stone : stones){
+            int rowNode = stone[0];
+            int colNode = stone[1];
+            //they both are now in same grp
+            dsu.unionByRank(rowNode, colNode+m+1);
+        }
+
+        //count the no. of grps 
+        return stones.size() - dsu.getTotalGroups();
+    }
+};"
+f9c084c6,Kosaraju algorithm O(N+E),https://www.geeksforgeeks.org/problems/strongly-connected-components-kosarajus-algo/1,gfg,medium,Graph,solved,"[STRIVER HARD] this algo is finding the SCC, now the idea is if you do a dfs on sink you'll stay there and can isolate the sink vertices easily - but using topo sort finding the source vertex is easy (sorting in inc. order of finishing time), so we apply the toposort in the reversed graph to get the the source of reversed graph => sink of the actual graph then apply dfs in the order of toposort in actual graph",2026-09-26,2026-09-27,https://www.youtube.com/watch?v=V8qIqJxCioo&list=PLgUwDviBIf0rGEWe64KWas0Nryn7SCRWw&index=28,"class Solution {
+  private:
+  void dfs(vector<vector<int>>& graph, int node, vector<bool>& vis, stack<int>* topo = nullptr){
+      //mark this node as visited
+      vis[node] = true;
+      //visit its neighbour in a dfs fashion
+      for(auto& nbr : graph[node]){
+          if (!vis[nbr]) dfs(graph, nbr, vis, topo);
+      }
+      //push the node into the stacl while returning to get the toposort
+      if (topo) topo->push(node);
+      return;
+  }
+  
+  stack<int> getTopoSort(vector<vector<int>>& graph){
+      int n = graph.size();
+      vector<bool> vis(n, false);
+      stack<int> topo;
+      
+      for(int node = 0; node<n; node++){
+          if(!vis[node]) dfs(graph, node, vis, &topo);
+      }
+      return topo;
+  }
+  
+  
+  public:
+    int countSCC(int V, vector<vector<int>> &edges) {
+        //building the graph and reversed graph
+        vector<vector<int>> graph(V);
+        vector<vector<int>> reversedGraph(V);
+        
+        for(auto& edge : edges){
+            graph[edge[0]].push_back(edge[1]);
+            reversedGraph[edge[1]].push_back(edge[0]);
+        }
+        
+        // doing topoSort in reversed graph to get the sinks in graph
+        stack<int> topo = getTopoSort(reversedGraph);
+        
+        //doing dfs in graph in order of toposort to get count the SCCs
+        vector<bool> vis(V, false);
+        int scc = 0;
+        
+        while(!topo.empty()){
+            int node = topo.top();
+            if (!vis[node]){
+                dfs(graph, node, vis);
+                scc++;
+            }
+            topo.pop();
+        }
+        return scc;
+    }
+};"
+4c80f856,Bridges in graph,https://leetcode.com/problems/critical-connections-in-a-network/,leetcode,hard,Graph,solved,[STIVER HARD] difficult to explain the intuition just read the code and see the video on 2x,2026-09-26,2026-09-27,https://youtu.be/qrAub5z8FeA,"class Solution {
+private:
+    int time = 0;
+    void getCC(int node, int parent, vector<vector<int>>& graph, vector<bool>& vis, 
+               vector<int>& insertion_time, vector<int>& lowest_time, vector<vector<int>>& CC){
+
+        vis[node] = 1;
+        insertion_time[node] = time;
+        lowest_time[node] = time++;
+
+        for(auto neighbour : graph[node]){
+            // if parent - no need to do anything
+            if (neighbour == parent) continue;
+            //else explore the neighbour if not visited and while returning tak its time if lower
+            if (!vis[neighbour]){
+                getCC(neighbour, node, graph, vis, insertion_time, lowest_time, CC);
+                // after exploring if we would have found any back edge aka cycle then the lowest of the neighboud would have been updated to a lower value than the node, if no cycle was found => it is a bridge
+                lowest_time[node] = min(lowest_time[node], lowest_time[neighbour]);
+                if (!(insertion_time[node] >= lowest_time[neighbour])){ //MAIN CONDITION
+                    CC.push_back({node, neighbour});
+                }
+            }
+            // if it is vis and not the parent then it is a cycle i.e. lowest_time needs to be updated
+            else{
+                lowest_time[node] = min(lowest_time[node], insertion_time[neighbour]);
+            }
+        }
+        return;
+    }
+public:
+    vector<vector<int>> criticalConnections(int n, vector<vector<int>>& connections) {
+        vector<vector<int>> CC;
+        vector<vector<int>> graph(n);
+        vector<bool> vis(n, false);
+        //make adj of graph
+        for(auto edge : connections){
+            graph[edge[0]].push_back(edge[1]);
+            graph[edge[1]].push_back(edge[0]);
+        }
+
+        vector<int> insetion_time(n, -1);
+        vector<int> lowest_time(n, -1);
+        getCC(0, -1, graph, vis, insetion_time, lowest_time, CC);
+        return CC;
+    }
+};"
+beed3d5c,Articulation point in graph,https://www.geeksforgeeks.org/problems/articulation-point2616/1,gfg,hard,Graph,solved,[STIVER HARD] difficult to explain the intuition just read the code and see the video on 2x (similar to bridges in graph),2026-09-26,2026-09-27,https://youtu.be/j1QDfU21iZk,"class Solution {
+  private:
+  int timer = 0;
+    void art_dfs(int node, int parent, vector<vector<int>>& graph, vector<int>& tin, 
+                 vector<int>& low, vector<bool>& mark_art_point){
+                     
+        tin[node] = low[node] = ++timer;
+        int child = 0;
+        //check all the neighbours
+        for(auto& nbr : graph[node]){
+            if (nbr == parent) continue; // we don't care if its a parent - just skip
+            if (tin[nbr] == 1e9){ //it's not visited
+                //visit it 
+                art_dfs(nbr, node, graph, tin, low, mark_art_point);
+                //take it low if it is lower
+                low[node] = min(low[node], low[nbr]);
+                if(!(tin[node] > low[nbr]) && parent != -1) mark_art_point[node] = true; //MAIN CONDITION
+                child++;
+            }
+            else{ //it's visited
+                //take its insertion time then
+                low[node] = min(low[node], tin[nbr]);
+            }
+        }
+        
+        if (child > 1 && parent == -1) mark_art_point[node] = true;
+        return;
+    }
+    
+  public:
+    vector<int> articulationPoints(int V, vector<vector<int>>& edges) {
+        //forminng the adj matrix for this UNDIRECTED GRAPH
+        vector<vector<int>> graph(V);
+        for(auto& edge : edges ){
+            graph[edge[0]].push_back(edge[1]);
+            graph[edge[1]].push_back(edge[0]);
+        }
+        
+        //initialising helping vectors
+        vector<int> tin(V, 1e9);
+        vector<int> low(V, 1e9);
+        vector<bool> mark_art_point(V, false);
+        
+        for(int i = 0; i<V; ++i){
+            if(tin[i] != 1e9) continue; //already visited
+            art_dfs(i, -1, graph, tin, low, mark_art_point);
+        }
+        
+        vector<int> ans;
+        for(int i = 0; i<V; ++i) if(mark_art_point[i]) ans.push_back(i);
+        return ans.size()? ans:vector<int>{-1};
+    }
+};"
+3f0a3e0c,Unique paths II,https://leetcode.com/problems/unique-paths-ii/,leetcode,medium,DP,solved,"[STRIVER HARD] The Unique Paths II problem can be solved using DP with memoization. Basically write the recursion exploring all the possibilities and then memoize it.
+Define dp[i][j] as the number of valid paths from cell (i,j) to the destination. If the cell is outside the grid or is an obstacle, it contributes 0 paths. For the destination cell, the number of paths is 1. Otherwise, the number of paths from (i,j) is the sum of paths going right and down: dp[i][j] = dp[i][j+1] + dp[i+1][j]. Memoization ensures each cell is solved only once, giving O(n·m) time and O(n·m) space",2026-09-27,2026-09-27,https://www.youtube.com/watch?v=TmhpgXScLyY,"class Solution {
+private:
+    int possiblePaths(int i, int j, vector<vector<int>> &dp, vector<vector<int>>& obstacleGrid){
+        int n = obstacleGrid.size();
+        int m = obstacleGrid[0].size();
+        if (i>=n || j >=m) return 0;
+        if (obstacleGrid[i][j] == 1) return dp[i][j] = 0;
+        if (i==n-1 && j ==m-1) return dp[i][j] = 1;
+        if (dp[i][j] != -1) return dp[i][j];
+
+        int right = possiblePaths(i,j+1,dp,obstacleGrid);
+        int down = possiblePaths(i+1,j,dp,obstacleGrid);
+        return dp[i][j] = right + down;
+    }
+public:
+    int uniquePathsWithObstacles(vector<vector<int>>& obstacleGrid) {
+        int n = obstacleGrid.size();
+        int m = obstacleGrid[0].size();
+        vector<vector<int>> dp(n, vector<int>(m, -1));
+        return possiblePaths(0,0,dp,obstacleGrid);
+        for(int i = 0; i<n; i++){
+            for(int j = 0; j<m; j++){
+                if (obstacleGrid[i][j] == 1) {dp[i][j] = 0;continue;}
+                if (i == 0 && j == 0) {dp[i][j] = 1;continue;}
+                int up = 0, left = 0;
+                if (i>0) up = dp[i-1][j];
+                if (j>0) left = dp[i][j-1];
+                dp[i][j] = up + left;
+            }
+        }
+        return dp[n-1][m-1];
+    }
+};"
+e683f177,Cherry Pickup II,https://leetcode.com/problems/cherry-pickup-ii/description/,leetcode,hard,DP,solved,,2026-09-27,2026-09-27,https://www.youtube.com/watch?v=QGfn7JeXK54,
