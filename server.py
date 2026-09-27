@@ -1,0 +1,286 @@
+from flask import Flask, render_template, jsonify, request
+import csv
+import json
+import os
+import uuid
+from datetime import datetime, timedelta
+from collections import defaultdict
+
+app = Flask(__name__)
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+DATA_DIR = os.path.join(BASE_DIR, 'data')
+
+CSV_FIELDS = [
+    'id', 'title', 'link', 'platform', 'difficulty',
+    'topic', 'status', 'notes', 'date_solved', 'date_added', 'video_link', 'code',
+]
+
+XP_MAP = {'easy': 10, 'medium': 25, 'hard': 50}
+
+RANKS = [
+    (0, 'Newbie', '#636366'),
+    (100, 'Apprentice', '#30d158'),
+    (300, 'Coder', '#64d2ff'),
+    (600, 'Solver', '#5e5ce6'),
+    (1000, 'Warrior', '#bf5af2'),
+    (2000, 'Knight', '#ff9f0a'),
+    (3500, 'Master', '#ff453a'),
+    (5000, 'Grandmaster', '#ffd60a'),
+]
+
+
+def csv_path(subject):
+    return os.path.join(DATA_DIR, f'{subject}.csv')
+
+
+def ensure_csv(subject):
+    p = csv_path(subject)
+    if not os.path.exists(p):
+        with open(p, 'w', newline='') as f:
+            csv.DictWriter(f, fieldnames=CSV_FIELDS).writeheader()
+
+
+def read_all(subject):
+    ensure_csv(subject)
+    with open(csv_path(subject), 'r', newline='') as f:
+        return list(csv.DictReader(f))
+
+
+def write_all(subject, rows):
+    with open(csv_path(subject), 'w', newline='') as f:
+        w = csv.DictWriter(f, fieldnames=CSV_FIELDS)
+        w.writeheader()
+        w.writerows(rows)
+
+
+def calc_stats(questions):
+    solved = [q for q in questions if q.get('status') in ('solved', 'revisit')]
+    total_xp = sum(XP_MAP.get(q.get('difficulty', ''), 0) for q in solved)
+
+    rank_idx = 0
+    for i, (threshold, _, _) in enumerate(RANKS):
+        if total_xp >= threshold:
+            rank_idx = i
+
+    rank_name = RANKS[rank_idx][1]
+    rank_color = RANKS[rank_idx][2]
+    cur_thresh = RANKS[rank_idx][0]
+
+    if rank_idx < len(RANKS) - 1:
+        nxt_thresh = RANKS[rank_idx + 1][0]
+        nxt_rank = RANKS[rank_idx + 1][1]
+        progress = (total_xp - cur_thresh) / (nxt_thresh - cur_thresh)
+    else:
+        nxt_thresh = None
+        nxt_rank = None
+        progress = 1.0
+
+    dates = sorted({q['date_solved'] for q in solved if q.get('date_solved')})
+
+    current_streak = 0
+    best_streak = 0
+    if dates:
+        date_set = set(dates)
+        today = datetime.now().date()
+        check = today
+        while check.isoformat() in date_set:
+            current_streak += 1
+            check -= timedelta(days=1)
+        if current_streak == 0:
+            check = today - timedelta(days=1)
+            while check.isoformat() in date_set:
+                current_streak += 1
+                check -= timedelta(days=1)
+
+        streak = 1
+        best_streak = 1
+        for i in range(1, len(dates)):
+            d1 = datetime.fromisoformat(dates[i - 1]).date()
+            d2 = datetime.fromisoformat(dates[i]).date()
+            if (d2 - d1).days == 1:
+                streak += 1
+                best_streak = max(best_streak, streak)
+            else:
+                streak = 1
+
+    heatmap = defaultdict(int)
+    for q in solved:
+        if q.get('date_solved'):
+            heatmap[q['date_solved']] += 1
+
+    today_str = datetime.now().date().isoformat()
+    today_count = sum(1 for q in solved if q.get('date_solved') == today_str)
+
+    topics = defaultdict(int)
+    for q in solved:
+        topics[q.get('topic') or 'Other'] += 1
+
+    avg_per_day = 0
+    if dates:
+        first_date = datetime.fromisoformat(dates[0]).date()
+        days_span = (datetime.now().date() - first_date).days + 1
+        if days_span > 0:
+            avg_per_day = round(len(solved) / days_span, 2)
+
+    return {
+        'total_solved': len(solved),
+        'total_questions': len(questions),
+        'total_xp': total_xp,
+        'rank': rank_name,
+        'rank_color': rank_color,
+        'next_rank': nxt_rank,
+        'current_threshold': cur_thresh,
+        'next_threshold': nxt_thresh,
+        'rank_progress': round(progress, 3),
+        'current_streak': current_streak,
+        'best_streak': best_streak,
+        'today_count': today_count,
+        'easy': sum(1 for q in solved if q.get('difficulty') == 'easy'),
+        'medium': sum(1 for q in solved if q.get('difficulty') == 'medium'),
+        'hard': sum(1 for q in solved if q.get('difficulty') == 'hard'),
+        'topics': dict(topics),
+        'heatmap': dict(heatmap),
+        'avg_per_day': avg_per_day,
+    }
+
+
+@app.route('/')
+def index():
+    return render_template('index.html')
+
+
+@app.route('/api/<subject>/questions')
+def get_questions(subject):
+    return jsonify(read_all(subject))
+
+
+@app.route('/api/<subject>/questions', methods=['POST'])
+def add_question(subject):
+    d = request.json
+    rows = read_all(subject)
+    row = {f: '' for f in CSV_FIELDS}
+    row['id'] = uuid.uuid4().hex[:8]
+    row['date_added'] = datetime.now().date().isoformat()
+    for k in ('title', 'link', 'platform', 'difficulty', 'topic', 'status', 'notes', 'date_solved', 'video_link', 'code'):
+        if k in d:
+            row[k] = d[k]
+    row.setdefault('status', 'solved')
+    rows.append(row)
+    write_all(subject, rows)
+    return jsonify(row), 201
+
+
+@app.route('/api/<subject>/questions/<qid>', methods=['PUT'])
+def update_question(subject, qid):
+    d = request.json
+    rows = read_all(subject)
+    for r in rows:
+        if r['id'] == qid:
+            for k in d:
+                if k in CSV_FIELDS and k != 'id':
+                    r[k] = d[k]
+            break
+    write_all(subject, rows)
+    return jsonify({'ok': True})
+
+
+@app.route('/api/<subject>/questions/<qid>', methods=['DELETE'])
+def delete_question(subject, qid):
+    rows = read_all(subject)
+    rows = [r for r in rows if r['id'] != qid]
+    write_all(subject, rows)
+    return jsonify({'ok': True})
+
+
+@app.route('/api/<subject>/reorder', methods=['PUT'])
+def reorder_questions(subject):
+    ids = (request.json or {}).get('ids', [])
+    rows = read_all(subject)
+    by_id = {r['id']: r for r in rows}
+    ordered = [by_id[i] for i in ids if i in by_id]
+    remaining = [r for r in rows if r['id'] not in {i for i in ids}]
+    write_all(subject, ordered + remaining)
+    return jsonify({'ok': True})
+
+
+def topics_path(subject):
+    return os.path.join(DATA_DIR, f'{subject}_topics.json')
+
+
+def read_topics(subject):
+    p = topics_path(subject)
+    if os.path.exists(p):
+        with open(p) as f:
+            return json.load(f)
+    return []
+
+
+def write_topics(subject, topics):
+    with open(topics_path(subject), 'w') as f:
+        json.dump(topics, f)
+
+
+@app.route('/api/<subject>/topics')
+def get_topics(subject):
+    saved = read_topics(subject)
+    from_questions = {q.get('topic') for q in read_all(subject) if q.get('topic')}
+    merged = list(dict.fromkeys(saved + sorted(from_questions - set(saved))))
+    return jsonify(merged)
+
+
+@app.route('/api/<subject>/topics', methods=['POST'])
+def add_topic(subject):
+    name = (request.json or {}).get('name', '').strip()
+    if not name:
+        return jsonify({'error': 'name required'}), 400
+    topics = read_topics(subject)
+    if name not in topics:
+        topics.append(name)
+        write_topics(subject, topics)
+    return jsonify({'ok': True}), 201
+
+
+@app.route('/api/<subject>/topics', methods=['DELETE'])
+def delete_topic(subject):
+    name = (request.json or {}).get('name', '').strip()
+    topics = read_topics(subject)
+    topics = [t for t in topics if t != name]
+    write_topics(subject, topics)
+    return jsonify({'ok': True})
+
+
+@app.route('/api/<subject>/stats')
+def get_stats(subject):
+    return jsonify(calc_stats(read_all(subject)))
+
+
+@app.route('/api/subjects')
+def list_subjects():
+    subs = []
+    for f in sorted(os.listdir(DATA_DIR)):
+        if f.endswith('.csv'):
+            name = f[:-4]
+            rows = read_all(name)
+            solved = sum(1 for r in rows if r.get('status') in ('solved', 'revisit'))
+            subs.append({'id': name, 'label': name.upper(), 'total': len(rows), 'solved': solved})
+    return jsonify(subs)
+
+
+@app.route('/api/dashboard')
+def dashboard():
+    all_questions = []
+    for f in sorted(os.listdir(DATA_DIR)):
+        if f.endswith('.csv'):
+            name = f[:-4]
+            for row in read_all(name):
+                row['_subject'] = name
+                all_questions.append(row)
+    return jsonify(calc_stats(all_questions))
+
+
+if __name__ == '__main__':
+    os.makedirs(DATA_DIR, exist_ok=True)
+    ensure_csv('dsa')
+    print('\n  Placement Prep Tracker')
+    print('  http://localhost:6969\n')
+    app.run(debug=True, port=6969)
