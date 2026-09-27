@@ -918,4 +918,39 @@ public:
         return dp[n-1][m-1];
     }
 };"
-e683f177,Cherry Pickup II,https://leetcode.com/problems/cherry-pickup-ii/description/,leetcode,hard,DP,solved,,2026-09-27,2026-09-27,https://www.youtube.com/watch?v=QGfn7JeXK54,
+e683f177,Cherry Pickup II,https://leetcode.com/problems/cherry-pickup-ii/description/,leetcode,medium,DP,solved,[STIVER HARD] same just explore all the possible paths - make sure to add the common square only once and write the recursion then memoize it,2026-09-27,2026-09-27,https://www.youtube.com/watch?v=QGfn7JeXK54,"class Solution {
+private:
+    int getMaxCherries(int i, int j1, int j2, vector<vector<int>>& grid, vector<vector<vector<int>>>& dp){
+        //return the stored value dp
+        if (dp[i][j1][j2] != -1) return dp[i][j1][j2];
+     
+        int m = grid.size();
+        int n = grid[0].size();
+        int Cherries = (j1 == j2)? grid[i][j1] : (grid[i][j1] + grid[i][j2]);
+        int maxCherries = Cherries;
+
+        //helper lambda function
+        auto isValid = [m,n](int i, int j1, int j2){
+            return (i<m && j1>=0 && j2>=0 && j1<n && j2<n);
+        };
+        
+        //explore all possibilities
+        for(int d_j1 = -1; d_j1<=1; ++d_j1){
+            for(int d_j2 = -1; d_j2<=1; ++d_j2){
+                if (!isValid(i+1, j1+d_j1, j2+d_j2)) continue; // the move should be a valid one
+                // store the max cherries possible across all possible paths
+                maxCherries = max(maxCherries, Cherries + getMaxCherries(i+1, j1+d_j1, j2+d_j2, grid, dp));
+            }
+        }
+
+        return dp[i][j1][j2] = maxCherries;
+    }
+public:
+    int cherryPickup(vector<vector<int>>& grid) {
+        int m = grid.size();
+        int n = grid[0].size();
+        //memoize it
+        vector<vector<vector<int>>> dp(m, vector<vector<int>>(n, vector<int>(n, -1)));
+        return getMaxCherries(0, 0, n-1, grid, dp);
+    }
+};"
