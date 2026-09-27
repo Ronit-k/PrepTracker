@@ -1,6 +1,6 @@
 # PrepTracker
 
-A placement preparation tracker with an Apple-inspired dark UI, built with Flask and vanilla JS.
+A placement preparation tracker built with Flask and vanilla JS.
 
 ![Python](https://img.shields.io/badge/Python-3.10+-3776AB?logo=python&logoColor=white)
 ![Flask](https://img.shields.io/badge/Flask-2.x-000?logo=flask)
