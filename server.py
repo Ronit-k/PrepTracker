@@ -3,6 +3,8 @@ import csv
 import json
 import os
 import uuid
+import subprocess
+import threading
 from datetime import datetime, timedelta
 from collections import defaultdict
 
@@ -51,6 +53,7 @@ def write_all(subject, rows):
         w = csv.DictWriter(f, fieldnames=CSV_FIELDS)
         w.writeheader()
         w.writerows(rows)
+    sync_data_async()
 
 
 def calc_stats(questions):
@@ -218,6 +221,7 @@ def read_topics(subject):
 def write_topics(subject, topics):
     with open(topics_path(subject), 'w') as f:
         json.dump(topics, f)
+    sync_data_async()
 
 
 @app.route('/api/<subject>/topics')
@@ -276,6 +280,51 @@ def dashboard():
                 row['_subject'] = name
                 all_questions.append(row)
     return jsonify(calc_stats(all_questions))
+
+
+def git_push_data():
+    try:
+        subprocess.run(['git', 'add', 'data/'], cwd=BASE_DIR,
+                       capture_output=True, timeout=10)
+        result = subprocess.run(
+            ['git', 'status', '--porcelain', 'data/'], cwd=BASE_DIR,
+            capture_output=True, text=True, timeout=10)
+        if not result.stdout.strip():
+            return
+        subprocess.run(
+            ['git', 'commit', '-m', f'data: sync {datetime.now().strftime("%Y-%m-%d %H:%M")}'],
+            cwd=BASE_DIR, capture_output=True, timeout=10)
+        subprocess.run(['git', 'push'], cwd=BASE_DIR,
+                       capture_output=True, timeout=30)
+    except Exception:
+        pass
+
+
+def sync_data_async():
+    threading.Thread(target=git_push_data, daemon=True).start()
+
+
+@app.route('/api/deploy', methods=['POST'])
+def deploy():
+    try:
+        subprocess.run(['git', 'stash'], cwd=BASE_DIR,
+                       capture_output=True, timeout=10)
+        r = subprocess.run(['git', 'pull', '--rebase'], cwd=BASE_DIR,
+                           capture_output=True, text=True, timeout=30)
+        subprocess.run(['git', 'stash', 'pop'], cwd=BASE_DIR,
+                       capture_output=True, timeout=10)
+        return jsonify({'ok': True, 'output': r.stdout.strip()})
+    except Exception as e:
+        return jsonify({'ok': False, 'error': str(e)}), 500
+
+
+@app.route('/api/sync', methods=['POST'])
+def sync():
+    try:
+        git_push_data()
+        return jsonify({'ok': True})
+    except Exception as e:
+        return jsonify({'ok': False, 'error': str(e)}), 500
 
 
 if __name__ == '__main__':
