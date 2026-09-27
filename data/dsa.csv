@@ -954,3 +954,35 @@ public:
         return getMaxCherries(0, 0, n-1, grid, dp);
     }
 };"
+71d987be,Best Time to Buy and Sell Stock III,https://leetcode.com/problems/best-time-to-buy-and-sell-stock-iii/description/,leetcode,medium,DP,solved,[STRIVER HARD] again explore all possibility of buy/sell (according to current position and skip and return the max then memoize it,2026-09-27,2026-09-27,https://youtu.be/-uQGzhYj8BQ,"class Solution {
+private:
+    int getMaxProfit(int i, int trxn, vector<int>& prices, vector<vector<int>>& dp){
+        //base case
+        if (trxn == 4) return 0; // we have exhausted all our transactions
+        if(i == prices.size()-1) { //now here obviously trxns < 3 and we have reached the end of the prices array 
+                                   //so we need to square off any open position
+            if (trxn%2 == 0) return dp[i][trxn] = 0; //nothing can be done, we can't open a long position here
+            else return dp[i][trxn] = prices[i];     //we need close the open position here
+        }
+
+        //memoization
+        if(dp[i][trxn] != -1) return dp[i][trxn];
+
+        int buy_or_sell;
+        if(trxn%2 == 0) buy_or_sell = -prices[i] + getMaxProfit(i+1, trxn+1, prices, dp); //buy
+        else buy_or_sell = prices[i] + getMaxProfit(i+1, trxn+1, prices, dp); //sell
+        
+        int skip = getMaxProfit(i+1, trxn, prices, dp);
+
+        return dp[i][trxn] = max(buy_or_sell, skip);
+    }
+public:
+    int maxProfit(vector<int>& prices) {
+        int n = prices.size();
+        //dp for memoization
+        vector<vector<int>> dp(n, vector<int>(4, -1));
+        return getMaxProfit(0, 0, prices, dp);
+        //trxn 0,2-> can buy since position 0
+        //trxn 1,3-> need to sell since position +1
+    }
+};"
