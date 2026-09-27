@@ -347,7 +347,6 @@ a:hover { text-decoration: underline; }
   margin-top: 0.65rem;
   padding: 1.2rem 1.4rem 1rem;
   background: rgba(30, 30, 32, 0.9);
-  cursor: ns-resize;
 }
 
 .hm-header {
@@ -435,15 +434,31 @@ a:hover { text-decoration: underline; }
 
 /* ── Heatmap year label ────────────────────────────────────────── */
 .hm-year-label {
-  display: inline-block;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
   font-weight: 700;
   color: var(--text-1);
-  padding: 0.05rem 0.4rem;
+  padding: 0.1rem 0.45rem;
   border-radius: 6px;
-  transition: transform 0.25s var(--spring), opacity 0.2s ease, background 0.15s;
+  cursor: ns-resize;
+  transition: transform 0.25s var(--spring), opacity 0.2s ease, background 0.2s, color 0.15s;
+  position: relative;
 }
-.dash-heatmap-card:hover .hm-year-label {
-  background: rgba(255,255,255,0.08);
+.hm-year-label::after {
+  content: '\25B2\2009\25BC';
+  font-size: 0.45rem;
+  color: var(--text-3);
+  opacity: 0;
+  letter-spacing: -0.05em;
+  transition: opacity 0.2s ease;
+}
+.hm-year-label:hover {
+  background: rgba(255,255,255,0.1);
+  color: var(--blue);
+}
+.hm-year-label:hover::after {
+  opacity: 1;
 }
 .hm-year-out-up {
   transform: translateY(-8px);

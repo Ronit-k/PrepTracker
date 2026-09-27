@@ -343,8 +343,30 @@ function renderHmHeader(s) {
   if (!hmWheelBound) {
     hmWheelBound = true;
     const card = document.querySelector('.dash-heatmap-card');
+    let hovering = false;
     let cooldown = false;
+
+    card.addEventListener('pointerenter', (e) => {
+      const label = $('#hmYearLabel');
+      if (label) {
+        const r = label.getBoundingClientRect();
+        const pad = 30;
+        hovering = e.clientX >= r.left - pad && e.clientX <= r.right + pad
+                && e.clientY >= r.top - pad && e.clientY <= r.bottom + pad;
+      }
+    });
+    card.addEventListener('pointermove', (e) => {
+      const label = $('#hmYearLabel');
+      if (!label) { hovering = false; return; }
+      const r = label.getBoundingClientRect();
+      const pad = 30;
+      hovering = e.clientX >= r.left - pad && e.clientX <= r.right + pad
+              && e.clientY >= r.top - pad && e.clientY <= r.bottom + pad;
+    });
+    card.addEventListener('pointerleave', () => { hovering = false; });
+
     card.addEventListener('wheel', (e) => {
+      if (!hovering) return;
       e.preventDefault();
       if (cooldown) return;
       cooldown = true;
