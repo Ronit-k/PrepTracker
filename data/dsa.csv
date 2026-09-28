@@ -1152,4 +1152,4 @@ public:
         return f(0,-1,nums,dp);
     }
 };"
-6591fb66,Printing Longest Increasing Subsequence,https://www.geeksforgeeks.org/problems/printing-longest-increasing-subsequence/1,gfg,hard,DP,todo,,2026-09-28,2026-09-28,https://www.youtube.com/watch?v=IFfYfonAFGc,
+6591fb66,Printing Longest Increasing Subsequence,https://www.geeksforgeeks.org/problems/printing-longest-increasing-subsequence/1,gfg,hard,DP,solved,,2026-09-28,2026-09-28,https://www.youtube.com/watch?v=IFfYfonAFGc,
