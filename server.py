@@ -5,8 +5,10 @@ import os
 import uuid
 import subprocess
 import threading
+import time
 from datetime import datetime, timedelta
 from collections import defaultdict
+from config import RANKS, XP_MAP, SYNC_INTERVAL_HOURS, PORT
 
 app = Flask(__name__)
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
@@ -15,19 +17,6 @@ DATA_DIR = os.path.join(BASE_DIR, 'data')
 CSV_FIELDS = [
     'id', 'title', 'link', 'platform', 'difficulty',
     'topic', 'status', 'notes', 'date_solved', 'date_added', 'video_link', 'code',
-]
-
-XP_MAP = {'easy': 10, 'medium': 25, 'hard': 50}
-
-RANKS = [
-    (0, 'Newbie', '#636366'),
-    (100, 'Apprentice', '#30d158'),
-    (300, 'Coder', '#64d2ff'),
-    (600, 'Solver', '#5e5ce6'),
-    (1000, 'Warrior', '#bf5af2'),
-    (2000, 'Knight', '#ff9f0a'),
-    (3500, 'Master', '#ff453a'),
-    (5000, 'Grandmaster', '#ffd60a'),
 ]
 
 
@@ -53,7 +42,7 @@ def write_all(subject, rows):
         w = csv.DictWriter(f, fieldnames=CSV_FIELDS)
         w.writeheader()
         w.writerows(rows)
-    sync_data_async()
+    mark_dirty()
 
 
 def calc_stats(questions):
@@ -135,6 +124,7 @@ def calc_stats(questions):
         'current_threshold': cur_thresh,
         'next_threshold': nxt_thresh,
         'rank_progress': round(progress, 3),
+        'rank_index': rank_idx,
         'current_streak': current_streak,
         'best_streak': best_streak,
         'today_count': today_count,
@@ -221,7 +211,7 @@ def read_topics(subject):
 def write_topics(subject, topics):
     with open(topics_path(subject), 'w') as f:
         json.dump(topics, f)
-    sync_data_async()
+    mark_dirty()
 
 
 @app.route('/api/<subject>/topics')
@@ -300,8 +290,24 @@ def git_push_data():
         pass
 
 
-def sync_data_async():
-    threading.Thread(target=git_push_data, daemon=True).start()
+_data_dirty = False
+_sync_lock = threading.Lock()
+
+
+def mark_dirty():
+    global _data_dirty
+    _data_dirty = True
+
+
+def sync_timer_loop():
+    global _data_dirty
+    interval = SYNC_INTERVAL_HOURS * 3600
+    while True:
+        time.sleep(interval)
+        with _sync_lock:
+            if _data_dirty:
+                _data_dirty = False
+                git_push_data()
 
 
 @app.route('/api/deploy', methods=['POST'])
@@ -330,6 +336,8 @@ def sync():
 if __name__ == '__main__':
     os.makedirs(DATA_DIR, exist_ok=True)
     ensure_csv('dsa')
+    threading.Thread(target=git_push_data, daemon=True).start()
+    threading.Thread(target=sync_timer_loop, daemon=True).start()
     print('\n  Placement Prep Tracker')
-    print('  http://localhost:6969\n')
-    app.run(debug=True, port=6969)
+    print(f'  http://localhost:{PORT}\n')
+    app.run(debug=True, port=PORT)

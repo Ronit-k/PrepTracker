@@ -3,14 +3,14 @@
    ================================================================ */
 
 const RANKS = [
-  { xp: 0,    name: 'Newbie',       color: '#636366' },
-  { xp: 100,  name: 'Apprentice',   color: '#30d158' },
-  { xp: 300,  name: 'Coder',        color: '#64d2ff' },
-  { xp: 600,  name: 'Solver',       color: '#5e5ce6' },
-  { xp: 1000, name: 'Warrior',      color: '#bf5af2' },
-  { xp: 2000, name: 'Knight',       color: '#ff9f0a' },
-  { xp: 3500, name: 'Master',       color: '#ff453a' },
-  { xp: 5000, name: 'Grandmaster',  color: '#ffd60a' },
+  { xp: 0,    name: 'Starter',   color: '#636366' },
+  { xp: 100,  name: 'Explorer',  color: '#30d158' },
+  { xp: 300,  name: 'Builder',   color: '#64d2ff' },
+  { xp: 600,  name: 'Solver',    color: '#5e5ce6' },
+  { xp: 1000, name: 'Warrior',   color: '#bf5af2' },
+  { xp: 2000, name: 'Expert',    color: '#ff9f0a' },
+  { xp: 3500, name: 'Master',    color: '#ff453a' },
+  { xp: 5000, name: 'Legend',    color: '#ffd60a' },
 ];
 
 const XP_MAP = { easy: 10, medium: 25, hard: 50 };
@@ -234,20 +234,21 @@ function renderDonutCard(s) {
   const circ = 2 * Math.PI * r;
   const bg = `<circle cx="${cx}" cy="${cy}" r="${r}" fill="none" stroke="rgba(255,255,255,0.04)" stroke-width="${stroke}"/>`;
   const slices = [
-    { count: s.easy, color: 'var(--green)' },
-    { count: s.medium, color: 'var(--orange)' },
-    { count: s.hard, color: 'var(--red)' },
+    { count: s.easy, color: 'var(--green)', diff: 'easy', label: 'Easy' },
+    { count: s.medium, color: 'var(--orange)', diff: 'medium', label: 'Med.' },
+    { count: s.hard, color: 'var(--red)', diff: 'hard', label: 'Hard' },
   ];
   let offset = 0;
   let arcs = '';
   slices.forEach(sl => {
     const pct = total ? sl.count / total : 0;
     const dash = pct * circ;
-    arcs += `<circle cx="${cx}" cy="${cy}" r="${r}" fill="none" stroke="${sl.color}" stroke-width="${stroke}" stroke-dasharray="${dash} ${circ - dash}" stroke-dashoffset="${-offset}" stroke-linecap="round" opacity="${sl.count ? 1 : 0.08}"/>`;
+    arcs += `<circle class="donut-arc" data-diff="${sl.diff}" cx="${cx}" cy="${cy}" r="${r}" fill="none" stroke="${sl.color}" stroke-width="${stroke}" stroke-dasharray="${dash} ${circ - dash}" stroke-dashoffset="${-offset}" stroke-linecap="round" opacity="${sl.count ? 1 : 0.08}"/>`;
     offset += dash;
   });
 
-  $('#dashDonut').innerHTML = `
+  const donut = $('#dashDonut');
+  donut.innerHTML = `
     <div class="donut-wrap">
       <svg class="donut-ring" viewBox="0 0 128 128">
         <g transform="rotate(-90 64 64)">${bg}${arcs}</g>
@@ -256,63 +257,100 @@ function renderDonutCard(s) {
       </svg>
     </div>
     <div class="diff-cards">
-      <div class="diff-card">
-        <div class="diff-card-label" style="color:var(--green)">Easy</div>
-        <div class="diff-card-val">${s.easy}</div>
-      </div>
-      <div class="diff-card">
-        <div class="diff-card-label" style="color:var(--orange)">Med.</div>
-        <div class="diff-card-val">${s.medium}</div>
-      </div>
-      <div class="diff-card">
-        <div class="diff-card-label" style="color:var(--red)">Hard</div>
-        <div class="diff-card-val">${s.hard}</div>
-      </div>
+      ${slices.map(sl => `
+        <div class="diff-card" data-diff="${sl.diff}">
+          <div class="diff-card-label" style="color:${sl.color}">${sl.label}</div>
+          <div class="diff-card-val">${sl.count}</div>
+        </div>
+      `).join('')}
     </div>
   `;
+
+  donut.querySelectorAll('.donut-arc').forEach(arc => {
+    arc.addEventListener('pointerenter', () => {
+      donut.querySelectorAll('.donut-arc').forEach(a => a.classList.add('dimmed'));
+      arc.classList.remove('dimmed');
+      arc.classList.add('hovered');
+      donut.querySelector(`.diff-card[data-diff="${arc.dataset.diff}"]`)?.classList.add('highlight');
+    });
+    arc.addEventListener('pointerleave', () => {
+      donut.querySelectorAll('.donut-arc').forEach(a => a.classList.remove('dimmed', 'hovered'));
+      donut.querySelectorAll('.diff-card').forEach(c => c.classList.remove('highlight'));
+    });
+  });
+
+  donut.querySelectorAll('.diff-card').forEach(card => {
+    card.addEventListener('pointerenter', () => {
+      donut.querySelectorAll('.donut-arc').forEach(a => a.classList.add('dimmed'));
+      const arc = donut.querySelector(`.donut-arc[data-diff="${card.dataset.diff}"]`);
+      if (arc) { arc.classList.remove('dimmed'); arc.classList.add('hovered'); }
+      card.classList.add('highlight');
+    });
+    card.addEventListener('pointerleave', () => {
+      donut.querySelectorAll('.donut-arc').forEach(a => a.classList.remove('dimmed', 'hovered'));
+      donut.querySelectorAll('.diff-card').forEach(c => c.classList.remove('highlight'));
+    });
+  });
 }
 
 function renderRankCard(s) {
   const pct = Math.round(s.rank_progress * 100);
-  const prevRank = s.current_threshold > 0
-    ? RANKS.find((r, i) => i < RANKS.length - 1 && RANKS[i + 1].xp > s.current_threshold && r.xp < s.current_threshold) || RANKS[0]
-    : null;
-  const prevIdx = RANKS.findIndex(r => r.xp === s.current_threshold);
-  const prev = prevIdx > 0 ? RANKS[prevIdx - 1] : null;
+  const currentIdx = RANKS.findIndex(r => r.name === s.rank);
+
+  const chipsHtml = RANKS.map((r, i) => {
+    let state = 'future';
+    if (i < currentIdx) state = 'past';
+    if (i === currentIdx) state = 'current';
+    return `
+      <div class="rank-chip ${state}" data-idx="${i}">
+        <div class="rank-chip-name" style="color:${r.color}">${r.name}</div>
+        <div class="rank-chip-xp">${r.xp.toLocaleString()} XP</div>
+      </div>`;
+  }).join('');
 
   $('#dashRank').innerHTML = `
-    <div class="rank-progression">
-      ${prev ? `<div class="rank-badge rank-prev"><span class="rank-badge-label" style="color:${prev.color}">${prev.name}</span></div>` : ''}
-      ${prev ? `<svg class="rank-arrow" width="20" height="20" viewBox="0 0 20 20" fill="none"><path d="M7 4l6 6-6 6" stroke="var(--text-3)" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>` : ''}
-      <div class="rank-badge rank-current"><span class="rank-badge-label" style="color:${s.rank_color}">${s.rank}</span></div>
-      ${s.next_rank ? `<svg class="rank-arrow" width="20" height="20" viewBox="0 0 20 20" fill="none"><path d="M7 4l6 6-6 6" stroke="var(--text-3)" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>` : ''}
-      ${s.next_rank ? `<div class="rank-badge rank-next"><span class="rank-badge-label" style="color:rgba(255,255,255,0.25)">${s.next_rank}</span></div>` : ''}
+    <div class="rank-strip-wrap">
+      <div class="rank-strip" id="rankStrip">${chipsHtml}</div>
     </div>
     <div class="xp-section">
       <div class="xp-track"><div class="xp-fill" style="width:${pct}%"></div></div>
       <div class="xp-labels">
-        <span>${s.total_xp} XP</span>
-        <span>${s.next_threshold ? s.next_threshold + ' XP' : 'Max Rank!'}</span>
+        <span>${s.total_xp.toLocaleString()} XP</span>
+        <span>${s.next_threshold ? s.next_threshold.toLocaleString() + ' XP' : 'Max Rank!'}</span>
       </div>
     </div>
-    <div class="streak-row">
-      <div class="streak-item">
-        <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M8 1.5c0 3-3.5 5-3.5 8a4 4 0 0 0 7 0c0-3-3.5-5-3.5-8z" fill="var(--orange)" opacity="0.8"/></svg>
-        <span class="streak-val">${s.current_streak}</span>
-        <span class="streak-label">day streak</span>
+    <div class="rank-stats">
+      <div class="rank-stat">
+        <span class="rank-stat-val">${s.current_streak}</span>
+        <span class="rank-stat-label">Day Streak</span>
       </div>
-      <div class="streak-item">
-        <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M8 1.5c0 3-3.5 5-3.5 8a4 4 0 0 0 7 0c0-3-3.5-5-3.5-8z" fill="var(--purple)" opacity="0.6"/></svg>
-        <span class="streak-val">${s.best_streak}</span>
-        <span class="streak-label">best streak</span>
+      <div class="rank-stat">
+        <span class="rank-stat-val">${s.best_streak}</span>
+        <span class="rank-stat-label">Best Streak</span>
       </div>
-      <div class="streak-item">
-        <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M3 13V7M8 13V3M13 13V9" stroke="var(--cyan)" stroke-width="2" stroke-linecap="round"/></svg>
-        <span class="streak-val">${s.avg_per_day || 0}</span>
-        <span class="streak-label">avg/day</span>
+      <div class="rank-stat">
+        <span class="rank-stat-val">${s.avg_per_day || 0}</span>
+        <span class="rank-stat-label">Avg Qs/Day</span>
       </div>
     </div>
   `;
+
+  const strip = document.getElementById('rankStrip');
+  const currentChip = strip?.querySelector('.rank-chip.current');
+  if (strip && currentChip) {
+    requestAnimationFrame(() => {
+      requestAnimationFrame(() => {
+        strip.scrollTo({ left: currentChip.offsetLeft - strip.offsetWidth / 2 + currentChip.offsetWidth / 2, behavior: 'instant' });
+      });
+    });
+  }
+
+  if (strip) {
+    strip.addEventListener('wheel', (e) => {
+      e.preventDefault();
+      strip.scrollLeft += e.deltaY || e.deltaX;
+    }, { passive: false });
+  }
 }
 
 let hmYear = String(new Date().getFullYear());
