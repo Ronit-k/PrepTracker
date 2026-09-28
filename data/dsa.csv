@@ -1055,3 +1055,32 @@ public:
 // and we ant to minimise the final answer so we need to partion the elements in two groups - '+' and '-' grp and we should aim to
 // minimise abs{sum('+' grp) - sum('-' grp)}. Since sum('+' grp) + sum('-' grp) = total sum is fixed we need to minimise 
 // abs{totalSum - 2*sum('+' grp)}, basically we need to form a grp with the sum as close to totalSum/2 as possible."
+e3a45d8d,Coin Change II,https://leetcode.com/problems/coin-change-ii/description/,leetcode,medium,DP,solved,[STRIVER HARD] same explore all possibilities i.e to take or not take the current coin and return the total number of ways,2026-09-28,2026-09-28,https://www.youtube.com/watch?v=HgyouUi11zk,"class Solution {
+private:
+    int getCombinations(int i, int target, vector<int>& coins, vector<vector<int>>& dp){
+        // Base Case - can we make the target amount using the last coin
+        if (i==coins.size()-1){
+            if(target%coins[i] == 0) return dp[i][target] = 1;
+            else return dp[i][target] = 0;
+        }
+
+        //using memoization
+        if (dp[i][target] != -1) return dp[i][target];
+
+        //exploring all posiibilities
+        int notTake = getCombinations(i+1,target,coins,dp);
+
+        int take  = 0;
+        if (coins[i] <= target) take = getCombinations(i,target-coins[i],coins,dp); //we do not move i, since there are an inf supply of coins
+
+        //returning the total number of ways to achieve the target
+        return dp[i][target] = take + notTake;
+    }
+public:
+    int change(int amount, vector<int>& coins) {
+        int n = coins.size();
+        //declaring dp for memoization
+        vector<vector<int>> dp(n, vector<int>(amount+1, -1));
+        return getCombinations(0, amount, coins, dp);
+    }
+};"
