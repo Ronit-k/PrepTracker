@@ -42,7 +42,7 @@ def write_all(subject, rows):
         w = csv.DictWriter(f, fieldnames=CSV_FIELDS)
         w.writeheader()
         w.writerows(rows)
-    mark_dirty()
+    check_and_sync()
 
 
 def calc_stats(questions):
@@ -211,7 +211,7 @@ def read_topics(subject):
 def write_topics(subject, topics):
     with open(topics_path(subject), 'w') as f:
         json.dump(topics, f)
-    mark_dirty()
+    check_and_sync()
 
 
 @app.route('/api/<subject>/topics')
@@ -290,24 +290,29 @@ def git_push_data():
         pass
 
 
-_data_dirty = False
 _sync_lock = threading.Lock()
 
 
-def mark_dirty():
-    global _data_dirty
-    _data_dirty = True
-
-
-def sync_timer_loop():
-    global _data_dirty
-    interval = SYNC_INTERVAL_HOURS * 3600
-    while True:
-        time.sleep(interval)
+def check_and_sync():
+    """Sync to git if enough time has passed since last sync."""
+    try:
+        marker = os.path.join(BASE_DIR, '.last_sync')
+        now = time.time()
+        if os.path.exists(marker):
+            if now - os.path.getmtime(marker) < SYNC_INTERVAL_HOURS * 3600:
+                return
         with _sync_lock:
-            if _data_dirty:
-                _data_dirty = False
-                git_push_data()
+            if os.path.exists(marker):
+                if time.time() - os.path.getmtime(marker) < SYNC_INTERVAL_HOURS * 3600:
+                    return
+            with open(marker, 'w') as f:
+                f.write('')
+        threading.Thread(target=git_push_data, daemon=True).start()
+    except Exception:
+        pass
+
+
+threading.Thread(target=git_push_data, daemon=True).start()
 
 
 @app.route('/api/deploy', methods=['POST'])
@@ -336,8 +341,6 @@ def sync():
 if __name__ == '__main__':
     os.makedirs(DATA_DIR, exist_ok=True)
     ensure_csv('dsa')
-    threading.Thread(target=git_push_data, daemon=True).start()
-    threading.Thread(target=sync_timer_loop, daemon=True).start()
     print('\n  Placement Prep Tracker')
     print(f'  http://localhost:{PORT}\n')
     app.run(debug=True, port=PORT)
