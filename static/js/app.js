@@ -325,7 +325,7 @@ function renderRankCard(s) {
     <div class="rank-stats">
       <div class="rank-stat">
         <span class="rank-stat-val">${s.current_streak}</span>
-        <span class="rank-stat-label">Day Streak</span>
+        <span class="rank-stat-label">Current Streak</span>
       </div>
       <div class="rank-stat">
         <span class="rank-stat-val">${s.best_streak}</span>
@@ -400,8 +400,6 @@ function renderHmHeader(s) {
       <div class="hm-title"><span class="hm-count">${total}</span> submissions in <span class="hm-year-label" id="hmYearLabel">${hmYear}</span></div>
       <div class="hm-header-right">
         <span class="hm-meta">Active days: <strong>${activeDays}</strong></span>
-        <span class="hm-meta">Avg/day: <strong>${s.avg_per_day || 0}</strong></span>
-        <span class="hm-meta">Max streak: <strong>${s.best_streak}</strong></span>
       </div>
     </div>
   `;
