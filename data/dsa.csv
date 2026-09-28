@@ -1018,7 +1018,7 @@ public:
         //trxn odd-> need to sell since position +1
     }
 };"
-9f1414c5,Last Stone Weight II,https://leetcode.com/problems/last-stone-weight-ii/description/,leetcode,hard,DP,solved,"if we see the smashing operation at a high leve - wach stone's weight will ither have a '+' or a '-' eggect in the final answer and we ant to minimise the final answer so we need to partion the elements in two groups - '+' and '-' grp and we should aim to minimise abs{sum('+' grp) - sum('-' grp)}. Since sum('+' grp) + sum('-' grp) = total sum is fixed we need to minimise abs{totalSum - 2*sum('+' grp)}, basically we need to form a grp with the sum as close to totalSum/2 as possible",2026-09-28,2026-09-28,https://www.youtube.com/watch?v=GS_OqZb2CWc,"class Solution {
+9f1414c5,Last Stone Weight II,https://leetcode.com/problems/last-stone-weight-ii/description/,leetcode,hard,DP,solved,"if we see the smashing operation at a high leve - each stone's weight will either have a '+' or a '-' effect in the final answer and we ant to minimise the final answer so we need to partition the elements in two groups - '+' and '-' grp and we should aim to minimise abs{sum('+' grp) - sum('-' grp)}. Since sum('+' grp) + sum('-' grp) = total sum is fixed we need to minimise abs{totalSum - 2*sum('+' grp)}, basically we need to form a grp with the sum as close to totalSum/2 as possible",2026-09-28,2026-09-28,https://www.youtube.com/watch?v=GS_OqZb2CWc,"class Solution {
 private:
     int getAsCloseToTarget(int i, int target, vector<int>& stones, vector<vector<int>>& dp){
         //Base case
