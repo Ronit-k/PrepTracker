@@ -1018,3 +1018,40 @@ public:
         //trxn odd-> need to sell since position +1
     }
 };"
+9f1414c5,Last Stone Weight II,https://leetcode.com/problems/last-stone-weight-ii/description/,leetcode,hard,DP,solved,"if we see the smashing operation at a high leve - wach stone's weight will ither have a '+' or a '-' eggect in the final answer and we ant to minimise the final answer so we need to partion the elements in two groups - '+' and '-' grp and we should aim to minimise abs{sum('+' grp) - sum('-' grp)}. Since sum('+' grp) + sum('-' grp) = total sum is fixed we need to minimise abs{totalSum - 2*sum('+' grp)}, basically we need to form a grp with the sum as close to totalSum/2 as possible",2026-09-28,2026-09-28,https://www.youtube.com/watch?v=GS_OqZb2CWc,"class Solution {
+private:
+    int getAsCloseToTarget(int i, int target, vector<int>& stones, vector<vector<int>>& dp){
+        //Base case
+        if(i == stones.size() || target == 0) return 0; //we have exhausted the stones or achieved the target so nothing to choose from
+
+        //using memoization
+        if (dp[i][target] != -1) return dp[i][target];
+
+        // exploring all the possibilities and returning the sum that is closest to target
+
+        //take the the ith element
+        //this condition also ensures that take <= target
+        int take = 0;
+        if(stones[i] <= target) take = stones[i] + getAsCloseToTarget(i+1, target - stones[i], stones, dp); 
+
+        //skip it
+        int notTake = getAsCloseToTarget(i+1, target, stones, dp);
+        
+        // We want maximum sum <= target
+        return dp[i][target] = max(take, notTake);
+    }
+     
+public:
+    int lastStoneWeightII(vector<int>& stones) {
+        int n = stones.size();
+        int totalSum = accumulate(stones.begin(), stones.end(), 0);
+        //declating dp for memoization
+        vector<vector<int>> dp(n, vector<int>(totalSum/2 + 1, -1));
+
+        return totalSum - 2*getAsCloseToTarget(0, totalSum/2, stones, dp);
+    }
+};
+// if we see the smashing operation at a high leve - wach stone's weight will ither have a '+' or a '-' eggect in the final answer
+// and we ant to minimise the final answer so we need to partion the elements in two groups - '+' and '-' grp and we should aim to
+// minimise abs{sum('+' grp) - sum('-' grp)}. Since sum('+' grp) + sum('-' grp) = total sum is fixed we need to minimise 
+// abs{totalSum - 2*sum('+' grp)}, basically we need to form a grp with the sum as close to totalSum/2 as possible."
