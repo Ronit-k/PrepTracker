@@ -1112,3 +1112,42 @@ public:
         return solve(n, price, dp);
     }
 };"
+64848f5b,Longest Increasing Subsequence (using binary search O(nLogn) ),https://leetcode.com/problems/longest-increasing-subsequence/description/,leetcode,hard,DP,solved,the normal dp - memoization approach (O(n^2)) is easy but the main challenge is to think about the binary search approach - the code is provided for binary search and normal approach both,2026-09-28,2026-09-28,https://www.youtube.com/watch?v=on2hvxBXJH4&t=70s,"//Binar Search O(nlogn)
+class Solution {
+public:
+    int lengthOfLIS(vector<int>& nums) {
+        vector<int> temp;
+        temp.push_back(nums[0]);
+        int n = nums.size();
+
+        for(int i = 1; i<n; i++){
+            if (nums[i] > temp.back()) temp.push_back(nums[i]);
+            else{
+                auto it = lower_bound(temp.begin(), temp.end(), nums[i]);
+                temp[it - temp.begin()] = nums[i];
+            }
+        }
+        return temp.size();
+    }
+};
+
+//DP O(n^2)
+class Solution {
+private:
+    int f(int i, int prev, vector<int> &nums, vector<vector<int>> &dp){
+        //base case
+        if (i == nums.size()) return 0;
+        if (dp[i][prev+1] != -1) return dp[i][prev+1];
+        //explore all paths
+        int take = INT_MIN;
+        if (prev == -1 || nums[i] > nums[prev]) take = 1 + f(i+1, i, nums, dp);
+        int notTake = f(i+1, prev, nums, dp);
+        return dp[i][prev+1] = max(take, notTake);
+    }
+public:
+    int lengthOfLIS(vector<int>& nums) {
+        int n = nums.size();
+        vector<vector<int>> dp(n, vector<int>(n+1, -1));
+        return f(0,-1,nums,dp);
+    }
+};"
