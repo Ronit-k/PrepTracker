@@ -1084,3 +1084,31 @@ public:
         return getCombinations(0, amount, coins, dp);
     }
 };"
+5b882ccb,Rod Cutting,https://www.geeksforgeeks.org/problems/rod-cutting0840/1,gfg,medium,DP,solved,[STRIVER HARD] just explaore all cuts at a given rod length - write recursion then memoize it,2026-09-28,2026-09-28,https://www.youtube.com/watch?v=mO8XpGoJwuo,"// User function Template for C++
+
+class Solution {
+private:
+    int solve(int rod_length, vector<int>& price, vector<int>& dp) {
+        //base case
+        if (rod_length == 0) return 0;
+        
+        //using memoization
+        if (dp[rod_length] != -1) return dp[rod_length];
+
+        int ans = 0;
+        //exploring all possibile cutting lengts for n size rod so n-i>=0 always
+        for (int i = 1; i <= rod_length; i++) {
+            ans = max(ans, price[i-1] + solve(rod_length - i, price, dp));
+        }
+        //returning the max cost that we got after exploring all cuts
+        return dp[rod_length] = ans;
+    }
+
+public:
+    int cutRod(vector<int> &price) {
+        int n = price.size();
+        //declaration for memoization
+        vector<int> dp(n+1, -1);
+        return solve(n, price, dp);
+    }
+};"
