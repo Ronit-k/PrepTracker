@@ -1112,7 +1112,8 @@ public:
         return solve(n, price, dp);
     }
 };"
-64848f5b,Longest Increasing Subsequence (using binary search O(nLogn) ),https://leetcode.com/problems/longest-increasing-subsequence/description/,leetcode,hard,DP,solved,the normal dp - memoization approach (O(n^2)) is easy but the main challenge is to think about the binary search approach - the code is provided for binary search and normal approach both,2026-09-28,2026-09-28,https://www.youtube.com/watch?v=on2hvxBXJH4&t=70s,"//Binar Search O(nlogn)
+64848f5b,Longest Increasing Subsequence (using binary search O(nLogn) ),https://leetcode.com/problems/longest-increasing-subsequence/description/,leetcode,hard,DP,solved,"the normal dp - memoization approach (O(n^2)) is easy but the main challenge is to think about the binary search approach - the code is provided for binary search and normal approach both
+In Binary search approach our main goal is to find the length of LIS not the LIS, so we are overwriting in the same temp array to save space",2026-09-28,2026-09-28,https://www.youtube.com/watch?v=on2hvxBXJH4&t=70s,"//Binar Search O(nlogn)
 class Solution {
 public:
     int lengthOfLIS(vector<int>& nums) {
