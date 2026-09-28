@@ -301,9 +301,12 @@ function renderRankCard(s) {
     let state = 'future';
     if (i < currentIdx) state = 'past';
     if (i === currentIdx) state = 'current';
+    const nameStyle = state !== 'future' ? ` style="color:${r.color}"` : '';
+    const badge = i === currentIdx ? '<div class="rank-chip-badge">YOU</div>' : '';
     return `
       <div class="rank-chip ${state}" data-idx="${i}">
-        <div class="rank-chip-name" style="color:${r.color}">${r.name}</div>
+        ${badge}
+        <div class="rank-chip-name"${nameStyle}>${r.name}</div>
         <div class="rank-chip-xp">${r.xp.toLocaleString()} XP</div>
       </div>`;
   }).join('');
@@ -336,21 +339,46 @@ function renderRankCard(s) {
   `;
 
   const strip = document.getElementById('rankStrip');
-  const currentChip = strip?.querySelector('.rank-chip.current');
-  if (strip && currentChip) {
+  if (!strip) return;
+  const chips = [...strip.querySelectorAll('.rank-chip')];
+
+  function updateFocus() {
+    const center = strip.scrollLeft + strip.offsetWidth / 2;
+    let best = 0, bestDist = Infinity;
+    chips.forEach((c, i) => {
+      const d = Math.abs(c.offsetLeft + c.offsetWidth / 2 - center);
+      if (d < bestDist) { bestDist = d; best = i; }
+    });
+    chips.forEach((c, i) => c.classList.toggle('focused', i === best));
+  }
+
+  const target = chips[currentIdx];
+  if (target) {
     requestAnimationFrame(() => {
       requestAnimationFrame(() => {
-        strip.scrollTo({ left: currentChip.offsetLeft - strip.offsetWidth / 2 + currentChip.offsetWidth / 2, behavior: 'instant' });
+        strip.scrollTo({ left: target.offsetLeft - strip.offsetWidth / 2 + target.offsetWidth / 2, behavior: 'instant' });
+        updateFocus();
       });
     });
   }
 
-  if (strip) {
-    strip.addEventListener('wheel', (e) => {
-      e.preventDefault();
-      strip.scrollLeft += e.deltaY || e.deltaX;
-    }, { passive: false });
-  }
+  strip.addEventListener('scroll', () => requestAnimationFrame(updateFocus));
+
+  let wheelLock = false;
+  strip.addEventListener('wheel', (e) => {
+    e.preventDefault();
+    if (wheelLock) return;
+    wheelLock = true;
+    setTimeout(() => { wheelLock = false; }, 300);
+    const focused = strip.querySelector('.rank-chip.focused');
+    if (!focused) return;
+    const idx = parseInt(focused.dataset.idx);
+    const dir = (e.deltaY > 0 || e.deltaX > 0) ? 1 : -1;
+    const next = Math.max(0, Math.min(chips.length - 1, idx + dir));
+    if (next === idx) return;
+    const nc = chips[next];
+    strip.scrollTo({ left: nc.offsetLeft - strip.offsetWidth / 2 + nc.offsetWidth / 2, behavior: 'smooth' });
+  }, { passive: false });
 }
 
 let hmYear = String(new Date().getFullYear());
@@ -383,6 +411,10 @@ function renderHmHeader(s) {
     const card = document.querySelector('.dash-heatmap-card');
     let hovering = false;
     let cooldown = false;
+
+    card.addEventListener('click', (e) => {
+      if (e.target.closest('#hmYearLabel')) openYearDial();
+    });
 
     card.addEventListener('pointerenter', (e) => {
       const label = $('#hmYearLabel');
@@ -439,6 +471,118 @@ function filterHeatmap(heatmap, year) {
     if (k.startsWith(year + '-')) out[k] = v;
   }
   return out;
+}
+
+function openYearDial() {
+  if (document.querySelector('.year-dial-backdrop')) {
+    document.querySelector('.year-dial-backdrop').remove();
+    return;
+  }
+
+  const currentYear = new Date().getFullYear();
+  const minYear = 2020;
+  const years = [];
+  for (let y = minYear; y <= currentYear; y++) years.push(y);
+
+  const itemH = 44;
+  const visible = 5;
+  const listH = visible * itemH;
+  const padH = Math.floor(visible / 2) * itemH;
+
+  const backdrop = document.createElement('div');
+  backdrop.className = 'year-dial-backdrop';
+
+  const dial = document.createElement('div');
+  dial.className = 'year-dial';
+
+  const titleEl = document.createElement('div');
+  titleEl.className = 'year-dial-title';
+  titleEl.textContent = 'Year';
+
+  const win = document.createElement('div');
+  win.className = 'year-dial-window';
+
+  const highlight = document.createElement('div');
+  highlight.className = 'year-dial-highlight';
+  highlight.style.height = itemH + 'px';
+
+  const list = document.createElement('div');
+  list.className = 'year-dial-list';
+  list.style.height = listH + 'px';
+
+  const topPad = document.createElement('div');
+  topPad.className = 'year-dial-pad';
+  topPad.style.height = padH + 'px';
+  list.appendChild(topPad);
+
+  years.forEach(y => {
+    const item = document.createElement('div');
+    item.className = 'year-dial-item';
+    item.dataset.year = y;
+    item.textContent = y;
+    item.style.height = itemH + 'px';
+    list.appendChild(item);
+  });
+
+  const botPad = document.createElement('div');
+  botPad.className = 'year-dial-pad';
+  botPad.style.height = padH + 'px';
+  list.appendChild(botPad);
+
+  win.appendChild(highlight);
+  win.appendChild(list);
+  dial.appendChild(titleEl);
+  dial.appendChild(win);
+  backdrop.appendChild(dial);
+  document.body.appendChild(backdrop);
+
+  const selectedIdx = years.indexOf(parseInt(hmYear));
+
+  function updateDial() {
+    const center = list.scrollTop + listH / 2;
+    list.querySelectorAll('.year-dial-item').forEach(item => {
+      const itemCenter = item.offsetTop + itemH / 2;
+      const offset = (itemCenter - center) / itemH;
+      const absOff = Math.abs(offset);
+      const rotX = offset * -22;
+      const opa = Math.max(0.12, 1 - absOff * 0.4);
+      const sc = Math.max(0.7, 1 - absOff * 0.12);
+      item.style.transform = `perspective(200px) rotateX(${rotX}deg) scale(${sc})`;
+      item.style.opacity = opa;
+      item.classList.toggle('active', absOff < 0.5);
+    });
+  }
+
+  list.addEventListener('scroll', () => requestAnimationFrame(updateDial));
+
+  requestAnimationFrame(() => {
+    if (selectedIdx >= 0) list.scrollTop = selectedIdx * itemH;
+    updateDial();
+    requestAnimationFrame(() => backdrop.classList.add('open'));
+  });
+
+  function closeDial() {
+    backdrop.remove();
+    document.removeEventListener('keydown', escHandler);
+  }
+
+  list.addEventListener('click', (e) => {
+    const item = e.target.closest('.year-dial-item');
+    if (!item) return;
+    hmYear = item.dataset.year;
+    closeDial();
+    renderHmHeader(hmStats);
+    renderHeatmap(hmData, dashHeatmap);
+  });
+
+  backdrop.addEventListener('click', (e) => {
+    if (e.target === backdrop) closeDial();
+  });
+
+  const escHandler = (e) => {
+    if (e.key === 'Escape') closeDial();
+  };
+  document.addEventListener('keydown', escHandler);
 }
 
 /* ── Heatmap ───────────────────────────────────────────────────── */
