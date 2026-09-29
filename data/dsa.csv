@@ -1018,7 +1018,7 @@ public:
         //trxn odd-> need to sell since position +1
     }
 };"
-9f1414c5,Last Stone Weight II,https://leetcode.com/problems/last-stone-weight-ii/description/,leetcode,hard,DP,solved,"if we see the smashing operation at a high leve - each stone's weight will either have a '+' or a '-' effect in the final answer and we ant to minimise the final answer so we need to partition the elements in two groups - '+' and '-' grp and we should aim to minimise abs{sum('+' grp) - sum('-' grp)}. Since sum('+' grp) + sum('-' grp) = total sum is fixed we need to minimise abs{totalSum - 2*sum('+' grp)}, basically we need to form a grp with the sum as close to totalSum/2 as possible",2026-09-28,2026-09-28,https://www.youtube.com/watch?v=GS_OqZb2CWc,"class Solution {
+9f1414c5,Last Stone Weight II,https://leetcode.com/problems/last-stone-weight-ii/description/,leetcode,hard,DP,solved,"if we see the smashing operation at a high level - each stone's weight will either have a '+' or a '-' effect in the final answer and we ant to minimise the final answer so we need to partition the elements in two groups - '+' and '-' grp and we should aim to minimise abs{sum('+' grp) - sum('-' grp)}. Since sum('+' grp) + sum('-' grp) = total sum is fixed we need to minimise abs{totalSum - 2*sum('+' grp)}, basically we need to form a grp with the sum as close to totalSum/2 as possible",2026-09-28,2026-09-28,https://www.youtube.com/watch?v=GS_OqZb2CWc,"class Solution {
 private:
     int getAsCloseToTarget(int i, int target, vector<int>& stones, vector<vector<int>>& dp){
         //Base case
@@ -1113,8 +1113,10 @@ public:
     }
 };"
 64848f5b,Longest Increasing Subsequence (using binary search O(nLogn) ),https://leetcode.com/problems/longest-increasing-subsequence/description/,leetcode,hard,DP,solved,"the normal dp - memoization approach (O(n^2)) is easy but the main challenge is to think about the binary search approach - the code is provided for binary search and normal approach both
+
 In Binary search approach our main goal is to find the length of LIS not the LIS, so we are overwriting in the same temp array to save space
-There is also one O(n^2) algorithmic approach which ises O(n) space complexity which basically stores the length of LIS ending at ith index in a dp(n) array se the printing LIS question where this algo is used and then backtracked to print the LIS",2026-09-28,2026-09-28,https://www.youtube.com/watch?v=on2hvxBXJH4&t=70s,"//Binar Search O(nlogn)
+
+There is also one O(n^2) algorithmic approach which ises O(n) space complexity which basically stores the length of LIS ending at ith index in a dp(n) array - see the printing LIS question where this algo is used and then backtracked to print the LIS",2026-09-28,2026-09-28,https://www.youtube.com/watch?v=on2hvxBXJH4&t=70s,"//Binar Search O(nlogn)
 class Solution {
 public:
     int lengthOfLIS(vector<int>& nums) {
@@ -1153,4 +1155,127 @@ public:
         return f(0,-1,nums,dp);
     }
 };"
-6591fb66,Printing Longest Increasing Subsequence,https://www.geeksforgeeks.org/problems/printing-longest-increasing-subsequence/1,gfg,hard,DP,todo,,2026-09-28,2026-09-28,https://www.youtube.com/watch?v=IFfYfonAFGc,
+6591fb66,Printing Longest Increasing Subsequence,https://www.geeksforgeeks.org/problems/printing-longest-increasing-subsequence/1,gfg,hard,DP,solved,"[STRIVER HARD] we store the length of LIS ending at ith index in a dp(n) array, so we can get the length of LIS by choosing the max element of that dp array. Now for printing LIS, we backtrack using a parent_idx hash, while iterating to fill the dp array we maintain an 'lis_idx' which stores that index in the dp array which has the max value, so that while backtracking we can start form 'lis_idx', and we also maintain the parent_idx array which stores the idx of the element which can come before the current element - like this we backtrack and reverse and return",2026-09-28,2026-09-28,https://www.youtube.com/watch?v=IFfYfonAFGc,"class Solution {
+  public:
+    vector<int> getLIS(vector<int>& arr) {
+        int n = arr.size();
+        //Algorithmic approac to get the length of LIS + backtracking is used to print the LIS
+        vector<int> dp(n, 1); // this dp array stores the length of LIS ending at i - so initially 1
+        vector<int> parent_idx(n); //a hash that stores the parent index of an element in the LIS
+        int lis_idx = 0;
+        for(int i = 0; i<n; i++) parent_idx[i] = i;
+        
+        //O(n*n)
+        for(int i = 1; i<n; i++){
+            //look at all the prev_index
+            for(int prev_i = 0; prev_i<i; prev_i++){
+                if(arr[prev_i] < arr[i] && dp[prev_i] + 1 > dp[i]){ // a valid element to consider in the LIS
+                    dp[i] = dp[prev_i] + 1;
+                    if(dp[i] > dp[lis_idx]) lis_idx = i;
+                    parent_idx[i] = prev_i;
+                }
+            }
+        }
+        
+        //backtracking
+        vector<int> lis;
+        while(parent_idx[lis_idx] != lis_idx){
+            lis.push_back(arr[lis_idx]);
+            lis_idx = parent_idx[lis_idx];
+        }
+        lis.push_back(arr[lis_idx]);
+        reverse(lis.begin(), lis.end());
+        return lis;
+    }
+};"
+ecda53f4,Minimum Insertion Steps to Make a String Palindrome,https://leetcode.com/problems/minimum-insertion-steps-to-make-a-string-palindrome/description/,leetcode,hard,DP,solved,[STRIVER HARD] the main trick is to understand that min no. of insertions to form a palindrome is nothing but {n - length of longest palindromic sequence} = {n - length of LCS of word and reversed word},2026-09-29,2026-09-29,https://www.youtube.com/watch?v=xPBLEj41rFU,"class Solution {
+private:
+    int getLCSLength(int i, int j, string &s, string &reversedS, vector<vector<int>> &dp) {
+        int n = s.size();
+        // Base case
+        if (i == n || j == n) return 0;
+
+        // using memoization
+        if (dp[i][j] != -1) return dp[i][j];
+
+        // LCS logic
+        if (s[i] == reversedS[j])
+            return dp[i][j] = 1 + getLCSLength(i+1, j+1, s, reversedS, dp);
+
+        return dp[i][j] = max(getLCSLength(i+1, j, s, reversedS, dp), getLCSLength(i, j+1, s, reversedS, dp));
+    }
+
+public:
+    int minInsertions(string s) {
+        int n = s.size();
+
+        string reversedS = s;
+        reverse(reversedS.begin(), reversedS.end());
+
+        vector<vector<int>> dp(n+1, vector<int>(n+1, -1));
+
+        int LPS = getLCSLength(0, 0, s, reversedS, dp);
+
+        return n - LPS;
+    }
+};"
+aa99c25b,Shortest Common Supersequence,https://leetcode.com/problems/shortest-common-supersequence/description/,leetcode,hard,DP,todo,"[STRIVER HARD] you should be knowing how to print or traverse the LCS table then we need to backtrack in that table - the idea is to take the character that is common once and add the leftover characters. so the min length of the Supersequence is n+m-LCS(m,n).
+for printing this Supersequence - start from that end of the LCS table where the final answer is stored then, traverse left or up, or down or right (depending upon where is you final answer) and diagonally to backtrace the dp calls and then print the letters accordingly - SEE CODE FOR BETTER UNDERSTANDING",2026-09-29,2026-09-29,https://www.youtube.com/watch?v=xElxAuBcvsU,"class Solution {
+private:
+    int getLCSLength(int i, int j, string &s1, string &s2, vector<vector<int>> &dp) {
+        int m = s1.size();
+        int n = s2.size();
+        // Base case
+        if (i == m || j == n) return 0;
+
+        // using memoization
+        if (dp[i][j] != -1) return dp[i][j];
+
+        // LCS logic
+        if (s1[i] == s2[j])
+            return dp[i][j] = 1 + getLCSLength(i+1, j+1, s1, s2, dp);
+
+        return dp[i][j] = max(getLCSLength(i+1, j, s1, s2, dp), getLCSLength(i, j+1, s1, s2, dp));
+    }
+public:
+    string shortestCommonSupersequence(string str1, string str2) {
+        int m = str1.size();
+        int n = str2.size();
+
+        vector<vector<int>> dp(m, vector<int>(n, -1));
+        //populating this dp table
+        getLCSLength(0, 0, str1, str2, dp);
+
+        //backtracking
+        //for visualization str1 is along the rows vertically and str2 is along the columns horizontally
+        //our final answer is stored in dp[0][0]
+        int i = 0, j = 0;
+        string superSequence = """";
+        while(i < m && j < n){
+            //where did this value of dp[i][j] come from?
+
+            //did it com from the diagonal?
+            if(str1[i] == str2[j]){ //move diagonally down
+                superSequence += str1[i];
+                i++; j++;
+            }
+
+            //did it come from below?
+            else if(i < m - 1 && dp[i][j] == dp[i+1][j]){ //move down
+                superSequence += str1[i];
+                i++;
+            }
+
+            //did it come from right? or if not then that implies dp[i+1][j] = dp[i][j+1] so we can move anywhere - so move right
+            else{ //move right
+                superSequence += str2[j];
+                j++;
+            }
+        }
+        //check which string have we exhausted
+        if(i == m) superSequence += str2.substr(j); // str1 exhausted
+        else if (j == n) superSequence += str1.substr(i); //str2 exhausted
+
+        return superSequence;
+    }
+};"
