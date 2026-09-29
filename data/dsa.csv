@@ -1219,7 +1219,7 @@ public:
         return n - LPS;
     }
 };"
-aa99c25b,Shortest Common Supersequence,https://leetcode.com/problems/shortest-common-supersequence/description/,leetcode,hard,DP,todo,"[STRIVER HARD] you should be knowing how to print or traverse the LCS table then we need to backtrack in that table - the idea is to take the character that is common once and add the leftover characters. so the min length of the Supersequence is n+m-LCS(m,n).
+aa99c25b,Shortest Common Supersequence,https://leetcode.com/problems/shortest-common-supersequence/description/,leetcode,hard,DP,solved,"[STRIVER HARD] you should be knowing how to print or traverse the LCS table then we need to backtrack in that table - the idea is to take the character that is common once and add the leftover characters. so the min length of the Supersequence is n+m-LCS(m,n).
 for printing this Supersequence - start from that end of the LCS table where the final answer is stored then, traverse left or up, or down or right (depending upon where is you final answer) and diagonally to backtrace the dp calls and then print the letters accordingly - SEE CODE FOR BETTER UNDERSTANDING",2026-09-29,2026-09-29,https://www.youtube.com/watch?v=xElxAuBcvsU,"class Solution {
 private:
     int getLCSLength(int i, int j, string &s1, string &s2, vector<vector<int>> &dp) {
