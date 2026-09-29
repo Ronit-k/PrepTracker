@@ -1113,7 +1113,8 @@ public:
     }
 };"
 64848f5b,Longest Increasing Subsequence (using binary search O(nLogn) ),https://leetcode.com/problems/longest-increasing-subsequence/description/,leetcode,hard,DP,solved,"the normal dp - memoization approach (O(n^2)) is easy but the main challenge is to think about the binary search approach - the code is provided for binary search and normal approach both
-In Binary search approach our main goal is to find the length of LIS not the LIS, so we are overwriting in the same temp array to save space",2026-09-28,2026-09-28,https://www.youtube.com/watch?v=on2hvxBXJH4&t=70s,"//Binar Search O(nlogn)
+In Binary search approach our main goal is to find the length of LIS not the LIS, so we are overwriting in the same temp array to save space
+There is also one O(n^2) algorithmic approach which ises O(n) space complexity which basically stores the length of LIS ending at ith index in a dp(n) array se the printing LIS question where this algo is used and then backtracked to print the LIS",2026-09-28,2026-09-28,https://www.youtube.com/watch?v=on2hvxBXJH4&t=70s,"//Binar Search O(nlogn)
 class Solution {
 public:
     int lengthOfLIS(vector<int>& nums) {
@@ -1152,4 +1153,4 @@ public:
         return f(0,-1,nums,dp);
     }
 };"
-6591fb66,Printing Longest Increasing Subsequence,https://www.geeksforgeeks.org/problems/printing-longest-increasing-subsequence/1,gfg,hard,DP,solved,,2026-09-28,2026-09-28,https://www.youtube.com/watch?v=IFfYfonAFGc,
+6591fb66,Printing Longest Increasing Subsequence,https://www.geeksforgeeks.org/problems/printing-longest-increasing-subsequence/1,gfg,hard,DP,todo,,2026-09-28,2026-09-28,https://www.youtube.com/watch?v=IFfYfonAFGc,
