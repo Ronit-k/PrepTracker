@@ -2,18 +2,9 @@
    Placement Prep Tracker — client
    ================================================================ */
 
-const RANKS = [
-  { xp: 0,    name: 'Starter',   color: '#636366' },
-  { xp: 100,  name: 'Explorer',  color: '#30d158' },
-  { xp: 300,  name: 'Builder',   color: '#64d2ff' },
-  { xp: 600,  name: 'Solver',    color: '#5e5ce6' },
-  { xp: 1000, name: 'Warrior',   color: '#bf5af2' },
-  { xp: 2000, name: 'Expert',    color: '#ff9f0a' },
-  { xp: 3500, name: 'Master',    color: '#ff453a' },
-  { xp: 5000, name: 'Legend',    color: '#ffd60a' },
-];
-
-const XP_MAP = { easy: 10, medium: 25, hard: 50 };
+let RANKS = [];
+let XP_MAP = {};
+let DIFFS = [];
 const STATUS_CYCLE = ['solved', 'revisit', 'todo'];
 
 const LC_SVG = `<svg width="18" height="18" viewBox="0 0 24 24"><path d="M13.483 0a1.374 1.374 0 0 0-.961.438L7.116 6.226l-3.854 4.126a5.266 5.266 0 0 0-1.209 2.104 5.35 5.35 0 0 0-.125.513 5.527 5.527 0 0 0 .062 2.362 5.83 5.83 0 0 0 .349 1.017 5.938 5.938 0 0 0 1.271 1.818l4.277 4.193.039.038c2.248 2.165 5.852 2.133 8.063-.074l2.396-2.392c.54-.54.54-1.414.003-1.955a1.378 1.378 0 0 0-1.951-.003l-2.396 2.392a3.021 3.021 0 0 1-4.205.038l-.02-.019-4.276-4.193c-.652-.64-.972-1.469-.948-2.263a2.68 2.68 0 0 1 .066-.523 2.545 2.545 0 0 1 .619-1.164L9.13 8.114c1.058-1.134 3.204-1.27 4.43-.278l.257.258a1.381 1.381 0 0 0 1.95-.003c.54-.54.54-1.414-.003-1.955L15.507.97A1.383 1.383 0 0 0 14.545.5 1.374 1.374 0 0 0 13.483 0zm-2.866 12.815a1.38 1.38 0 0 0-1.38 1.382 1.38 1.38 0 0 0 1.38 1.382H18.35a1.38 1.38 0 0 0 1.38-1.382 1.38 1.38 0 0 0-1.38-1.382z" fill="#FFA116"/></svg>`;
@@ -171,12 +162,33 @@ document.addEventListener('click', (e) => {
 
 /* ── Init ──────────────────────────────────────────────────────── */
 (async function init() {
+  const cfg = await api('/api/config');
+  RANKS = cfg.ranks;
+  DIFFS = cfg.difficulties;
+  XP_MAP = {};
+  DIFFS.forEach(d => XP_MAP[d.key] = d.xp);
+  buildFilterDropdown();
+  buildDiffSegment();
   setupModal();
   setupSegmented();
   setupNewFolder();
   await loadNavTabs();
   showPage('dashboard');
 })();
+
+function buildFilterDropdown() {
+  const dd = $('#filterDiffDropdown');
+  dd.innerHTML = DIFFS.map(d =>
+    `<div class="cs-option selected" data-value="${d.key}"><span class="cs-check">&#10003;</span><span class="cs-dot" style="background:${d.color}"></span>${d.label}</div>`
+  ).join('');
+}
+
+function buildDiffSegment() {
+  const seg = $('#segDifficulty');
+  seg.innerHTML = DIFFS.map((d, i) =>
+    `<button type="button" class="seg-btn${i === 1 ? ' active' : ''}" data-val="${d.key}" style="--seg-color:${d.color}">${d.label}</button>`
+  ).join('') + '<div class="seg-indicator"></div>';
+}
 
 /* ── Navigation ────────────────────────────────────────────────── */
 async function loadNavTabs() {
@@ -229,15 +241,16 @@ async function loadDashboard() {
 }
 
 function renderDonutCard(s) {
-  const total = s.easy + s.medium + s.hard;
+  const slices = DIFFS.map(d => {
+    let short = d.label;
+    if (d.label.includes(' ')) short = d.label.split(' ').map(w => w[0]).join('');
+    else if (d.label.length > 4) short = d.label.slice(0, 3) + '.';
+    return { count: s[d.key] || 0, color: d.color, diff: d.key, label: short };
+  });
+  const total = slices.reduce((a, sl) => a + sl.count, 0);
   const r = 54, cx = 64, cy = 64, stroke = 8;
   const circ = 2 * Math.PI * r;
   const bg = `<circle cx="${cx}" cy="${cy}" r="${r}" fill="none" stroke="rgba(255,255,255,0.04)" stroke-width="${stroke}"/>`;
-  const slices = [
-    { count: s.easy, color: 'var(--green)', diff: 'easy', label: 'Easy' },
-    { count: s.medium, color: 'var(--orange)', diff: 'medium', label: 'Med.' },
-    { count: s.hard, color: 'var(--red)', diff: 'hard', label: 'Hard' },
-  ];
   let offset = 0;
   let arcs = '';
   slices.forEach(sl => {
@@ -728,14 +741,45 @@ function populateTopicList(topics) {
 function getFilteredQuestions() {
   let qs = [...subjectQuestions];
   const search = searchInput.value.trim().toLowerCase();
-  const diff = filterDiff.dataset.value;
   if (search) qs = qs.filter(q => q.title.toLowerCase().includes(search) || (q.notes || '').toLowerCase().includes(search));
-  if (diff) qs = qs.filter(q => q.difficulty === diff);
+  const selected = [...filterDiff.querySelectorAll('.cs-option.selected')].map(o => o.dataset.value);
+  if (selected.length > 0 && selected.length < DIFFS.length) {
+    qs = qs.filter(q => selected.includes(q.difficulty));
+  }
   return qs;
 }
 
+function updateFilterLabel() {
+  const sel = filterDiff.querySelectorAll('.cs-option.selected').length;
+  const label = filterDiff.querySelector('.cs-label');
+  if (sel === 0 || sel === DIFFS.length) label.textContent = 'All Levels';
+  else if (sel === 1) label.textContent = filterDiff.querySelector('.cs-option.selected').textContent.trim();
+  else label.textContent = sel + ' Levels';
+}
+
 searchInput.addEventListener('input', renderTree);
-initCustomSelect(filterDiff, renderTree);
+initMultiSelect(filterDiff, () => { updateFilterLabel(); renderTree(); });
+
+function initMultiSelect(el, onChange) {
+  const trigger = el.querySelector('.cs-trigger');
+  const dropdown = el.querySelector('.cs-dropdown');
+  trigger.addEventListener('click', (e) => {
+    e.stopPropagation();
+    document.querySelectorAll('.custom-select.open').forEach(s => { if (s !== el) s.classList.remove('open'); });
+    if (dpPicker) dpPicker.classList.remove('open');
+    el.classList.toggle('open');
+  });
+  dropdown.addEventListener('click', (e) => {
+    const opt = e.target.closest('.cs-option');
+    if (!opt) return;
+    e.stopPropagation();
+    opt.classList.toggle('selected');
+    if (onChange) onChange();
+  });
+  document.addEventListener('click', (e) => {
+    if (!el.contains(e.target)) el.classList.remove('open');
+  });
+}
 
 let openFolders = new Set();
 
@@ -876,7 +920,7 @@ function renderFileRow(q) {
       <div class="file-main">
         <div class="file-title">${esc(q.title)}</div>
       </div>
-      <span class="file-diff ${q.difficulty}">${cap(q.difficulty)}</span>
+      <span class="file-diff" style="color:${diffColor(q.difficulty)};background:${diffBg(q.difficulty)}">${cap(q.difficulty)}</span>
       ${refLink}
       ${platLink}
       ${notesBtn}
@@ -1294,7 +1338,19 @@ function esc(s) {
 
 function cap(s) {
   if (!s) return '';
+  const d = DIFFS.find(d => d.key === s);
+  if (d) return d.label;
   return s.charAt(0).toUpperCase() + s.slice(1);
+}
+
+function diffColor(key) {
+  const d = DIFFS.find(d => d.key === key);
+  return d ? d.color : 'var(--text-3)';
+}
+
+function diffBg(key) {
+  const d = DIFFS.find(d => d.key === key);
+  return d ? d.bg : 'transparent';
 }
 
 function formatDate(iso) {

@@ -8,7 +8,7 @@ import threading
 import time
 from datetime import datetime, timedelta
 from collections import defaultdict
-from config import RANKS, XP_MAP, SYNC_INTERVAL_HOURS, PORT
+from config import RANKS, XP_MAP, DIFFICULTIES, SYNC_INTERVAL_HOURS, PORT
 
 app = Flask(__name__)
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
@@ -128,9 +128,7 @@ def calc_stats(questions):
         'current_streak': current_streak,
         'best_streak': best_streak,
         'today_count': today_count,
-        'easy': sum(1 for q in solved if q.get('difficulty') == 'easy'),
-        'medium': sum(1 for q in solved if q.get('difficulty') == 'medium'),
-        'hard': sum(1 for q in solved if q.get('difficulty') == 'hard'),
+        **{d[0]: sum(1 for q in solved if q.get('difficulty') == d[0]) for d in DIFFICULTIES},
         'topics': dict(topics),
         'heatmap': dict(heatmap),
         'avg_per_day': avg_per_day,
@@ -140,6 +138,20 @@ def calc_stats(questions):
 @app.route('/')
 def index():
     return render_template('index.html')
+
+
+@app.route('/api/config')
+def get_config():
+    return jsonify({
+        'difficulties': [
+            {'key': k, 'label': l, 'xp': xp, 'color': c, 'bg': bg}
+            for k, l, xp, c, bg in DIFFICULTIES
+        ],
+        'ranks': [
+            {'xp': xp, 'name': n, 'color': c}
+            for xp, n, c in RANKS
+        ],
+    })
 
 
 @app.route('/api/<subject>/questions')

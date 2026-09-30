@@ -13,4 +13,11 @@ RANKS = [
     (5000, 'Legend', '#ffd60a'),
 ]
 
-XP_MAP = {'easy': 10, 'medium': 25, 'hard': 50}
+DIFFICULTIES = [
+    ('easy',       'Easy',       10,  '#30d158', 'rgba(48,209,88,0.12)'),
+    ('medium',     'Medium',     25,  '#ff9f0a', 'rgba(255,159,10,0.12)'),
+    ('hard',       'Hard',       50,  '#ff453a', 'rgba(255,69,58,0.12)'),
+    ('gaand_faad', 'Gaand Faad', 100, '#bf5af2', 'rgba(191,90,242,0.12)'),
+]
+
+XP_MAP = {d[0]: d[2] for d in DIFFICULTIES}
