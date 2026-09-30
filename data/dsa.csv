@@ -1279,3 +1279,238 @@ public:
         return superSequence;
     }
 };"
+cb66c695,Distinct Subsequences,https://leetcode.com/problems/distinct-subsequences/description/,leetcode,hard,DP,solved,"[STRIVER HARD] The idea is to count how many ways we can form t as a subsequence of s. At every position (i, j), if s[i] == t[j], we have two choices: take s[i] as the current character of t and look for t[j+1.....] in s[i+1.....], moving to (i+1, j+1), or skip s[i] and look for t[j...] in s[i+1...], moving to (i+1, j). If the characters don't match, we can only skip s[i]. When j == m, the entire t has been formed, so we return 1; when i == n while t is still remaining, we return 0, as there is still tleft to match.
+
+Note: getDistinctSubsequences(i,j) represents the number of ways to form t[j...] using s[i...]. The recurrence is take + notTake when characters match, and only notTake otherwise. 
+TC: O(n × m) 
+SC: O(n × m)",2026-09-29,2026-09-29,https://www.youtube.com/watch?v=nVG7eTiD2bY,"class Solution {
+private:
+    int getDistinctSubsequences(int i, int j, string &s, string &t, vector<vector<int>> &dp) {
+        int n = s.size();
+        int m = t.size();
+
+        // Base case
+        // t is completely matched => 1 valid subsequence
+        if (j == m) return 1;
+        // s is exhausted but t is still left => impossible
+        if (i == n) return 0;
+
+        // using memoization
+        if (dp[i][j] != -1) return dp[i][j];
+
+        // If characters match: we can either take s[i] or skip iti]
+        if (s[i] == t[j]) {
+            return dp[i][j] = getDistinctSubsequences(i+1, j+1, s, t, dp) + getDistinctSubsequences(i+1, j, s, t, dp);
+        }
+
+        // If characters don't match, we cannot take s[i] we have to skip it
+        return dp[i][j] = getDistinctSubsequences(i+1, j, s, t, dp);
+    }
+
+public:
+    int numDistinct(string s, string t) {
+        int n = s.size();
+        int m = t.size();
+
+        vector<vector<int>> dp(n, vector<int>(m, -1));
+
+        return getDistinctSubsequences(0, 0, s, t, dp);
+    }
+};"
+9a06f11f,Edit Distance,https://leetcode.com/problems/edit-distance/description/,leetcode,medium,DP,solved,"[STRIVER HARD] similar to all dp on stings, compare each char, if same move on to next, else try all operations and return the min",2026-09-29,2026-09-29,https://www.youtube.com/watch?v=fJaKO8FbDdo,"class Solution {
+private:
+    int min(int a, int b, int c){ return std::min(a, std::min(b,c));}
+    int getMinOperations(int i, int j, string& w1, string& w2, vector<vector<int>>& dp){
+        //Base case
+        if(i == w1.size()) return w2.size()-j; //we have exhausted w1 so just insert whatever is left of w2
+        if(j == w2.size()) return w1.size()-i; //we have exhausted w2 so just delete whatever is left of w1
+
+        //using memoization
+        if(dp[i][j] != -1) return dp[i][j];
+         
+        //if characters match - nothing to do
+        if (w1[i] == w2[j]) return dp[i][j] = getMinOperations(i+1, j+1, w1, w2, dp);
+        // if they don't then explore all operations
+        else{
+            int ins = 1 + getMinOperations(i, j+1, w1, w2, dp); // we have hypothetically inerted just before i so now still at i
+            int del = 1 + getMinOperations(i+1, j, w1, w2, dp); // we have hypothetically deleted ith letter so moved ahead
+            int rep = 1 + getMinOperations(i+1, j+1, w1, w2, dp);//we have hypothetically replaced the ith char with char w2[j]
+            return dp[i][j] = min(ins,del,rep);
+        }
+        return -1;
+    }
+public:
+    int minDistance(string word1, string word2) {
+        int m = word1.size();
+        int n = word2.size();
+        //we have to convert word1 to word2 - so all operations will be on word1
+        vector<vector<int>> dp(m, vector<int>(n,-1)); //for memoization
+        return getMinOperations(0, 0, word1, word2, dp);
+    }
+};"
+310365bb,Wildcard Matching,https://leetcode.com/problems/wildcard-matching/description/,leetcode,medium,DP,solved,"[STRIVER HARD] getMatch(i,j) means whether s[i...] can be matched with p[j...]. If the current characters match (or pattern has ?), move both pointers. If the pattern has *, there are two choices: * matches nothing, so move j, or * matches the current character, so move i while keeping j unchanged because * can match more characters. If neither condition is satisfied, the match fails.",2026-09-29,2026-09-29,https://www.youtube.com/watch?v=ZmlQ3vgAOMo,"class Solution {
+private:
+    bool getMatch(int i, int j, string &s, string &p, vector<vector<int>> &dp) {
+        int n = s.size();
+        int m = p.size();
+
+        // Base case
+        if (i == n && j == m) return true; // both string and pattern are exhausted
+        if (i == n) { // string is exhausted, pattern must contain only '*'
+            while (j < m) {
+                if (p[j] != '*') return false;
+                j++;
+            }
+            return true;
+        }
+        if (j == m) return false; // pattern is exhausted but string is left
+
+        // using memoization
+        if (dp[i][j] != -1) return dp[i][j];
+
+        // if characters are matching or we have a '?' in the pattern
+        if (s[i] == p[j] || p[j] == '?') return dp[i][j] = getMatch(i+1, j+1, s, p, dp);
+
+        // '*' can either match nothing or match one/more characters
+        if (p[j] == '*')
+            return dp[i][j] = getMatch(i, j+1, s, p, dp) || getMatch(i+1, j, s, p, dp);
+
+        // characters don't match
+        return dp[i][j] = false;
+    }
+
+public:
+    bool isMatch(string s, string p) {
+        int n = s.size();
+        int m = p.size();
+        vector<vector<int>> dp(n, vector<int>(m, -1));
+        return getMatch(0, 0, s, p, dp);
+    }
+};"
+9ab85d15,Count Palindromic Subsequences,https://www.geeksforgeeks.org/problems/count-palindromic-subsequences/1,gfg,hard,DP,solved,"Range DP: Count Palindromic Subsequences
+
+We apply the concept of range DP here by breaking the string into smaller subproblems with smaller ranges. To find the number of palindromes in s[i...j], we break it into smaller ranges based on the endpoints s[i] and s[j].
+
+Case 1: If the endpoints s[i] != s[j]
+We cannot use the endpoints to wrap any inner sequences to form new palindromes. We simply call for the number of palindromes in the left and right windows (s[i+1...j] and s[i...j-1]). Because the palindromes in the overlapping middle section s[i+1...j-1] are counted twice, we subtract them.
+
+Formula: solve(i+1, j) + solve(i, j-1) - solve(i+1, j-1)
+
+Case 2: If the endpoints s[i] == s[j]
+We can now wrap the endpoints around any inner palindromic sequence to form a new palindrome. We take the base count of the left and right windows minus the overlap: solve(i+1, j) + solve(i, j-1) - solve(i+1, j-1).
+We then add solve(i+1, j-1) because every palindrome in the middle range combines with the endpoints to form a new palindrome. Finally, we add 1 for the standalone 2-character palindrome ""s[i]s[j]"".
+
+Formula: solve(i+1, j) + solve(i, j-1) + 1",2026-09-29,2026-09-30,,"class Solution {
+  private:
+    int getPallindromeInRange(int i, int j, string& s, vector<vector<int>>& dp){
+        //Base case
+        if (i == j) return dp[i][j] = 1; //sting of len 1 -> only one pallindrome possible
+        if (i > j) return dp[i][j] = 0; //string exhausted
+        
+        //using memoization
+        if(dp[i][j] != -1) return dp[i][j];
+        
+        //if endpoints are not equal
+        if(s[i] != s[j])
+        return dp[i][j] = getPallindromeInRange(i+1, j, s, dp) + getPallindromeInRange(i, j-1, s, dp) - getPallindromeInRange(i+1, j-1, s, dp);
+        
+        //if they are equal
+        return dp[i][j] = 1 + getPallindromeInRange(i+1, j, s, dp) + getPallindromeInRange(i, j-1, s, dp);
+        
+    }
+  public:
+    /*You are required to complete below method */
+    int countPS(string &s) {
+        int n = s.size();
+        // we will aplly a range dp solution
+        vector<vector<int>> dp(n, vector<int>(n, -1));
+        return getPallindromeInRange(0, n-1, s, dp);
+    }
+};"
+e78059e7,Count Palindromic Subsequences having length 5,https://leetcode.com/problems/count-palindromic-subsequences/description/,leetcode,hard,DP,solved,"[STRIVER HARD] We apply the concept of prefix and suffix state tracking here - we break the length 5 palindrome into three parts: a 2-digit left pair, a center digit, and a matching reversed 2-digit right pair.
+Our approach is that for finding the no. of length 5 palindromes, we iterate through the string treating each character as the center c. A valid length 5 palindrome will look like XY c YX.
+
+step 1: preprocessing the right window
+we precalculate the frequency of all single digits and 2-digit pairs for the entire string and store them in our right-side trackers (backwardFreq, backwardPair).
+
+step 2: shifting the center and calculating
+as we move our center idx from left to right:
+first, we remove the current center digit s[idx] from the right side (depopulate) because the center cannot overlap with the right pairs.
+second, we calculate palindromes centered here. For every possible 2-digit pair i (from 00 to 99), we multiply its frequency on the left (forwardPair[i]) by the frequency of its reversed pair on the right (backwardPair[rev(i)]), and add this to our total answer.
+finally, we add the current center digit s[idx] into the left side (populate) so it can be used to form left pairs for the upcoming centers.
+
+so FINALLY we get the total count by summing up these valid combinations for every index and applying modulo.",2026-09-30,2026-09-29,https://www.youtube.com/watch?v=vW3l7UvYmwQ,"long long MOD = 1000000007;
+
+class Process {
+    vector<int> forwardFreq = vector<int>(10, 0), backwardFreq = vector<int>(10, 0);
+    vector<long long> forwardPair = vector<long long>(100, 0), backwardPair = vector<long long>(100, 0);
+    vector<uint8_t> number;
+    int idx = -1;
+
+    int rev(int x) {return 10 * (x % 10) + x / 10;}
+
+    void populate(vector<int>& freq, vector<long long>& pair, int digit, string dir) {
+        for(int i = 0; i < 10; i++) {
+            if(freq[i]) {
+                int p = 10 * i + digit;
+                if (dir == ""back"") p = rev(p);
+                pair[p] += freq[i];
+            }
+        }
+        freq[digit]++;
+    }
+
+    void depopulate(vector<int>& freq, vector<long long>& pair, int digit) {//we will always be depopulating backward one
+        freq[digit]--;
+        for(int i = 0; i < 10; i++) {
+            if(freq[i]) {
+                pair[10 * digit + i] -= freq[i];
+            }
+        }
+    }
+
+public:
+    Process(string s) {
+        int n = s.size();
+
+        // storing the number in a digit array
+        number.resize(n);
+        for(int i = 0; i < n; i++) number[i] = s[i] - '0';
+
+        // preprocessing backwardFreq and backwardPair
+        for(int i = n - 1; i >= 0; i--) populate(backwardFreq, backwardPair, number[i], ""back"");
+    }
+
+    void incIdx() {idx++;}
+
+    long long getPalindromesWithIdxCentre() {
+        // current digit is the centre, so it should not belong to either the left pair or right pair
+        // so 1st we remove current digit from the right side
+        depopulate(backwardFreq, backwardPair, number[idx]);
+        
+        // then calculate the palindromes
+        long long ans = 0;
+        for(int i = 0; i < 100; i++) ans = (ans + forwardPair[i] * backwardPair[rev(i)]) % MOD;
+
+        // then we dd current digit to the left side
+        populate(forwardFreq, forwardPair, number[idx], ""fwrd"");
+
+        return ans;
+    }
+};
+
+class Solution {
+public:
+    int countPalindromes(string s) {
+
+        int n = s.size();
+        Process helperS(s);
+
+        long long cnt = 0;
+        for(int i = 0; i < n; i++) {
+            helperS.incIdx();
+            cnt = (cnt + helperS.getPalindromesWithIdxCentre()) % MOD;
+        }
+        return cnt;
+    }
+};"
