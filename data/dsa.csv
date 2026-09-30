@@ -1427,7 +1427,7 @@ Formula: solve(i+1, j) + solve(i, j-1) + 1",2026-09-29,2026-09-30,,"class Soluti
         return getPallindromeInRange(0, n-1, s, dp);
     }
 };"
-e78059e7,Count Palindromic Subsequences having length 5,https://leetcode.com/problems/count-palindromic-subsequences/description/,leetcode,hard,DP,solved,"[STRIVER HARD] We apply the concept of prefix and suffix state tracking here - we break the length 5 palindrome into three parts: a 2-digit left pair, a center digit, and a matching reversed 2-digit right pair.
+e78059e7,Count Palindromic Subsequences having length 5,https://leetcode.com/problems/count-palindromic-subsequences/description/,leetcode,gaand_faad,DP,solved,"[STRIVER HARD] We apply the concept of prefix and suffix state tracking here - we break the length 5 palindrome into three parts: a 2-digit left pair, a center digit, and a matching reversed 2-digit right pair.
 Our approach is that for finding the no. of length 5 palindromes, we iterate through the string treating each character as the center c. A valid length 5 palindrome will look like XY c YX.
 
 step 1: preprocessing the right window
