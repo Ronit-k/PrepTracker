@@ -785,7 +785,7 @@ f9c084c6,Kosaraju algorithm O(N+E),https://www.geeksforgeeks.org/problems/strong
         return scc;
     }
 };"
-4c80f856,Bridges in graph,https://leetcode.com/problems/critical-connections-in-a-network/,leetcode,hard,Graph,solved,[STIVER HARD] difficult to explain the intuition just read the code and see the video on 2x,2026-09-26,2026-09-27,https://youtu.be/qrAub5z8FeA,"class Solution {
+4c80f856,Bridges in graph,https://leetcode.com/problems/critical-connections-in-a-network/,leetcode,gaand_faad,Graph,solved,[STIVER HARD] difficult to explain the intuition just read the code and see the video on 2x,2026-09-26,2026-09-27,https://youtu.be/qrAub5z8FeA,"class Solution {
 private:
     int time = 0;
     void getCC(int node, int parent, vector<vector<int>>& graph, vector<bool>& vis, 
@@ -831,7 +831,7 @@ public:
         return CC;
     }
 };"
-beed3d5c,Articulation point in graph,https://www.geeksforgeeks.org/problems/articulation-point2616/1,gfg,hard,Graph,solved,[STIVER HARD] difficult to explain the intuition just read the code and see the video on 2x (similar to bridges in graph),2026-09-26,2026-09-27,https://youtu.be/j1QDfU21iZk,"class Solution {
+beed3d5c,Articulation point in graph,https://www.geeksforgeeks.org/problems/articulation-point2616/1,gfg,gaand_faad,Graph,solved,[STIVER HARD] difficult to explain the intuition just read the code and see the video on 2x (similar to bridges in graph),2026-09-26,2026-09-27,https://youtu.be/j1QDfU21iZk,"class Solution {
   private:
   int timer = 0;
     void art_dfs(int node, int parent, vector<vector<int>>& graph, vector<int>& tin, 
@@ -1387,7 +1387,7 @@ public:
         return getMatch(0, 0, s, p, dp);
     }
 };"
-9ab85d15,Count Palindromic Subsequences,https://www.geeksforgeeks.org/problems/count-palindromic-subsequences/1,gfg,hard,DP,solved,"Range DP: Count Palindromic Subsequences
+9ab85d15,Count Palindromic Subsequences,https://www.geeksforgeeks.org/problems/count-palindromic-subsequences/1,gfg,gaand_faad,DP,solved,"Range DP: Count Palindromic Subsequences
 
 We apply the concept of range DP here by breaking the string into smaller subproblems with smaller ranges. To find the number of palindromes in s[i...j], we break it into smaller ranges based on the endpoints s[i] and s[j].
 
