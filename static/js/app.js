@@ -241,12 +241,9 @@ async function loadDashboard() {
 }
 
 function renderDonutCard(s) {
-  const slices = DIFFS.map(d => {
-    let short = d.label;
-    if (d.label.includes(' ')) short = d.label.split(' ').map(w => w[0]).join('');
-    else if (d.label.length > 4) short = d.label.slice(0, 3) + '.';
-    return { count: s[d.key] || 0, color: d.color, diff: d.key, label: short };
-  });
+  const slices = DIFFS.map(d => ({
+    count: s[d.key] || 0, color: d.color, diff: d.key, label: d.label
+  }));
   const total = slices.reduce((a, sl) => a + sl.count, 0);
   const r = 54, cx = 64, cy = 64, stroke = 8;
   const circ = 2 * Math.PI * r;
