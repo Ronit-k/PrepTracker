@@ -1514,4 +1514,188 @@ public:
         return cnt;
     }
 };"
-b3c7ce4c,Matrix Chain Multiplication,https://www.geeksforgeeks.org/problems/matrix-chain-multiplication0303/1,gfg,medium,DP,solved,,2026-10-01,2026-10-01,https://www.youtube.com/watch?v=vRVfmbCFW7Y,
+b3c7ce4c,Matrix Chain Multiplication,https://www.geeksforgeeks.org/problems/matrix-chain-multiplication0303/1,gfg,hard,DP,solved,"[STRIVER HARD] we apply the concept of partition dp here, this question is basically asking where to put brackets in the multiplication - so we try all possibilities, if we split at any i, from arr[start] to arr[i] there will one subproblem (A) , and other will be from arr[i] to arr[end] (B), now hypothetically when we obtain A and B matrices form left and right subproblems their dimension would be A->arr[start] x arr[i] and b->arr[i] x arr[end], so this partition will cost arr[start] * arr[i] * arr[end] multiplication
+like this we for recursion, and i should be between start+1 to end-1, else you'll be calling same recursion problem again and again",2026-10-01,2026-10-01,https://www.youtube.com/watch?v=vRVfmbCFW7Y,"class Solution {
+private:
+    int getMinMult(int start, int end, vector<int>& arr, vector<vector<int>>& dp) {
+        // Base case: only one matrix
+        if (end - start <= 1) return 0; // only one matrix is present son no multiplication
+        
+        //using memo
+        if(dp[start][end] != -1) return dp[start][end];
+
+        int minMult = 1e9;
+
+        // Try all possible partitions
+        for (int i = start + 1; i < end; i++) { //ith matrix ->dimension-> arr[i-1] X arr[i]
+            int mult = getMinMult(start, i, arr, dp)
+                     + arr[start] * arr[i] * arr[end]
+                     + getMinMult(i, end, arr, dp);
+
+            minMult = min(minMult, mult);
+        }
+
+        return dp[start][end] = minMult;
+    }
+
+public:
+    int matrixMultiplication(vector<int>& arr) {
+        int n = arr.size();
+        vector<vector<int>> dp(n, vector<int>(n, -1));
+        return getMinMult(0, n - 1, arr, dp);
+    }
+};"
+47d396c0,Burst Balloons,https://leetcode.com/problems/burst-balloons/description/,leetcode,hard,DP,solved,"[STRIVER HARD] here the idea is to start from the last baloon and work our way up, since bursting it will give us the guaranteed endpoints that we can use to multiply",2026-10-01,2026-10-01,https://www.youtube.com/watch?v=Yz4LlDSlkns,"class Solution {
+private:
+    int getMaxCoins(int start, int end, vector<int>& nums, vector<vector<int>>& dp){
+        if (start+1 == end) return 0; //we have exhausted the range, and there are no ballons to burst between start and end
+        int ans = INT_MIN;
+
+        //using memo
+        if (dp[start][end]!=-1) return dp[start][end];
+
+        //choosing the last balloon to burst in that range
+        for(int i = start+1; i<end; i++){
+            int coins = getMaxCoins(start, i, nums, dp) +
+                        nums[start]*nums[i]*nums[end] + 
+                        getMaxCoins(i, end, nums, dp);
+            ans = max(ans, coins);
+        }
+        return dp[start][end] = ans;
+    }
+
+public:
+    int maxCoins(vector<int>& nums) {
+        //inserting 1s on the ends as we follow a reverse strategy here
+        //we choose which baloon to burst at the last and then work our way backup
+        nums.insert(nums.begin(), 1);
+        nums.insert(nums.end(), 1);
+        int n = nums.size();
+
+        vector<vector<int>> dp(n, vector<int>(n, -1));
+        return getMaxCoins(0, n-1, nums, dp);
+    }
+};"
+ceb7ec19,Palindrome Partitioning - II,https://leetcode.com/problems/palindrome-partitioning-ii/,leetcode,hard,DP,solved,"[STRIVER HARD] we make use of front partition here - we make the 1st cut only if the left side of that cut is a palindrome, then we pass the right half and repeat this to ensure the sting between cuts is a palindrome - then just memoize it",2026-10-01,2026-10-01,https://www.youtube.com/watch?v=_H8V5hJUGd0,"class Solution {
+private:
+    bool isPalindrome(int start, int end, string& s) {
+        while (start < end) {
+            if (s[start] != s[end]) return false;
+            start++;
+            end--;
+        }
+        return true;
+    }
+
+    int getMinCuts(int start, string& s, vector<int>& dp) {
+        // Base case
+        if (start == s.size()) return 0; // string exhausted
+        
+        // using memoization
+        if(dp[start] != -1) return dp[start];
+
+        int minCuts = 1e9;
+
+        // Try all possible front partitions
+        for (int end = start; end < s.size(); end++) { 
+            if (isPalindrome(start, end, s)) { // cut is valid only if it leaves the left partition a pallindrome
+                int cuts = 1 + getMinCuts(end + 1, s, dp);  
+                minCuts = min(minCuts, cuts);
+            }
+        }
+
+        return dp[start] = minCuts;
+    }
+
+public:
+    int minCut(string s) {
+        int n = s.size();
+        
+        // if the whole string is already a palindrome, no cuts needed
+        if (isPalindrome(0, n - 1, s)) return 0;
+        
+        // we will apply a front partition dp solution
+        vector<int> dp(n, -1);
+        
+        // subtract 1 because our logic makes a final cut at the very end of the string
+        return getMinCuts(0, s, dp) - 1; 
+    }
+};"
+9bc4ba1b,Partition Array for Maximum Sum,https://leetcode.com/problems/partition-array-for-maximum-sum/submissions/2159221345/,leetcode,medium,DP,solved,,2026-10-01,2026-10-01,https://www.youtube.com/watch?v=PhWWJmaKfMc,"class Solution {
+private:
+    int getMaxSum(int start, vector<int>& arr, int k, vector<int>& dp) {
+        // Base case
+        if (start >= arr.size()) return 0; // array exhausted
+
+        // using memoization
+        if (dp[start] != -1) return dp[start];
+
+        int maxSum = -1e9;
+        int maxEle = arr[start];
+        
+        // Try all possible partitions of length up to k
+        for (int i = start; i < start + k; i++) {
+            if (i >= arr.size()) continue; // boundary check
+            
+            maxEle = max(maxEle, arr[i]);
+            // sum of current partition (= no. of elements in this partition*maxEle of this partition) + max sum of the remaining array
+            int sum = (i - start + 1) * maxEle + getMaxSum(i + 1, arr, k, dp);
+            
+            maxSum = max(maxSum, sum);
+        }
+        
+        return dp[start] = maxSum;
+    }
+    
+public:
+    int maxSumAfterPartitioning(vector<int>& arr, int k) {
+        int n = arr.size();
+        // we will apply a partition dp solution
+        vector<int> dp(n, -1);
+        return getMaxSum(0, arr, k, dp);
+    }
+};"
+7c4d12b2,Minimum Cost to Cut the Stick,https://leetcode.com/problems/minimum-cost-to-cut-a-stick/description/,leetcode,hard,DP,solved,[STRIVER HARD] add the boundaries in the cuts array and then sort it then try all the cuts - adding boundaries for calculating length and thus the cost is the main game here,2026-10-01,2026-10-01,https://www.youtube.com/watch?v=xwomavsC86c,"class Solution {
+private:
+    int getMinCost(int start, int end, vector<int>& arr, vector<vector<int>>& dp) {
+        // Base case
+        if (start > end) return 0; // no more cuts to make in this segment
+        
+        // using memoization
+        if (dp[start][end] != -1) return dp[start][end];
+        
+        int minCost = 1e9;
+        
+        // Try all possible partition points (cuts)
+        for (int i = start; i <= end; i++) {
+            // length of current stick + cost of left segment + cost of right segment
+            int cost = arr[end + 1] - arr[start - 1] 
+                     + getMinCost(start, i - 1, arr, dp) 
+                     + getMinCost(i + 1, end, arr, dp);
+                     
+            minCost = min(minCost, cost);
+        }
+        
+        return dp[start][end] = minCost;
+    }
+    
+public:
+    int minCost(int len, vector<int>& cuts) {
+        // we will apply a partition dp solution
+        vector<int> arr;
+        
+        // add boundaries to calculate lengths easily
+        arr.push_back(0); 
+        for (int cut : cuts) arr.push_back(cut);
+        arr.push_back(len);
+        
+        // sorting is mandatory so cuts are in order from left to right
+        sort(arr.begin(), arr.end());
+        
+        int m = arr.size();
+        vector<vector<int>> dp(m, vector<int>(m, -1));
+        
+        // we pass indices of the valid cuts (1 to m-2)
+        return getMinCost(1, m - 2, arr, dp); 
+    }
+};"
