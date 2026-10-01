@@ -1514,3 +1514,4 @@ public:
         return cnt;
     }
 };"
+b3c7ce4c,Matrix Chain Multiplication,https://www.geeksforgeeks.org/problems/matrix-chain-multiplication0303/1,gfg,medium,DP,solved,,2026-10-01,2026-10-01,https://www.youtube.com/watch?v=vRVfmbCFW7Y,
