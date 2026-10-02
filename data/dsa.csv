@@ -1836,3 +1836,138 @@ public:
         return false;
     }
 };"
+a47aefb4,Candy,https://leetcode.com/problems/candy/description/,leetcode,gaand_faad,Greedy,solved,"[STRIVER HARD] this rpblem is rather medium if done in O(n) S.C. main challenge is to think and implement the O(1) S.C. solution (both solutions are given below)
+
+to solve in O(n) S.C., just maintain two arrays left and right satisfying only the left and right neighbours respectively, then take the max if left and right array for ith element and add it to the sum - you can omit making right array by calculating it on the fly
+
+in O(1) S.C. approach this is very tough to think and mp. watch the video from 15:00 to better understand it, we make use of slope concept here",2026-10-02,2026-10-02,https://www.youtube.com/watch?v=IIqVFvKE6RY,"//O(1) S.C. approach
+class Solution {
+public:
+    int candy(vector<int>& ratings) {
+        int n = ratings.size();
+        int minCandies = 1;
+        int peak, down;
+        for(int i = 1; i<n; ){
+            //if we encounter const slope
+            while(i<n && ratings[i] == ratings[i-1]){
+                minCandies++;
+                i++;
+                continue;
+            }  
+            //if the slope is inc
+            peak = 1;
+            while(i<n && ratings[i] > ratings[i-1]){
+                peak++;
+                minCandies += peak;
+                i++;
+                continue;
+            }
+            //if the slope is dec
+            down = 1;
+            while(i<n && ratings[i] < ratings[i-1]){
+                minCandies += down;
+                down++;
+                i++;
+            }
+            minCandies += max(0, down - peak );
+        }
+        return minCandies;
+    }
+};
+
+//O(n) S.C. approach 
+class Solution {
+public:
+    int candy(vector<int>& ratings) {
+        int n = ratings.size();
+
+        vector<int> left(n);
+        left[0] = 1;
+
+        // Satisfying left neighbours
+        for(int i = 1; i < n; i++) {
+            if(ratings[i] > ratings[i-1]) left[i] = left[i-1] + 1;
+            else left[i] = 1;
+        }
+
+        // Satisfying right neighbours
+        int rightPrev = 1;
+        int rightCurr = 1;
+
+        int minCandies = max(left[n-1], rightCurr);
+
+        for(int i = n-2; i >= 0; i--) {
+
+            if(ratings[i] > ratings[i+1]) rightCurr = rightPrev + 1;
+            else rightCurr = 1;
+            
+            minCandies += max(left[i], rightCurr);
+
+            rightPrev = rightCurr;
+        }
+
+        return minCandies;
+    }
+};"
+dffe0e18,Jump Game - II,https://leetcode.com/problems/jump-game-ii/description/,leetcode,hard,Greedy,solved,"[STRIVER HARD]
+Within one jump, we scan all positions that are reachable, and among them find the position that gives us the farthest next coverage. Only when we reach the end of the current range do we actually commit to that jump.",2026-10-02,2026-10-02,https://www.youtube.com/watch?v=7SBVnw7GSTk,"class Solution {
+public:
+    int jump(vector<int>& nums) {
+        int n = nums.size();
+
+        //base case
+        if(n == 1) return 0;
+
+        int maxCoverage = 0;
+        int currentEnd = 0;
+        int minJumps = 0;
+        //our greedy strategy is as follows
+        //standing at i I can jump to till currentEnd, now from i+1 to currnetEnd i'll se which index gives me max coverage and when I have exhausted the currentEnd i'll make a jump to that max coverage
+        for(int i = 0; i<n; i++){
+            int coverage = i + nums[i];
+            maxCoverage = max(maxCoverage, coverage);
+
+            if(i == currentEnd){
+                minJumps++;
+                currentEnd = maxCoverage;
+                if(currentEnd >= n-1) return minJumps;
+            }
+        }
+        return minJumps;
+    }
+};"
+c0ad2a98,Maximum Path Sum in Binary Tree,https://leetcode.com/problems/binary-tree-maximum-path-sum/,leetcode,hard,Binary Trees,todo,"[STRIVER HARD], A bit tough to write the recursion
+keep in mind the following things
+each recursive call will return the its value + max(left_sum, right_sum) => it will basically tell in which direction from that node should you go to get the max sum, then it also checks if there is a maxSum path passing from it, if yes then it updates that too",2026-10-02,2026-10-02,https://www.youtube.com/watch?v=WszrfSwMz58,"/**
+ * Definition for a binary tree node.
+ * struct TreeNode {
+ *     int val;
+ *     TreeNode *left;
+ *     TreeNode *right;
+ *     TreeNode() : val(0), left(nullptr), right(nullptr) {}
+ *     TreeNode(int x) : val(x), left(nullptr), right(nullptr) {}
+ *     TreeNode(int x, TreeNode *left, TreeNode *right) : val(x), left(left), right(right) {}
+ * };
+ */
+class Solution {
+private:
+    int getMaxSum(TreeNode* root, int& maxSum){
+        if  (!root) return 0;
+
+        // consider the left and right sum only if they are +ve
+        int ls = max(0, getMaxSum(root->left, maxSum));
+        int rs = max(0, getMaxSum(root->right, maxSum));
+
+        // check whether the path passing throught this root gives maxSum
+        maxSum = max(maxSum, root->val + ls + rs);
+
+        // return whether ls or rs which direction gives the max sum
+        return root->val + max(ls, rs);
+    }
+public:
+    int maxPathSum(TreeNode* root) {
+        int maxSum = INT_MIN;
+        getMaxSum(root, maxSum);
+        return maxSum;
+    }
+};"
