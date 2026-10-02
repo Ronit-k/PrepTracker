@@ -1936,9 +1936,9 @@ public:
         return minJumps;
     }
 };"
-c0ad2a98,Maximum Path Sum in Binary Tree,https://leetcode.com/problems/binary-tree-maximum-path-sum/,leetcode,hard,Binary Trees,todo,"[STRIVER HARD], A bit tough to write the recursion
+c0ad2a98,Maximum Path Sum in Binary Tree,https://leetcode.com/problems/binary-tree-maximum-path-sum/,leetcode,medium,Binary Trees,solved,"[STRIVER HARD], A bit tough to write the recursion
 keep in mind the following things
-each recursive call will return the its value + max(left_sum, right_sum) => it will basically tell in which direction from that node should you go to get the max sum, then it also checks if there is a maxSum path passing from it, if yes then it updates that too",2026-10-02,2026-10-02,https://www.youtube.com/watch?v=WszrfSwMz58,"/**
+each recursive call will return the its value + max(left_sum, right_sum) => it will basically tell in which direction from that node should you go to get the max sum, then it also checks if there is a maxSum path passing from it, if yes then it updates that too. MAKE SURE that the min value of left_sum and right_sum is 0",2026-10-02,2026-10-02,https://www.youtube.com/watch?v=WszrfSwMz58,"/**
  * Definition for a binary tree node.
  * struct TreeNode {
  *     int val;
@@ -1969,5 +1969,203 @@ public:
         int maxSum = INT_MIN;
         getMaxSum(root, maxSum);
         return maxSum;
+    }
+};"
+29a7c8eb,Vertical Order Traversal of Binary Tree,https://leetcode.com/problems/vertical-order-traversal-of-a-binary-tree/,leetcode,medium,Binary Trees,solved,"[STRIVER HARD] just do a bfs and store in col,row,val order and sort then push in ans vector",2026-10-02,2026-10-02,https://www.youtube.com/watch?v=q_a6lpbKJdw,"/**
+ * Definition for a binary tree node.
+ * struct TreeNode {
+ *     int val;
+ *     TreeNode *left;
+ *     TreeNode *right;
+ *     TreeNode() : val(0), left(nullptr), right(nullptr) {}
+ *     TreeNode(int x) : val(x), left(nullptr), right(nullptr) {}
+ *     TreeNode(int x, TreeNode *left, TreeNode *right) : val(x), left(left), right(right) {}
+ * };
+ */
+class Solution {
+public:
+    vector<vector<int>> verticalTraversal(TreeNode* root) {
+        vector<pair<pair<int,int>,int>> v; //in this we will store {{col,row},value} -> we need to sort in this order only
+        //to populate this map we can do a bfs travesal
+        queue<pair<pair<int,int>, TreeNode*>> q; //{{r,c}, node}
+        q.push({{0,0},root});
+        int col_max = 0, col_min = 0;
+        while(!q.empty()){
+            auto [row, col] = q.front().first;
+            TreeNode* node = q.front().second;
+            q.pop();
+
+            v.push_back({{col, row}, node->val});//pushing in col, row order!!
+            col_max = max(col_max, col);
+            col_min = min(col_min, col);
+
+            //pushing the neighbours if they exist
+            if(node->left) q.push({{row+1,col-1},node->left});
+            if(node->right) q.push({{row+1,col+1},node->right});
+        }
+
+        sort(v.begin(), v.end());
+
+        vector<vector<int>> ans(col_max-col_min+1);
+        for(auto & n : v){
+            auto [col, row] = n.first;
+            int val = n.second;
+            ans[col-col_min].push_back(val);
+        }
+        return ans;
+    }
+};"
+e7fc72f9,Lowest Common Ancestor in Binary Tree,https://leetcode.com/problems/lowest-common-ancestor-of-a-binary-tree/description/,leetcode,medium,Binary Trees,solved,"[STRIVER HARD] if you reach the target nodes return them to the caller, if any caller gets both the target nodes returned from left and right then it is the LCA - return itself - simple enough code",2026-10-02,2026-10-02,https://www.youtube.com/watch?v=_-QHfMDde90,"/**
+ * Definition for a binary tree node.
+ * struct TreeNode {
+ *     int val;
+ *     TreeNode *left;
+ *     TreeNode *right;
+ *     TreeNode(int x) : val(x), left(NULL), right(NULL) {}
+ * };
+ */
+class Solution {
+public:
+    TreeNode* lowestCommonAncestor(TreeNode* root, TreeNode* p, TreeNode* q) {
+        // if we reach any null or target nodes just return them
+        if (!root || root == p || root == q) return root; 
+
+        TreeNode* l = lowestCommonAncestor(root->left, p, q);
+        TreeNode* r = lowestCommonAncestor(root->right, p, q);
+
+        if (!l) return r; //if left is  null what ever be the right return it;
+        if (!r) return l; //if right is  null what ever be the left return it;
+        // both l and r are not null => it is the lca, so return it
+        return root;
+
+            
+    }
+};"
+c39b5c80,Maximum Width of Binary Tree,https://leetcode.com/problems/maximum-width-of-binary-tree/description/,leetcode,hard,Binary Trees,solved,"[STRIVER HARD] logic wise its not hard to think but you will get overflow errors so to rectify those is the main challenge
+
+logic is simple like if we represent a BT in an array the left and right child indices are 2i+1 and 2i+2, you can store these in the queue along with the level while traversing anf when a level ends take the diff of max and min index at that level, but this will be overflowed
+so notice node 0 at level 1 will have children at 0 and 1 in level 2 and node 1 at level 1 will have children at 2 and 3 at level 2, so we can say the child are 2i and 2i+1 at level lvl+1, then use the unsigned long long to store it",2026-10-02,2026-10-02,https://www.youtube.com/watch?v=ZbybYvcVLks,"/**
+ * Definition for a binary tree node.
+ * struct TreeNode {
+ *     int val;
+ *     TreeNode *left;
+ *     TreeNode *right;
+ *     TreeNode() : val(0), left(nullptr), right(nullptr) {}
+ *     TreeNode(int x) : val(x), left(nullptr), right(nullptr) {}
+ *     TreeNode(int x, TreeNode *left, TreeNode *right) : val(x), left(left), right(right) {}
+ * };
+ */
+class Solution {
+public:
+    int widthOfBinaryTree(TreeNode* root) {
+        // we will do a level order bfs traversal and in the queue we will store the node, its index in a level order traversal if child = 2*i+1 and 2*i+2
+        // then we will take the difference of min and max index in a level to get the width
+        int level = 0;
+        unsigned long long minIdxAtLevel = 0;
+        unsigned long long maxIdxAtLevel = 0;
+        unsigned long long width = 1;
+
+        queue<pair< pair<TreeNode*,unsigned long long>,int>> q; //{{node, its idx}, level}
+        q.push({{root, 0}, 0LL});
+        while(!q.empty()){
+            auto [node, N_idx] = q.front().first;
+            int lvl = q.front().second;
+            q.pop();
+            
+            if(lvl == level){ //if we are iterating the same level keep track of the min and max indices
+                minIdxAtLevel = min(minIdxAtLevel, N_idx);
+                maxIdxAtLevel = max(maxIdxAtLevel, N_idx);
+            }
+            else{//we have moved one level down so now calculate the width of prev level and reset the minIdxAtLevel and maxIdxAtLevel values
+                unsigned long long w = maxIdxAtLevel - minIdxAtLevel + 1;
+                width = max(width, w);
+
+                level = lvl;
+                minIdxAtLevel = N_idx;
+                maxIdxAtLevel = N_idx;
+            }
+
+            //pushing all the children
+            if(node->left) q.push({{node->left, 2LL*N_idx}, lvl+1});
+            if(node->right) q.push({{node->right, 2LL*N_idx+1}, lvl+1});
+        }
+        // Calculate width of last level
+        width = max(width, maxIdxAtLevel - minIdxAtLevel + 1);
+        return width;
+    }
+};"
+aba64bff,Print all the Nodes at a distance of K in Binary Tree,https://leetcode.com/problems/all-nodes-distance-k-in-binary-tree/description/,leetcode,medium,Binary Trees,solved,[STRIVER HARD] just make the parent array and populate it then carry out a simple bfs keeping track of the level and considering parents as neighbours,2026-10-02,2026-10-02,https://www.youtube.com/watch?v=i9ORlEy6EsI,"/**
+ * Definition for a binary tree node.
+ * struct TreeNode {
+ *     int val;
+ *     TreeNode *left;
+ *     TreeNode *right;
+ *     TreeNode(int x) : val(x), left(NULL), right(NULL) {}
+ * };
+ */
+class Solution {
+public:
+    vector<int> distanceK(TreeNode* root, TreeNode* target, int k) {
+        //edge case
+        if(k == 0) return {target->val};
+        
+        vector<TreeNode*> parent(501, nullptr); //parent[i] gives parent of node with value i, since values are unique we can use it
+
+        // doing bfs for populating parent array
+        queue<TreeNode*> q;
+        q.push(root);
+        while(!q.empty()){
+            TreeNode* node = q.front();
+            q.pop();
+
+            //push the children marking the parent
+            if(node->left){
+                q.push(node->left);
+                parent[node->left->val] = node;
+            }
+            if(node->right){
+                q.push(node->right);
+                parent[node->right->val] = node;
+            }
+        }
+
+        //now doing bfs to get nodes at distance k
+        vector<bool> vis(501);
+        int dist = 0;
+
+        q.push(target);
+        vis[target->val] = true;
+
+        while(!q.empty()){
+            //process level wise, push all the neighbours of this level into the queue
+            int nodesAtCurrLevel = q.size();
+            for(int i = 0; i<nodesAtCurrLevel; i++){
+                TreeNode* node = q.front();
+                q.pop();
+                if(node->left && !vis[node->left->val]) {
+                    q.push(node->left);
+                    vis[node->left->val] = true;
+                }
+                if(node->right && !vis[node->right->val]){
+                    q.push(node->right);
+                    vis[node->right->val] = true;
+                }
+                if(parent[node->val] && !vis[parent[node->val]->val]){
+                    q.push(parent[node->val]);
+                    vis[parent[node->val]->val] = true;
+                }
+            }
+            dist++;
+            //now the q contains all the nodes that are dist distance from the target
+            if(dist == k) break;
+        }
+
+        //now q contains all the nodes that are k distance away from target
+        vector<int> ans;
+        while(!q.empty()){
+            ans.push_back(q.front()->val);
+            q.pop();
+        }
+        return ans;
     }
 };"
