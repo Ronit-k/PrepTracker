@@ -1699,3 +1699,140 @@ public:
         return getMinCost(1, m - 2, arr, dp); 
     }
 };"
+873e9122,Minimum Cost to Cut the Stick,https://leetcode.com/problems/minimum-cost-to-cut-a-stick/description/,leetcode,hard,DP,solved,[STRIVER HARD] add the boundaries in the cuts array and then sort it then try all the cuts - adding boundaries for calculating length and thus the cost is the main game here,2026-10-01,2026-10-01,https://www.youtube.com/watch?v=xwomavsC86c,"class Solution {
+private:
+    int getMinCost(int start, int end, vector<int>& arr, vector<vector<int>>& dp) {
+        // Base case
+        if (start > end) return 0; // no more cuts to make in this segment
+        
+        // using memoization
+        if (dp[start][end] != -1) return dp[start][end];
+        
+        int minCost = 1e9;
+        
+        // Try all possible partition points (cuts)
+        for (int i = start; i <= end; i++) {
+            // length of current stick + cost of left segment + cost of right segment
+            int cost = arr[end + 1] - arr[start - 1] 
+                     + getMinCost(start, i - 1, arr, dp) 
+                     + getMinCost(i + 1, end, arr, dp);
+                     
+            minCost = min(minCost, cost);
+        }
+        
+        return dp[start][end] = minCost;
+    }
+    
+public:
+    int minCost(int len, vector<int>& cuts) {
+        // we will apply a partition dp solution
+        vector<int> arr;
+        
+        // add boundaries to calculate lengths easily
+        arr.push_back(0); 
+        for (int cut : cuts) arr.push_back(cut);
+        arr.push_back(len);
+        
+        // sorting is mandatory so cuts are in order from left to right
+        sort(arr.begin(), arr.end());
+        
+        int m = arr.size();
+        vector<vector<int>> dp(m, vector<int>(m, -1));
+        
+        // we pass indices of the valid cuts (1 to m-2)
+        return getMinCost(1, m - 2, arr, dp); 
+    }
+};"
+cbd440bf,Evaluate Boolean Expression to True,https://www.geeksforgeeks.org/problems/boolean-parenthesization5610/1,gfg,hard,DP,solved,"[STRIVER HARD] In Boolean Parenthesization, we use interval DP where getWays(start, end, isTrue) stores the number of ways to parenthesize the expression from start to end such that it evaluates to True/False. We try every operator as a partition (i += 2) and recursively calculate left_true, left_false, right_true, and right_false, then combine them according to the operator &, |, or ^. The base case is when only one operand is left, where we directly check T/F. Memoization avoids recalculating the same interval. Time complexity = O(n³), Space = O(n²).",2026-10-01,2026-10-01,https://www.youtube.com/watch?v=MM7fXopgyjw,"class Solution {
+  private:
+    int getWays(int start, int end, bool isTrue, string& s, vector<vector<vector<int>>>& dp){
+        //Base case
+        if (start > end) return 0; //invalid
+        if (start == end) { // only one member
+            if(isTrue && s[start] == 'T') return 1;
+            else if(isTrue && s[start] == 'F') return 0;
+            else if(!isTrue && s[start] == 'F') return 1;
+            else if(!isTrue && s[start] == 'T') return 0;
+        }
+        
+        //using memoization
+        if (dp[start][end][isTrue] != -1) return dp[start][end][isTrue];
+        
+        int ways = 0;
+        //using partitioning the expression into a left and right half
+        for(int i = start+1; i<end; i+=2){// we devide on an operator  s[i] represents an operator
+            int left_true = getWays(start, i-1, 1, s, dp);
+            int left_false = getWays(start, i-1, 0, s, dp);
+            int right_true = getWays(i+1, end, 1, s, dp);
+            int right_false = getWays(i+1, end, 0, s, dp);
+            
+            if (isTrue){//if our aim is to make the expresion true
+                if(s[i] == '&'){
+                    ways += left_true*right_true; //& is T only when T&T
+                }
+                else if(s[i] == '|'){// \ is T only when T|T or F|T or T|F
+                    ways += left_true*right_true +
+                            left_false*right_true +
+                            left_true*right_false;
+                }
+                else if(s[i] == '^'){// ^ is T only when T^F or F^T
+                    ways += left_true*right_false + 
+                            left_false*right_true;
+                }
+            }
+            
+            else{
+                if(s[i] == '&'){
+                    ways += left_false*right_true + //& is F only when F&T or T&F or F&F
+                            left_true*right_false +
+                            left_false*right_false;
+                }
+                else if(s[i] == '|'){// \ is F only when F|F
+                    ways += left_false*right_false;
+                }
+                else if(s[i] == '^'){// ^ is T only when T^T or F^F
+                    ways += left_true*right_true + 
+                            left_false*right_false;
+                }
+            }
+        }
+        return dp[start][end][isTrue] = ways;
+    }
+  public:
+    int countWays(string &s) {
+        int n = s.size();
+        
+        //declaring a 3d dp for this
+        vector<vector<vector<int>>> dp(n, vector<vector<int>>(n, vector<int>(2, -1)));
+        
+        return getWays(0, n-1, 1, s, dp);
+    }
+};"
+f72f31f9,Valid Parenthesis String,https://leetcode.com/problems/valid-parenthesis-string/description/,leetcode,hard,Greedy,solved,"[STRIVER HARD] this is a very nice question the main thing to come up here is that assign scores to '(' ')' and '*' as 1, -1 and {-1,0,1}, then if you use recursion+memo dp to explore all possibilities it'll take O(n^2) TC, so we apply a greedy approach here, we maintain 2 variables to capture the min possible score and the mac possible score while iterating, and if at point in time our maxScore goes -ve that meand there is no way to make the string until there as valid so we return false, and we keep the min score 0 at minimum as there is no point in going -ve",2026-10-02,2026-10-02,https://www.youtube.com/watch?v=cHT6sG_hUZI,"class Solution {
+public:
+    bool checkValidString(string s) {
+        int n = s.size(); 
+        // denote '('->1, ')'->-1 and an '*' can be -1, 0, or 1
+        int minScore = 0;
+        int maxScore = 0;
+        for(char c : s){
+            if(c == '('){
+                minScore++;
+                maxScore++;
+            }
+            else if(c == ')'){
+                minScore--;
+                maxScore--;
+            }
+            else{
+                minScore--;
+                maxScore++;
+            }
+            if(maxScore < 0) return false;
+            minScore = max(0, minScore);
+        }
+        //if 0 lies betwen our score range then it is possible to make this a valid Parenthesis string
+        if(minScore <= 0 && 0 <= maxScore) return true;
+        return false;
+    }
+};"
