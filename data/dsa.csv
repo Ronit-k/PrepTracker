@@ -2480,7 +2480,7 @@ public:
         return ans;
     }
 };"
-5cfe8600,Trapping Rainwater,https://leetcode.com/problems/trapping-rain-water/description/,leetcode,hard,Stacks and Queues,solved,[STRIVER HARD],2026-10-04,2026-10-04,https://www.youtube.com/watch?v=1_5VuquLbXg,"class Solution {
+5cfe8600,Trapping Rainwater,https://leetcode.com/problems/trapping-rain-water/description/,leetcode,hard,Stacks and Queues,solved,"[STRIVER HARD] the idea is to iterate from left and right simultaneously, and we move the pointer with smaller height, if we encounter a block taller than our directional max we just update the directional max if not, then it means that we are at a position from where there is some thing taller behind me and there something even taller in front of me so the water stored just above me will be my directional max minus my height - like this we can accumulate the possible water stored on top of each block",2026-10-04,2026-10-04,https://www.youtube.com/watch?v=1_5VuquLbXg,"class Solution {
 public:
     int trap(vector<int>& arr) {
         int n = arr.size();
@@ -2505,4 +2505,33 @@ public:
         return ans;
     }
 
+};"
+002f3da8,Largest Rectangle in Histogram,https://leetcode.com/problems/largest-rectangle-in-histogram/,leetcode,hard,Stacks and Queues,solved,[STRIVER HARD],2026-10-04,2026-10-05,https://www.youtube.com/watch?v=Bzat9vgD0fs,"class Solution {
+public:
+    int largestRectangleArea(vector<int>& heights) {
+        stack<int> st; // stack to get the next smallest element
+        int n = heights.size();
+        st.push(0);
+        int maxArea = 0;
+
+        for(int i = 0; i<n; i++){
+            while(!st.empty() && heights[i] < heights[st.top()] ){
+                int element = heights[st.top()];
+                st.pop();
+                int nse = i;
+                int pse = (st.empty())? -1 : st.top();
+                maxArea = max(maxArea, element*(nse-pse-1));
+            }
+            st.push(i);
+        }
+        //for all these elementas the next smaller element is -1;
+        while(!st.empty()){
+            int element = heights[st.top()];
+            st.pop();
+            int nse = n;
+            int pse = (st.empty())? -1 : st.top();
+            maxArea = max(maxArea, element*(nse-pse-1));
+        }
+        return maxArea;
+    }
 };"
