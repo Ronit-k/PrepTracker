@@ -2239,7 +2239,7 @@ class Solution {
                 return --minTime;
     }
 };"
-bee083df,Flatten a Binary Tree to Linked List,https://leetcode.com/problems/flatten-binary-tree-to-linked-list/description/,leetcode,medium,Binary Trees,todo,"[STRIVER HARD] Write a recursive function to flatten call it in the order of left-right, then swap the left and right flatten trees",2026-10-02,2026-10-02,https://www.youtube.com/watch?v=sWf7k1x9XR4,"/**
+bee083df,Flatten a Binary Tree to Linked List,https://leetcode.com/problems/flatten-binary-tree-to-linked-list/description/,leetcode,medium,Binary Trees,solved,"[STRIVER HARD] Write a recursive function to flatten call it in the order of left-right, then swap the left and right flatten trees",2026-10-03,2026-10-02,https://www.youtube.com/watch?v=sWf7k1x9XR4,"/**
  * Definition for a binary tree node.
  * struct TreeNode {
  *     int val;
@@ -2275,3 +2275,89 @@ public:
         return;
     }
 };"
+53a2fb2d,Serialise and Deserialise a Binary Tree,https://leetcode.com/problems/serialize-and-deserialize-binary-tree/description/,leetcode,medium,Binary Trees,solved,[STRIVER HARD] Just use any traversal to serialise and deserialise it,2026-10-03,2026-10-03,https://youtu.be/-YbXySKJsX8,"/**
+ * Definition for a binary tree node.
+ * struct TreeNode {
+ *     int val;
+ *     TreeNode *left;
+ *     TreeNode *right;
+ *     TreeNode(int x) : val(x), left(NULL), right(NULL) {}
+ * };
+ */
+class Codec {
+public:
+
+    // Encodes a tree to a single string.
+    string serialize(TreeNode* root) {
+        //lets do level order traversal and store the tree
+        if(!root) return ""N"";
+        string seq = """";
+        queue<TreeNode*> q;
+        q.push(root);
+        while(!q.empty()){
+            int levelSize = q.size();
+            for(int i = 0; i<levelSize; i++){
+                TreeNode* node = q.front();
+                q.pop();
+                
+                if(!node) {seq += ""N,""; continue;}
+                seq += to_string(node->val) + ',';
+                
+                q.push(node->left);
+                q.push(node->right);
+            }
+        }
+        return seq;
+    }
+    
+    TreeNode* getNextElement(int& i, string data){
+        int n = data.size();
+        if(data[i] == 'N') {
+            i++;
+            return nullptr;
+        }
+        
+        string element = """";
+        for(int j = i; j<n; j++){
+            if(data[j] == ','){
+                i = j;
+                break;
+            }
+            element += data[j];
+        }
+        return new TreeNode(stoi(element));
+    }
+    // Decodes your encoded data to tree.
+    TreeNode* deserialize(string data) {
+        if(data == ""N"") return nullptr;
+        
+        int n = data.size();
+        queue<TreeNode*> q;
+        
+        TreeNode* root;
+        
+        for(int i = 0; i<n; i++){
+            if(data[i] == ','){
+                continue;
+            }
+            
+            if(q.empty()){//first element
+                root = getNextElement(i, data);
+                q.push(root);
+            }
+            else{
+                TreeNode* node = q.front();
+                q.pop();
+                node->left = getNextElement(i, data);
+                node->right = getNextElement(++i, data);
+                if(node->left) q.push(node->left);
+                if(node->right) q.push(node->right);
+            }
+        }
+        return root;
+    }
+};
+
+// Your Codec object will be instantiated and called as such:
+// Codec ser, deser;
+// TreeNode* ans = deser.deserialize(ser.serialize(root));"
