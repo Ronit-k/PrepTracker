@@ -1,0 +1,39 @@
+name: Back up PythonAnywhere data
+
+on:
+  workflow_dispatch:
+  # BEGIN GENERATED IST SCHEDULE
+  schedule:
+    - cron: '0 0,6,12,18 * * *'
+      timezone: 'Asia/Kolkata'
+  # END GENERATED IST SCHEDULE
+
+permissions:
+  contents: write
+
+concurrency:
+  group: preptracker-data-backup
+  cancel-in-progress: false
+
+jobs:
+  backup:
+    # Forks and unconfigured repositories do not contact the hosted site.
+    if: vars.PREPTRACKER_SITE_URL != ''
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          ref: ${{ github.event.repository.default_branch }}
+          fetch-depth: 0
+      - name: Verify schedule matches config
+        run: python3 scripts/generate_backup_workflow.py --check
+      - name: Configure commit author
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+      - name: Download and back up changed data
+        env:
+          PREPTRACKER_SITE_URL: ${{ vars.PREPTRACKER_SITE_URL }}
+          PREPTRACKER_BACKUP_TOKEN: ${{ secrets.PREPTRACKER_BACKUP_TOKEN }}
+        run: python3 scripts/backup_from_site.py

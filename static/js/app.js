@@ -5,6 +5,16 @@
 let RANKS = [];
 let XP_MAP = {};
 let DIFFS = [];
+// Calendar dates use IST even when the browser or hosting server is elsewhere.
+function indiaDateKey(instant = new Date()) {
+  const parts = new Intl.DateTimeFormat('en-CA', {
+    timeZone: 'Asia/Kolkata', year: 'numeric', month: '2-digit', day: '2-digit'
+  }).formatToParts(instant);
+  const part = type => parts.find(p => p.type === type).value;
+  return `${part('year')}-${part('month')}-${part('day')}`;
+}
+function indiaToday() { return new Date(indiaDateKey() + 'T00:00:00'); }
+
 const STATUS_CYCLE = ['solved', 'revisit', 'todo'];
 
 const LC_SVG = `<svg width="18" height="18" viewBox="0 0 24 24"><path d="M13.483 0a1.374 1.374 0 0 0-.961.438L7.116 6.226l-3.854 4.126a5.266 5.266 0 0 0-1.209 2.104 5.35 5.35 0 0 0-.125.513 5.527 5.527 0 0 0 .062 2.362 5.83 5.83 0 0 0 .349 1.017 5.938 5.938 0 0 0 1.271 1.818l4.277 4.193.039.038c2.248 2.165 5.852 2.133 8.063-.074l2.396-2.392c.54-.54.54-1.414.003-1.955a1.378 1.378 0 0 0-1.951-.003l-2.396 2.392a3.021 3.021 0 0 1-4.205.038l-.02-.019-4.276-4.193c-.652-.64-.972-1.469-.948-2.263a2.68 2.68 0 0 1 .066-.523 2.545 2.545 0 0 1 .619-1.164L9.13 8.114c1.058-1.134 3.204-1.27 4.43-.278l.257.258a1.381 1.381 0 0 0 1.95-.003c.54-.54.54-1.414-.003-1.955L15.507.97A1.383 1.383 0 0 0 14.545.5 1.374 1.374 0 0 0 13.483 0zm-2.866 12.815a1.38 1.38 0 0 0-1.38 1.382 1.38 1.38 0 0 0 1.38 1.382H18.35a1.38 1.38 0 0 0 1.38-1.382 1.38 1.38 0 0 0-1.38-1.382z" fill="#FFA116"/></svg>`;
@@ -94,7 +104,7 @@ function dpRender() {
   const prevDays = new Date(dpViewYear, dpViewMonth, 0).getDate();
 
   const selected = $('#fDate').value;
-  const today = new Date();
+  const today = indiaToday();
   const todayStr = `${today.getFullYear()}-${String(today.getMonth()+1).padStart(2,'0')}-${String(today.getDate()).padStart(2,'0')}`;
 
   let html = '';
@@ -127,7 +137,7 @@ dpTrigger.addEventListener('click', (e) => {
       dpViewYear = y;
       dpViewMonth = m - 1;
     } else {
-      const now = new Date();
+      const now = indiaToday();
       dpViewYear = now.getFullYear();
       dpViewMonth = now.getMonth();
     }
@@ -178,9 +188,10 @@ document.addEventListener('click', (e) => {
 
 function buildFilterDropdown() {
   const dd = $('#filterDiffDropdown');
-  dd.innerHTML = DIFFS.map(d =>
-    `<div class="cs-option selected" data-value="${d.key}"><span class="cs-check">&#10003;</span><span class="cs-dot" style="background:${d.color}"></span>${d.label}</div>`
-  ).join('');
+  dd.innerHTML = '<div class="filter-help">Select levels to filter</div>' + DIFFS.map(d =>
+    `<button type="button" class="cs-option" aria-pressed="false" data-value="${d.key}"><span class="cs-check" aria-hidden="true">&#10003;</span><span class="cs-dot" style="background:${d.color}"></span>${esc(d.label)}</button>`
+  ).join('') + '<button type="button" class="filter-clear" disabled>Clear selection</button>';
+  updateFilterLabel();
 }
 
 function buildDiffSegment() {
@@ -343,7 +354,7 @@ function renderRankCard(s) {
       </div>
       <div class="rank-stat">
         <span class="rank-stat-val">${s.avg_per_day || 0}</span>
-        <span class="rank-stat-label">Avg Qs/Day</span>
+        <span class="rank-stat-label">Average questions per day</span>
       </div>
     </div>
   `;
@@ -391,7 +402,7 @@ function renderRankCard(s) {
   }, { passive: false });
 }
 
-let hmYear = String(new Date().getFullYear());
+let hmYear = String(indiaToday().getFullYear());
 let hmData = {};
 let hmStats = {};
 
@@ -451,7 +462,7 @@ function renderHmHeader(s) {
       setTimeout(() => { cooldown = false; }, 250);
       const cur = parseInt(hmYear);
       const next = cur + (e.deltaY > 0 ? 1 : -1);
-      if (next < 2020 || next > new Date().getFullYear()) return;
+      if (next < 2020 || next > indiaToday().getFullYear()) return;
       const dir = e.deltaY > 0 ? 1 : -1;
       const label = $('#hmYearLabel');
       if (label) {
@@ -487,7 +498,7 @@ function openYearDial() {
     return;
   }
 
-  const currentYear = new Date().getFullYear();
+  const currentYear = indiaToday().getFullYear();
   const minYear = 2020;
   const years = [];
   for (let y = minYear; y <= currentYear; y++) years.push(y);
@@ -596,7 +607,7 @@ function openYearDial() {
 /* ── Heatmap ───────────────────────────────────────────────────── */
 function renderHeatmap(heatmap, container) {
   const yr = parseInt(hmYear);
-  const today = new Date();
+  const today = indiaToday();
   today.setHours(0, 0, 0, 0);
   const startDate = new Date(yr, 0, 1);
   const endDate = new Date(yr, 11, 31);
@@ -747,11 +758,14 @@ function getFilteredQuestions() {
 }
 
 function updateFilterLabel() {
-  const sel = filterDiff.querySelectorAll('.cs-option.selected').length;
+  const selected = [...filterDiff.querySelectorAll('.cs-option.selected')];
   const label = filterDiff.querySelector('.cs-label');
-  if (sel === 0 || sel === DIFFS.length) label.textContent = 'All Levels';
-  else if (sel === 1) label.textContent = filterDiff.querySelector('.cs-option.selected').textContent.trim();
-  else label.textContent = sel + ' Levels';
+  label.textContent = selected.length === 0 ? 'All Levels' : selected.length === 1
+    ? DIFFS.find(d => d.key === selected[0].dataset.value).label : `${selected.length} Levels`;
+  filterDiff.classList.toggle('filter-active', selected.length > 0);
+  filterDiff.querySelectorAll('.cs-option').forEach(o => o.setAttribute('aria-pressed', o.classList.contains('selected')));
+  const clear = filterDiff.querySelector('.filter-clear');
+  if (clear) clear.disabled = selected.length === 0;
 }
 
 searchInput.addEventListener('input', renderTree);
@@ -760,22 +774,32 @@ initMultiSelect(filterDiff, () => { updateFilterLabel(); renderTree(); });
 function initMultiSelect(el, onChange) {
   const trigger = el.querySelector('.cs-trigger');
   const dropdown = el.querySelector('.cs-dropdown');
+  trigger.setAttribute('aria-expanded', 'false');
+  trigger.setAttribute('aria-controls', dropdown.id);
+  const close = () => { el.classList.remove('open'); trigger.setAttribute('aria-expanded', 'false'); };
   trigger.addEventListener('click', (e) => {
     e.stopPropagation();
     document.querySelectorAll('.custom-select.open').forEach(s => { if (s !== el) s.classList.remove('open'); });
     if (dpPicker) dpPicker.classList.remove('open');
-    el.classList.toggle('open');
+    const opened = el.classList.toggle('open');
+    trigger.setAttribute('aria-expanded', opened);
   });
   dropdown.addEventListener('click', (e) => {
     const opt = e.target.closest('.cs-option');
-    if (!opt) return;
+    if (!opt && !e.target.closest('.filter-clear')) return;
     e.stopPropagation();
-    opt.classList.toggle('selected');
+    if (opt) opt.classList.toggle('selected');
+    // Every level selected is equivalent to no filter; display that consistently.
+    if (!opt || dropdown.querySelectorAll('.cs-option.selected').length === DIFFS.length) {
+      dropdown.querySelectorAll('.cs-option').forEach(o => o.classList.remove('selected'));
+    }
     if (onChange) onChange();
   });
-  document.addEventListener('click', (e) => {
-    if (!el.contains(e.target)) el.classList.remove('open');
+  el.addEventListener('keydown', e => {
+    if (e.key === 'Escape') { close(); trigger.focus(); }
   });
+  document.addEventListener('click', e => { if (!el.contains(e.target)) close(); });
+  el.addEventListener('focusout', e => { if (!el.contains(e.relatedTarget)) close(); });
 }
 
 let openFolders = new Set();
@@ -784,6 +808,8 @@ function toggleFolder(el) {
   const folder = el.closest('.tree-folder');
   const topic = folder.dataset.topic;
   folder.classList.toggle('open');
+  el.setAttribute('aria-expanded', folder.classList.contains('open'));
+  folder.querySelector('.folder-body').inert = !folder.classList.contains('open');
   if (folder.classList.contains('open')) {
     openFolders.add(topic);
   } else {
@@ -795,13 +821,8 @@ window.toggleFolder = toggleFolder;
 function renderTree() {
   const questions = getFilteredQuestions();
 
-  const prevOpen = new Set();
-  treeContainer.querySelectorAll('.tree-folder.open').forEach(f => {
-    prevOpen.add(f.dataset.topic);
-  });
-  if (prevOpen.size) openFolders = prevOpen;
 
-  const grouped = {};
+  const grouped = Object.create(null);
   subjectTopics.forEach(t => { if (!grouped[t]) grouped[t] = []; });
   questions.forEach(q => {
     const topic = q.topic || 'Other';
@@ -824,23 +845,25 @@ function renderTree() {
     html += `
       <div class="tree-folder${openFolders.has(topic) ? ' open' : ''}" data-topic="${esc(topic)}">
         <div class="folder-header">
-          <div class="folder-left" onclick="toggleFolder(this)">
+          <button type="button" class="folder-left" data-topic-action="toggle" aria-expanded="${openFolders.has(topic)}">
             <svg class="folder-chevron" width="12" height="12" viewBox="0 0 12 12" fill="none"><path d="M4.5 2.5l3.5 3.5-3.5 3.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
             <svg class="folder-icon" width="18" height="18" viewBox="0 0 18 18" fill="none"><path d="M2 4.5A1.5 1.5 0 0 1 3.5 3h3.586a1 1 0 0 1 .707.293L9.5 5H14.5A1.5 1.5 0 0 1 16 6.5v7a1.5 1.5 0 0 1-1.5 1.5h-11A1.5 1.5 0 0 1 2 13.5z" stroke="currentColor" stroke-width="1.3"/></svg>
             <span class="folder-name">${esc(topic)}</span>
             <span class="folder-count">${solvedCount}/${qs.length}</span>
-          </div>
+          </button>
           <div class="folder-right">
-            <button class="btn-icon btn-folder-add" onclick="addToFolder('${esc(topic)}')" title="Add question">
+            <button class="btn-icon btn-folder-add" type="button" data-topic-action="add" aria-label="Add question to ${esc(topic)}" title="Add question">
               <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M7 3v8M3 7h8" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
             </button>
-            ${isEmpty ? `<button class="btn-icon" onclick="deleteFolder('${esc(topic)}')" title="Delete empty folder"><svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M3 4h8M5.5 4V3a1 1 0 0 1 1-1h1a1 1 0 0 1 1 1v1M4.5 4l.5 8h4l.5-8" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"/></svg></button>` : ''}
+            <button type="button" class="btn-icon btn-topic-manage" data-topic-action="manage" title="Manage topic" aria-label="Manage ${esc(topic)}">
+              <svg width="18" height="18" viewBox="0 0 18 18" fill="currentColor" aria-hidden="true"><circle cx="4" cy="9" r="1.5"/><circle cx="9" cy="9" r="1.5"/><circle cx="14" cy="9" r="1.5"/></svg>
+            </button>
           </div>
         </div>
         <div class="folder-body-wrap">
-          <div class="folder-body">
+          <div class="folder-body" ${openFolders.has(topic) ? '' : 'inert'}>
             ${qs.map(q => renderFileRow(q)).join('')}
-            ${isEmpty ? '<div class="folder-empty">No questions yet</div>' : ''}
+            ${isEmpty ? `<div class="folder-empty">${subjectQuestions.some(q => q.topic === topic) ? 'No questions match your filters' : 'No questions yet'}</div>` : ''}
           </div>
         </div>
       </div>`;
@@ -889,7 +912,7 @@ function renderFileRow(q) {
 
   const refIcn = q.video_link ? refIcon(q.video_link) : null;
   const refLink = q.video_link && refIcn
-    ? `<a href="${esc(q.video_link)}" target="_blank" rel="noopener" class="file-platform-link" title="Ref material">${refIcn}</a>`
+    ? `<a href="${esc(q.video_link)}" target="_blank" rel="noopener" class="file-platform-link" title="Reference material">${refIcn}</a>`
     : '';
 
   const hasNotes = q.notes && q.notes.trim();
@@ -1138,29 +1161,111 @@ async function onDragEnd(e) {
   dragState = null;
 }
 
-/* ── New folder ────────────────────────────────────────────────── */
+/* ── Topic management ──────────────────────────────────────────── */
 function setupNewFolder() {
-  $('#btnFolder').addEventListener('click', async () => {
-    const name = prompt('Topic name:');
-    if (!name || !name.trim()) return;
-    await api(`/api/${currentSubject}/topics`, 'POST', { name: name.trim() });
-    await loadSubject(currentSubject);
-    showToast(`Folder "${name.trim()}" created`);
+  $('#btnFolder').addEventListener('click', () => openTopicDialog());
+  treeContainer.addEventListener('click', e => {
+    const button = e.target.closest('[data-topic-action]');
+    if (!button) return;
+    const topic = button.closest('.tree-folder').dataset.topic;
+    if (button.dataset.topicAction === 'toggle') toggleFolder(button);
+    if (button.dataset.topicAction === 'add') addToFolder(topic);
+    if (button.dataset.topicAction === 'manage') openTopicDialog(topic);
   });
 }
 
-async function addToFolder(topic) {
-  openModal(null, topic);
-}
+function addToFolder(topic) { openModal(null, topic); }
 window.addToFolder = addToFolder;
 
-async function deleteFolder(topic) {
-  if (!confirm(`Delete empty folder "${topic}"?`)) return;
-  await api(`/api/${currentSubject}/topics`, 'DELETE', { name: topic });
-  await loadSubject(currentSubject);
-  showToast('Folder deleted');
+function openTopicDialog(topic = null) {
+  const subject = currentSubject;
+  const opener = document.activeElement;
+  const count = subjectQuestions.filter(q => q.topic === topic).length;
+  const dialog = document.createElement('dialog');
+  dialog.className = 'topic-dialog';
+  dialog.setAttribute('aria-labelledby', 'topicDialogTitle');
+  dialog.innerHTML = `
+    <form class="topic-form">
+      <div class="topic-dialog-heading"><h2 id="topicDialogTitle">${topic === null ? 'New topic' : 'Manage topic'}</h2>
+        <button type="button" class="btn-icon topic-close" aria-label="Close">✕</button></div>
+      <p class="topic-description">${topic === null ? 'Give your questions a place to belong.' : `${count} question${count === 1 ? '' : 's'} · Renaming keeps your progress and notes.`}</p>
+      <label for="topicName">Topic name</label>
+      <input id="topicName" class="topic-name-input" required maxlength="100" autocomplete="off" value="${esc(topic || '')}">
+      <p class="topic-error" role="alert"></p>
+      <div class="topic-dialog-actions">
+        ${topic !== null ? '<button type="button" class="topic-delete-link">Delete topic…</button>' : ''}
+        <button type="submit" class="btn btn-primary">${topic === null ? 'Create topic' : 'Save name'}</button>
+      </div>
+    </form>`;
+  document.body.appendChild(dialog);
+  let saving = false;
+  dialog.addEventListener('cancel', e => { if (saving) e.preventDefault(); });
+  dialog.addEventListener('close', () => {
+    dialog.remove();
+    if (opener?.isConnected) opener.focus();
+    else $('#btnFolder').focus();
+  });
+  dialog.addEventListener('click', e => {
+    const rect = dialog.getBoundingClientRect();
+    const outside = e.clientX < rect.left || e.clientX > rect.right || e.clientY < rect.top || e.clientY > rect.bottom;
+    if (!saving && (e.target.closest('.topic-close') || (e.target === dialog && outside))) dialog.close();
+  });
+  const perform = async (method, data, message) => {
+    if (saving) return;
+    saving = true;
+    dialog.querySelectorAll('button').forEach(b => b.disabled = true);
+    try {
+      await api(`/api/${subject}/topics`, method, data);
+      if (topic !== null) {
+        const wasOpen = openFolders.delete(topic);
+        if (method === 'PUT' && wasOpen) openFolders.add(data.new_name);
+        // Remove old DOM state before rebuilding renamed folders.
+        treeContainer.querySelectorAll('.tree-folder').forEach(f => {
+          if (f.dataset.topic === topic) f.classList.remove('open');
+        });
+      }
+      dialog.close();
+      await loadSubject(subject);
+      await refreshNavCounts();
+      showToast(message);
+    } catch (error) {
+      const messageEl = dialog.querySelector('.topic-error');
+      if (messageEl) messageEl.textContent = error.message;
+    } finally {
+      saving = false;
+      dialog.querySelectorAll('button').forEach(b => b.disabled = false);
+    }
+  };
+  dialog.querySelector('form').addEventListener('submit', e => {
+    e.preventDefault();
+    const name = dialog.querySelector('#topicName').value.trim();
+    if (!name) { dialog.querySelector('.topic-error').textContent = 'Enter a topic name.'; return; }
+    perform(topic === null ? 'POST' : 'PUT', topic === null ? {name} : {name: topic, new_name: name}, topic === null ? 'Topic created' : 'Topic renamed');
+  });
+  dialog.querySelector('.topic-delete-link')?.addEventListener('click', () => {
+    const target = topic === 'Uncategorized' ? 'Other' : 'Uncategorized';
+    dialog.querySelector('form').innerHTML = `
+      <h2 id="topicDialogTitle">Delete “${esc(topic)}”?</h2>
+      <p class="topic-description">${count ? 'Choose what happens to the questions in this topic.' : 'This topic is empty.'}</p>
+      ${count ? `<label class="topic-delete-choice"><input type="checkbox" id="deleteTopicQuestions"><span>Also delete all ${count} question${count === 1 ? '' : 's'}<small>Includes saved notes, code, and progress.</small></span></label>
+      <p class="topic-delete-detail">Questions will move to “${esc(target)}”.</p>` : ''}
+      <p class="topic-error" role="alert"></p>
+      <div class="topic-dialog-actions"><button type="button" class="btn topic-close">Cancel</button><button type="button" class="btn topic-confirm-delete">Delete topic</button></div>`;
+    const checkbox = dialog.querySelector('#deleteTopicQuestions');
+    checkbox?.addEventListener('change', () => {
+      dialog.querySelector('.topic-delete-detail').textContent = checkbox.checked
+        ? 'These questions and their progress will be permanently deleted.' : `Questions will move to “${target}”.`;
+      dialog.querySelector('.topic-confirm-delete').textContent = checkbox.checked ? 'Delete topic and questions' : 'Delete topic';
+    });
+    dialog.querySelector('.topic-confirm-delete').addEventListener('click', () => {
+      perform('DELETE', {name: topic, question_action: checkbox?.checked ? 'delete' : 'keep'}, 'Topic deleted');
+    });
+    dialog.querySelector('.topic-close').focus();
+  });
+  dialog.showModal();
+  dialog.querySelector('#topicName').focus();
+  if (topic) dialog.querySelector('#topicName').select();
 }
-window.deleteFolder = deleteFolder;
 
 /* ── Modal ──────────────────────────────────────────────────────── */
 function setupModal() {
@@ -1185,7 +1290,7 @@ function openModal(q, presetTopic) {
   $('#fLink').value = q ? q.link : '';
   $('#fDifficulty').value = q ? q.difficulty : 'medium';
   $('#fTopic').value = q ? q.topic : (presetTopic || '');
-  dpSetValue(q ? q.date_solved : new Date().toISOString().slice(0, 10));
+  dpSetValue(q ? q.date_solved : indiaDateKey());
   const statusVal = q ? q.status : 'solved';
   $('#fStatus').value = statusVal;
   const statusColors = { solved: 'var(--green)', revisit: 'var(--orange)', todo: 'var(--text-3)' };
@@ -1229,7 +1334,7 @@ async function saveQuestion() {
     code: $('#fCode').value,
   };
   if (!data.title) return;
-  if (!data.topic) { showToast('Please enter a topic/folder'); return; }
+  if (!data.topic) { showToast('Please enter a topic'); return; }
 
   if (editingId) {
     await api(`/api/${currentSubject}/questions/${editingId}`, 'PUT', data);
@@ -1323,14 +1428,16 @@ async function api(url, method = 'GET', body) {
     opts.body = JSON.stringify(body);
   }
   const res = await fetch(url, opts);
-  return res.json();
+  const data = await res.json();
+  if (!res.ok) throw new Error(data.error || `Request failed (${res.status})`);
+  return data;
 }
 
 function esc(s) {
   if (!s) return '';
   const d = document.createElement('div');
   d.textContent = s;
-  return d.innerHTML;
+  return d.innerHTML.replace(/"/g, '&quot;').replace(/'/g, '&#39;');
 }
 
 function cap(s) {

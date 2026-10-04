@@ -4,3 +4,7 @@ __pycache__/
 .env
 .claude/
 .last_sync
+
+.runtime/
+
+.pytest_cache/

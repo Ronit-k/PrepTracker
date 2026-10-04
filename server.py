@@ -1,23 +1,46 @@
-from flask import Flask, render_template, jsonify, request
+from flask import Flask, render_template, jsonify, request, g
 import csv
 import json
 import os
 import uuid
-import subprocess
-import threading
-import time
+import hmac
+import re
+from pathlib import Path
 from datetime import datetime, timedelta
 from collections import defaultdict
-from config import RANKS, XP_MAP, DIFFICULTIES, SYNC_INTERVAL_HOURS, PORT
+from config import RANKS, XP_MAP, DIFFICULTIES, PORT
+
+from storage import atomic_file, file_lock, RUNTIME_DIR
+from time_utils import today_ist
+from backup import make_snapshot
 
 app = Flask(__name__)
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
-DATA_DIR = os.path.join(BASE_DIR, 'data')
+DATA_DIR = os.environ.get('PREPTRACKER_DATA_DIR', os.path.join(BASE_DIR, 'data'))
 
 CSV_FIELDS = [
     'id', 'title', 'link', 'platform', 'difficulty',
     'topic', 'status', 'notes', 'date_solved', 'date_added', 'video_link', 'code',
 ]
+
+
+@app.before_request
+def lock_data_request():
+    if request.endpoint == 'export_backup':
+        error = authorize_backup()
+        if error:
+            return error
+    if request.path.startswith('/api/') and request.endpoint != 'get_config':
+        lock = file_lock(RUNTIME_DIR / 'data.lock')
+        lock.__enter__()
+        g.data_lock = lock
+
+
+@app.teardown_request
+def unlock_data_request(error):
+    lock = g.pop('data_lock', None)
+    if lock:
+        lock.__exit__(None, None, None)
 
 
 def csv_path(subject):
@@ -38,11 +61,10 @@ def read_all(subject):
 
 
 def write_all(subject, rows):
-    with open(csv_path(subject), 'w', newline='') as f:
+    with atomic_file(csv_path(subject)) as f:
         w = csv.DictWriter(f, fieldnames=CSV_FIELDS)
         w.writeheader()
         w.writerows(rows)
-    check_and_sync()
 
 
 def calc_stats(questions):
@@ -73,7 +95,7 @@ def calc_stats(questions):
     best_streak = 0
     if dates:
         date_set = set(dates)
-        today = datetime.now().date()
+        today = today_ist()
         check = today
         while check.isoformat() in date_set:
             current_streak += 1
@@ -100,7 +122,7 @@ def calc_stats(questions):
         if q.get('date_solved'):
             heatmap[q['date_solved']] += 1
 
-    today_str = datetime.now().date().isoformat()
+    today_str = today_ist().isoformat()
     today_count = sum(1 for q in solved if q.get('date_solved') == today_str)
 
     topics = defaultdict(int)
@@ -110,7 +132,7 @@ def calc_stats(questions):
     avg_per_day = 0
     if dates:
         first_date = datetime.fromisoformat(dates[0]).date()
-        days_span = (datetime.now().date() - first_date).days + 1
+        days_span = (today_ist() - first_date).days + 1
         if days_span > 0:
             avg_per_day = round(len(solved) / days_span, 2)
 
@@ -143,6 +165,8 @@ def index():
 @app.route('/api/config')
 def get_config():
     return jsonify({
+        'timezone': 'Asia/Kolkata',
+        'today': today_ist().isoformat(),
         'difficulties': [
             {'key': k, 'label': l, 'xp': xp, 'color': c, 'bg': bg}
             for k, l, xp, c, bg in DIFFICULTIES
@@ -165,11 +189,13 @@ def add_question(subject):
     rows = read_all(subject)
     row = {f: '' for f in CSV_FIELDS}
     row['id'] = uuid.uuid4().hex[:8]
-    row['date_added'] = datetime.now().date().isoformat()
+    row['date_added'] = today_ist().isoformat()
     for k in ('title', 'link', 'platform', 'difficulty', 'topic', 'status', 'notes', 'date_solved', 'video_link', 'code'):
         if k in d:
             row[k] = d[k]
-    row.setdefault('status', 'solved')
+    row['status'] = row['status'] or 'solved'
+    if not row['date_solved'] and row['status'] in ('solved', 'revisit'):
+        row['date_solved'] = today_ist().isoformat()
     rows.append(row)
     write_all(subject, rows)
     return jsonify(row), 201
@@ -221,9 +247,8 @@ def read_topics(subject):
 
 
 def write_topics(subject, topics):
-    with open(topics_path(subject), 'w') as f:
+    with atomic_file(topics_path(subject)) as f:
         json.dump(topics, f)
-    check_and_sync()
 
 
 @app.route('/api/<subject>/topics')
@@ -237,22 +262,60 @@ def get_topics(subject):
 @app.route('/api/<subject>/topics', methods=['POST'])
 def add_topic(subject):
     name = (request.json or {}).get('name', '').strip()
-    if not name:
-        return jsonify({'error': 'name required'}), 400
-    topics = read_topics(subject)
-    if name not in topics:
-        topics.append(name)
-        write_topics(subject, topics)
+    if not name or len(name) > 100:
+        return jsonify({'error': 'Use a topic name between 1 and 100 characters.'}), 400
+    topics = list(dict.fromkeys(read_topics(subject) + [r['topic'] for r in read_all(subject) if r.get('topic')]))
+    if any(t.casefold() == name.casefold() for t in topics):
+        return jsonify({'error': 'A topic with that name already exists.'}), 409
+    topics.append(name)
+    write_topics(subject, topics)
     return jsonify({'ok': True}), 201
+
+
+@app.route('/api/<subject>/topics', methods=['PUT'])
+def rename_topic(subject):
+    d = request.get_json() or {}
+    name, new_name = d.get('name', '').strip(), d.get('new_name', '').strip()
+    if not new_name or len(new_name) > 100:
+        return jsonify({'error': 'Use a topic name between 1 and 100 characters.'}), 400
+    rows = read_all(subject)
+    topics = list(dict.fromkeys(read_topics(subject) + [r['topic'] for r in rows if r.get('topic')]))
+    if name not in topics:
+        return jsonify({'error': 'Topic no longer exists.'}), 404
+    if new_name != name and any(t.casefold() == new_name.casefold() for t in topics if t != name):
+        return jsonify({'error': 'A topic with that name already exists.'}), 409
+    for row in rows:
+        if row.get('topic') == name:
+            row['topic'] = new_name
+    write_all(subject, rows)
+    write_topics(subject, [new_name if t == name else t for t in topics])
+    return jsonify({'ok': True})
 
 
 @app.route('/api/<subject>/topics', methods=['DELETE'])
 def delete_topic(subject):
-    name = (request.json or {}).get('name', '').strip()
-    topics = read_topics(subject)
+    d = request.get_json() or {}
+    name = d.get('name', '').strip()
+    rows = read_all(subject)
+    topics = list(dict.fromkeys(read_topics(subject) + [r['topic'] for r in rows if r.get('topic')]))
+    if name not in topics:
+        return jsonify({'error': 'Topic no longer exists.'}), 404
+    affected = [r for r in rows if r.get('topic') == name]
+    mode = d.get('question_action')
+    if affected and mode not in ('keep', 'delete'):
+        return jsonify({'error': 'Choose whether to keep or delete the questions.'}), 400
     topics = [t for t in topics if t != name]
+    if affected and mode == 'keep':
+        target = 'Uncategorized' if name != 'Uncategorized' else 'Other'
+        for row in affected:
+            row['topic'] = target
+        if target not in topics:
+            topics.append(target)
+    elif affected:
+        rows = [r for r in rows if r.get('topic') != name]
+    write_all(subject, rows)
     write_topics(subject, topics)
-    return jsonify({'ok': True})
+    return jsonify({'ok': True, 'affected': len(affected)})
 
 
 @app.route('/api/<subject>/stats')
@@ -284,70 +347,41 @@ def dashboard():
     return jsonify(calc_stats(all_questions))
 
 
-def git_push_data():
+def authorize_backup():
+    token = os.environ.get('PREPTRACKER_BACKUP_TOKEN', '')
+    if not token:
+        token_path = Path(os.environ.get('PREPTRACKER_BACKUP_TOKEN_FILE',
+                                        str(Path.home() / '.config/preptracker/backup-token')))
+        try:
+            token = token_path.read_text().strip()
+        except OSError:
+            token = ''
+    if not re.fullmatch(r'[A-Za-z0-9_-]{32,256}', token):
+        return jsonify({'error': 'Backup token has not been configured.'}), 503
+    header = request.headers.get('Authorization', '')
+    supplied = header[7:] if header.startswith('Bearer ') else ''
+    if not hmac.compare_digest(supplied.encode('utf-8'), token.encode('utf-8')):
+        return jsonify({'error': 'Unauthorized'}), 401
+    return None
+
+
+@app.after_request
+def prevent_backup_caching(response):
+    if request.endpoint == 'export_backup':
+        response.headers['Cache-Control'] = 'no-store, private'
+        response.headers['Vary'] = 'Authorization'
+        response.headers['X-Content-Type-Options'] = 'nosniff'
+    return response
+
+
+@app.route('/api/backup', methods=['GET'])
+def export_backup():
+    """The Actions runner pulls a consistent snapshot; this route never runs Git."""
     try:
-        subprocess.run(['git', 'add', 'data/'], cwd=BASE_DIR,
-                       capture_output=True, timeout=10)
-        result = subprocess.run(
-            ['git', 'status', '--porcelain', 'data/'], cwd=BASE_DIR,
-            capture_output=True, text=True, timeout=10)
-        if not result.stdout.strip():
-            return
-        subprocess.run(
-            ['git', 'commit', '-m', f'data: sync {datetime.now().strftime("%Y-%m-%d %H:%M")}'],
-            cwd=BASE_DIR, capture_output=True, timeout=10)
-        subprocess.run(['git', 'push'], cwd=BASE_DIR,
-                       capture_output=True, timeout=30)
-    except Exception:
-        pass
-
-
-_sync_lock = threading.Lock()
-
-
-def check_and_sync():
-    """Sync to git if enough time has passed since last sync."""
-    try:
-        marker = os.path.join(BASE_DIR, '.last_sync')
-        now = time.time()
-        if os.path.exists(marker):
-            if now - os.path.getmtime(marker) < SYNC_INTERVAL_HOURS * 3600:
-                return
-        with _sync_lock:
-            if os.path.exists(marker):
-                if time.time() - os.path.getmtime(marker) < SYNC_INTERVAL_HOURS * 3600:
-                    return
-            with open(marker, 'w') as f:
-                f.write('')
-        threading.Thread(target=git_push_data, daemon=True).start()
-    except Exception:
-        pass
-
-
-threading.Thread(target=git_push_data, daemon=True).start()
-
-
-@app.route('/api/deploy', methods=['POST'])
-def deploy():
-    try:
-        subprocess.run(['git', 'stash'], cwd=BASE_DIR,
-                       capture_output=True, timeout=10)
-        r = subprocess.run(['git', 'pull', '--rebase'], cwd=BASE_DIR,
-                           capture_output=True, text=True, timeout=30)
-        subprocess.run(['git', 'stash', 'pop'], cwd=BASE_DIR,
-                       capture_output=True, timeout=10)
-        return jsonify({'ok': True, 'output': r.stdout.strip()})
-    except Exception as e:
-        return jsonify({'ok': False, 'error': str(e)}), 500
-
-
-@app.route('/api/sync', methods=['POST'])
-def sync():
-    try:
-        git_push_data()
-        return jsonify({'ok': True})
-    except Exception as e:
-        return jsonify({'ok': False, 'error': str(e)}), 500
+        return jsonify(make_snapshot(DATA_DIR))
+    except (ValueError, OSError) as error:
+        app.logger.error('Backup snapshot failed: %s', error)
+        return jsonify({'error': 'Unable to create a complete data snapshot; check the server error log.'}), 503
 
 
 if __name__ == '__main__':

@@ -1,4 +1,7 @@
-SYNC_INTERVAL_HOURS = 6
+# Daily GitHub sync times in India (24-hour HH:MM). [] disables scheduled sync.
+# After editing, run: python scripts/generate_backup_workflow.py
+# Commit config.py and the generated workflow together; GitHub runs the backups.
+GIT_SYNC_TIMES_IST = ["00:00", "06:00", "12:00", "18:00"]
 
 PORT = 6969
 
