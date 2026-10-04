@@ -2452,3 +2452,57 @@ class Solution {
         return get<0>(getLargestaBst(root)); 
     }
 };"
+9b3fdc50,Sliding Window Maximum,https://leetcode.com/problems/sliding-window-maximum/,leetcode,hard,Stacks and Queues,solved,"[STRIVER HARD] So the algorithm is, we maintain a monototnic decreasing stack rather a dequeue of indices whose corresponding numbers are in decreasing order,
+so if we find that current number is greater than the back or last inserted element of the dequeue so we pop till we find an element greater and insert the current element there, if the current element is smaller we just push back it
+and after pushing back we see the front element of the queue and take is the max of the current window, and also we maintain the size of the dequeue to k by popping from the front before performing any action in the loop",2026-10-04,2026-10-04,https://www.youtube.com/watch?v=NwBvene4Imo,"class Solution {
+public:
+    vector<int> maxSlidingWindow(vector<int>& nums, int k) {
+        deque<int> dq; // stores indices
+        vector<int> ans;
+        int n = nums.size();
+
+        for(int i = 0; i < n; i++) {
+
+            // Remove elements outside current window
+            while(!dq.empty() && dq.front() <= i-k)
+                dq.pop_front();
+
+            // Remove elements smaller than current element
+            while(!dq.empty() && nums[dq.back()] < nums[i])
+                dq.pop_back();
+
+            dq.push_back(i);
+
+            if(i+1 >= k)
+                ans.push_back(nums[dq.front()]);
+        }
+
+        return ans;
+    }
+};"
+5cfe8600,Trapping Rainwater,https://leetcode.com/problems/trapping-rain-water/description/,leetcode,hard,Stacks and Queues,solved,[STRIVER HARD],2026-10-04,2026-10-04,https://www.youtube.com/watch?v=1_5VuquLbXg,"class Solution {
+public:
+    int trap(vector<int>& arr) {
+        int n = arr.size();
+        int l = 0;
+        int r = n - 1;
+        int l_max = arr[l];
+        int r_max = arr[r];
+        int ans = 0;
+
+        while(l<r){
+            if (arr[l]<=arr[r]){
+                if (arr[l] > l_max) l_max = arr[l];
+                else ans += l_max-arr[l];
+                l++;
+            }
+            else if (arr[r] < arr[l]){
+                if (arr[r] > r_max) r_max = arr[r];
+                else ans += r_max-arr[r];
+                r--;
+            }
+        }
+        return ans;
+    }
+
+};"
