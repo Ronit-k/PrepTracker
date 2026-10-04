@@ -2361,3 +2361,94 @@ public:
 // Your Codec object will be instantiated and called as such:
 // Codec ser, deser;
 // TreeNode* ans = deser.deserialize(ser.serialize(root));"
+739e973b,Recover Binary Search Tree with 2 Nodes swapped,https://leetcode.com/problems/recover-binary-search-tree/,leetcode,medium,Binary Search Tree,solved,"[STRIVER HARD] In O(n) S.C. this can be done by getting the inorder and then sorting it and seeing the violations, optimally to do it in O(1) S.C. we have to detect the violations on the fly and swap it when the inorder traversal ends;",2026-10-04,2026-10-04,https://www.youtube.com/watch?v=ZWGW7FminDM,"/**
+ * Definition for a binary tree node.
+ * struct TreeNode {
+ *     int val;
+ *     TreeNode *left;
+ *     TreeNode *right;
+ *     TreeNode() : val(0), left(nullptr), right(nullptr) {}
+ *     TreeNode(int x) : val(x), left(nullptr), right(nullptr) {}
+ *     TreeNode(int x, TreeNode *left, TreeNode *right) : val(x), left(left), right(right) {}
+ * };
+ */
+class Solution {
+TreeNode* violation1;
+TreeNode* violation2;
+TreeNode* prevNode;
+TreeNode* root;
+int violations;
+public:
+    //constructor to intialize the violatioins
+    Solution() {
+        violation1 = nullptr;
+        violation2 = nullptr;
+        prevNode = nullptr;
+        violations = 0;
+        root = nullptr;
+    }
+    void recoverTree(TreeNode* node) {
+        if(!node) return;
+        
+        if(!root) root = node;
+        
+        recoverTree(node->left);
+        
+        if(prevNode && prevNode->val > node->val){
+            if(violations == 0) violation1 = prevNode;
+                
+            violation2 = node;
+            violations++;   
+        }
+        prevNode = node;
+        
+        recoverTree(node->right);
+        
+        //swat in the 1st call
+        if(node == root && violation1 && violation2){
+            swap(violation1->val, violation2->val);
+        }
+    }
+};"
+2ffcc262,Largest BST in Binary Tree,https://www.geeksforgeeks.org/problems/largest-bst/1,gfg,hard,Binary Search Tree,solved,[STRIVER HARD] main thing is we return the max bst sizr till now in this subtree and its min and max node values then we recursively see if we can make a BST with the current node and update and return the values appropriately,2026-10-04,2026-10-04,https://www.youtube.com/watch?v=X0oXMdtUDwo,"/* Structure of a Binary Search Tree node
+class Node {
+public:
+    int data;
+    Node *left, *right;
+    Node(int val) {
+        data = val;
+        left = right = nullptr;
+    }
+};*/
+
+class Solution {
+  private:
+    //this function recursively returns {largest BST size, minValue, maxValue}  of that sub tree
+    tuple<int,int,int> getLargestaBst(Node* node){
+        if(!node) return {0, INT_MAX, INT_MIN};
+        
+        auto [leftBST, leftMin, leftMax] = getLargestaBst(node->left);
+        auto [rightBST, rightMin, rightMax] = getLargestaBst(node->right);
+        
+        int nodeBST, nodeMin, nodeMax;
+        if(leftMax < node->data && node->data < rightMin){ //condition to form a BST using this node
+            nodeBST = 1 + leftBST + rightBST;
+            nodeMin = (leftMin != INT_MAX)? leftMin : node->data;
+            nodeMax = (rightMax != INT_MIN)? rightMax : node->data;
+        }
+        else{
+            //if we cannot form the bt using this node then return the max size of bst till now
+            //and since we look for node->data > max and < min, so put max = int_max and min = int_min
+            //so that nothing can be compared with these values when returned;
+            nodeBST = max(leftBST, rightBST);
+            nodeMin = INT_MIN;
+            nodeMax = INT_MAX;
+        }
+        return {nodeBST, nodeMin, nodeMax};
+    }
+  public:
+    int largestBst(Node *root) {
+        // code here
+        return get<0>(getLargestaBst(root)); 
+    }
+};"
