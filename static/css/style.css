@@ -1658,7 +1658,6 @@ a:hover { text-decoration: underline; }
 
 /* Topic management and multi-select: native focus, restrained glass surfaces. */
 .folder-left { border: 0; background: none; color: inherit; font: inherit; text-align: left; padding: 0; }
-.folder-right .btn-icon { min-width: 36px; min-height: 36px; }
 .folder-left:focus-visible, .btn-topic-manage:focus-visible, .cs-option:focus-visible {
   outline: 2px solid var(--blue); outline-offset: 3px; border-radius: 6px;
 }
@@ -1688,7 +1687,7 @@ a:hover { text-decoration: underline; }
 .topic-delete-choice small { display: block; color: var(--text-2); margin-top: .3rem; line-height: 1.5; }
 .topic-dialog button:disabled { opacity: .45; cursor: wait; }
 @keyframes topic-appear { from { opacity: 0; transform: translateY(8px) scale(.98); } to { opacity: 1; transform: none; } }
-@media (pointer: coarse) { .folder-right .btn-icon { min-width: 44px; min-height: 44px; } #filterDiff .cs-option { min-height: 44px; } }
+@media (pointer: coarse) { #filterDiff .cs-option { min-height: 44px; } }
 @media (prefers-reduced-motion: reduce) { .topic-dialog[open] { animation: none; } }
 .topic-dialog .btn { border-radius: 10px; padding: .65rem 1rem; font: inherit; font-size: .85rem; font-weight: 500; cursor: pointer; transition: background .15s, transform .15s; }
 .topic-dialog .btn.topic-close { color: var(--text-1); background: rgba(255,255,255,.07); border: 1px solid var(--border); }
