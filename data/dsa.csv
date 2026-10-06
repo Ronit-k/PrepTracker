@@ -2506,32 +2506,103 @@ public:
     }
 
 };"
-002f3da8,Largest Rectangle in Histogram,https://leetcode.com/problems/largest-rectangle-in-histogram/,leetcode,hard,Stacks and Queues,solved,[STRIVER HARD],2026-10-04,2026-10-05,https://www.youtube.com/watch?v=Bzat9vgD0fs,"class Solution {
+002f3da8,Largest Rectangle in Histogram,https://leetcode.com/problems/largest-rectangle-in-histogram/,leetcode,hard,Stacks and Queues,solved,"[STRIVER HARD] 
+
+Some concept in general:
+The Concept of Monotonic stack
+We maintain some order while pushing the elements in the stack and if an element violates that order we pop till the point where pushing that element does not break the order
+
+To get next smaller element -> inc. Stack - traverse from right to left
+To get next Greater element -> dec. Stack - traverse from right to left
+Similarly for previous smaller and greater just the traversing direction changes
+
+In this question the max area that a bock can occupy is its 
+height x (indexOfNextSmallerElement - indexOfPrevSmallerElement - 1)
+now to optimise the code we calculate the nse and pse on the demostrated in the code below, its highly encouraged to go through the video once if you cannot understand the code below",2026-10-04,2026-10-05,https://www.youtube.com/watch?v=Bzat9vgD0fs,"class Solution {
 public:
     int largestRectangleArea(vector<int>& heights) {
-        stack<int> st; // stack to get the next smallest element
         int n = heights.size();
-        st.push(0);
-        int maxArea = 0;
+        int idxPrevSmallEle, idxNextSmallEle, largestRect = 0;
+
+        //this stack will give us prev small element for every elemnt so we need to maintain it in an inc order
+        stack<int> st;
+        //and while popping from this stack we would have founded the next smaller element for st.top()
 
         for(int i = 0; i<n; i++){
-            while(!st.empty() && heights[i] < heights[st.top()] ){
-                int element = heights[st.top()];
+            while(!st.empty() && heights[i] < heights[st.top()]){
+                int idxEle = st.top();
                 st.pop();
-                int nse = i;
-                int pse = (st.empty())? -1 : st.top();
-                maxArea = max(maxArea, element*(nse-pse-1));
+                //if heights[i] < heights[st.top] => we found next smaller element for st.top() 
+                //and just behind it, in the  stack is its prev smaller element
+                idxPrevSmallEle = st.empty()? -1:st.top();
+                idxNextSmallEle = i;
+                largestRect = max(largestRect, heights[idxEle]*(idxNextSmallEle - idxPrevSmallEle - 1));
             }
             st.push(i);
         }
-        //for all these elementas the next smaller element is -1;
+
+        // now the leftover elements in the stack do not have a next smaller element so idxNextSmallEle = n
         while(!st.empty()){
-            int element = heights[st.top()];
+            int idxEle = st.top();
             st.pop();
-            int nse = n;
-            int pse = (st.empty())? -1 : st.top();
-            maxArea = max(maxArea, element*(nse-pse-1));
+            idxPrevSmallEle = st.empty()? -1:st.top();
+            idxNextSmallEle = n;
+            largestRect = max(largestRect, heights[idxEle]*(idxNextSmallEle - idxPrevSmallEle - 1));
         }
-        return maxArea;
+        return largestRect;
     }
 };"
+a2aaa46d,Maximal Rectangle,https://leetcode.com/problems/maximal-rectangle/,leetcode,hard,Stacks and Queues,solved,[STRIVER HARD] same as Largest Rectangle ion Histogram code but here you need to form the heights array column wise then calculate the max area rectangle for it,2026-10-05,2026-10-06,https://www.youtube.com/watch?v=tOylVCugy9k,"class Solution {
+public:
+    int largestRectangleArea(vector<int>& heights) {
+        int n = heights.size();
+        int idxPrevSmallEle, idxNextSmallEle, largestRect = 0;
+
+        //this stack will give us prev small element for every elemnt so we need to maintain it in an inc order
+        stack<int> st;
+        //and while popping from this stack we would have founded the next smaller element for st.top()
+
+        for(int i = 0; i<n; i++){
+            while(!st.empty() && heights[i] < heights[st.top()]){
+                int idxEle = st.top();
+                st.pop();
+                //if heights[i] < heights[st.top] => we found next smaller element for st.top() 
+                //and just behind it, in the  stack is its prev smaller element
+                idxPrevSmallEle = st.empty()? -1:st.top();
+                idxNextSmallEle = i;
+                largestRect = max(largestRect, heights[idxEle]*(idxNextSmallEle - idxPrevSmallEle - 1));
+            }
+            st.push(i);
+        }
+
+        // now the leftover elements in the stack do not have a next smaller element so idxNextSmallEle = n
+        while(!st.empty()){
+            int idxEle = st.top();
+            st.pop();
+            idxPrevSmallEle = st.empty()? -1:st.top();
+            idxNextSmallEle = n;
+            largestRect = max(largestRect, heights[idxEle]*(idxNextSmallEle - idxPrevSmallEle - 1));
+        }
+        return largestRect;
+    }
+
+
+    int maximalRectangle(vector<vector<char>>& matrix) {
+        int m = matrix.size();
+        int n = matrix[0].size();
+        vector<int> heights(n, 0);
+        
+        int maxRectArea = 0;
+        //populating the heights array row wise
+        for(int i = 0; i<m; i++){
+            for(int j = 0; j<n; j++){
+                if(matrix[i][j] == '1') heights[j]++;
+                else heights[j] = 0;
+            }
+            maxRectArea = max(maxRectArea, largestRectangleArea(heights));
+        }
+        return maxRectArea;
+    }
+};"
+c67d9b71,Implement LRU Cache,https://leetcode.com/problems/lru-cache/description/,leetcode,medium,Stacks and Queues,revisit,[STRIVER HARD],2026-10-05,2026-10-06,https://www.youtube.com/watch?v=z9bJUPxzFOw,
+6ce42126,Imlement LFU Cache,https://leetcode.com/problems/lfu-cache/description/,leetcode,hard,Stacks and Queues,todo,[STRIVER HARD],2026-10-05,2026-10-06,https://www.youtube.com/watch?v=0PSB9y8ehbk&list=PLgUwDviBIf0p4ozDR_kJJkONnb1wdx2Ma&index=80,
