@@ -2604,5 +2604,213 @@ public:
         return maxRectArea;
     }
 };"
-c67d9b71,Implement LRU Cache,https://leetcode.com/problems/lru-cache/description/,leetcode,medium,Stacks and Queues,revisit,[STRIVER HARD],2026-10-05,2026-10-06,https://www.youtube.com/watch?v=z9bJUPxzFOw,
-6ce42126,Imlement LFU Cache,https://leetcode.com/problems/lfu-cache/description/,leetcode,hard,Stacks and Queues,todo,[STRIVER HARD],2026-10-05,2026-10-06,https://www.youtube.com/watch?v=0PSB9y8ehbk&list=PLgUwDviBIf0p4ozDR_kJJkONnb1wdx2Ma&index=80,
+c67d9b71,Implement LRU Cache,https://leetcode.com/problems/lru-cache/description/,leetcode,hard,Stacks and Queues,solved,"[STRIVER HARD] This is just a Implementation heavy problem
+we need to use a doubly linked list(DLL) to maintain the LRU property and a map of(key, node) to fetch from DLL in O(1). the most recently used element will be right after head for this implement a InsertAfterHead function and to delete the element if capacity reaches above k we need a Delete funtion, rest is pretty clear form the code",2026-10-05,2026-10-06,https://www.youtube.com/watch?v=z9bJUPxzFOw,"// no use of freq in LRU, it'll be used in LFU
+struct Node { 
+    int key, val, freq; 
+    Node* prev;
+    Node* next; 
+
+    Node(int k, int v, int f) : key(k), val(v), freq(f), prev(nullptr), next(nullptr) {} // constructore using initializer list
+    Node(int k, int v) : Node(k,v,0) {} 
+};
+
+class LRUCache {
+public:
+    unordered_map<int, Node*> mp; // map for O(1) lookup and deletion of values {key, node}
+    Node *head, *tail; // defining head and tail of a doubly linked list
+    int k;
+
+    void Delete(Node* node){
+        //remove from the map
+        mp.erase(node->key);
+
+        //remove from the DLL
+        Node* prevNode = node->prev;
+        Node* nextNode = node->next;
+        prevNode->next = nextNode;
+        nextNode->prev = prevNode;
+
+        //clean the node too
+        node->prev = node->next = nullptr;
+        return;
+    }
+
+    void InsertAfterHead(Node* node){
+        //added for LFU
+        mp[node->key] = node;
+
+        //remove from the DLL if it is in DLL
+        if (node->prev && node->next){
+            Node* prevNode = node->prev;
+            Node* nextNode = node->next;
+            prevNode->next = nextNode;
+            nextNode->prev = prevNode;
+        }
+
+        //insert after head, juggling with the pointers
+        node->next = head->next;
+        head->next->prev = node;
+        head->next = node;
+        node->prev = head;
+
+        return;
+    }
+public:
+    LRUCache(int capacity) {
+        k = capacity;
+        head = new Node(-1, -1);
+        tail = new Node(-1, -1);
+        head->next = tail;
+        tail->prev = head;
+    }
+    int get(int key) {
+        if(mp.find(key) == mp.end()) return -1; //not a valid value
+
+        // if its call so we have to push this node just after head as this is the most recently used one
+        InsertAfterHead(mp[key]);
+        return mp[key]->val;
+}
+    void put(int key, int value) {
+        if(mp.find(key) == mp.end()) {
+            if(mp.size() == k) Delete(tail->prev);
+
+            Node* node = new Node(key, value);
+            InsertAfterHead(node);
+        }
+        else {
+            mp[key]->val = value;
+            InsertAfterHead(mp[key]);
+        }
+    }
+};"
+6ce42126,Imlement LFU Cache,https://leetcode.com/problems/lfu-cache/description/,leetcode,gaand_faad,Stacks and Queues,solved,"[STRIVER HARD] main points are : 
+now we have to maintain a LRU for every frequency and maintain it and Node now stores frequency too
+so we define a increaseFrequency function that removes the node from the curr LRU, ince the freq, and puts it in the LRU of the higher freq - WHILE INSERTTING AFTER THE HEAD IN THE HIGHER FREQ LRU< DONT FORGET TO ALSO INSERT IT IN THE MAP OF THE HIGHER FREQ LRU, this handled by the insertAfterHead function here, rest is pretty self e xplanotory if you read the code",2026-10-05,2026-10-06,https://www.youtube.com/watch?v=0PSB9y8ehbk&list=PLgUwDviBIf0p4ozDR_kJJkONnb1wdx2Ma&index=80,"//LFU is implemented by having a list {freq,LRU} i.e. LRUs for every frequency
+struct Node { 
+    int key, val, freq; 
+    Node* prev;
+    Node* next; 
+
+    Node(int k, int v, int f) : key(k), val(v), freq(f), prev(nullptr), next(nullptr) {} // constructore using initializer list
+    Node(int k, int v) : Node(k,v,0) {} 
+};
+
+class LRUCache {
+public:
+    unordered_map<int, Node*> mp; // map for O(1) lookup and deletion of values {key, node}
+    Node *head, *tail; // defining head and tail of a doubly linked list
+    int k;
+
+    void Delete(Node* node){
+        //remove from the map
+        mp.erase(node->key);
+
+        //remove from the DLL
+        Node* prevNode = node->prev;
+        Node* nextNode = node->next;
+        prevNode->next = nextNode;
+        nextNode->prev = prevNode;
+
+        //clean the node too
+        node->prev = node->next = nullptr;
+        return;
+    }
+
+    void InsertAfterHead(Node* node){
+        //added for LFU
+        mp[node->key] = node;
+
+        //remove from the DLL if it is in DLL
+        if (node->prev && node->next){
+            Node* prevNode = node->prev;
+            Node* nextNode = node->next;
+            prevNode->next = nextNode;
+            nextNode->prev = prevNode;
+        }
+
+        //insert after head, juggling with the pointers
+        node->next = head->next;
+        head->next->prev = node;
+        head->next = node;
+        node->prev = head;
+
+        return;
+    }
+    LRUCache(int capacity) {
+        k = capacity;
+        head = new Node(-1, -1);
+        tail = new Node(-1, -1);
+        head->next = tail;
+        tail->prev = head;
+    }
+
+};
+
+class LFUCache {
+private: 
+    unordered_map<int, LRUCache*> freqList; //stores {freq, LRU}
+    unordered_map<int, Node*> keyList; //stores {key, node} total nodes in the LFU to maintain the capacity
+    int minFreq;
+    int k;
+
+    void IncreaseFrequency(Node* node){
+        //remove from old LRU
+        freqList[node->freq]->Delete(node);
+        //inc the node->freq and minFreq if needed;
+        if(freqList[node->freq]->mp.empty() && node->freq == minFreq) minFreq++;
+        node->freq++;
+        // insert the node into new higher freq
+        if(freqList.find(node->freq) == freqList.end()) freqList[node->freq] = new LRUCache(k);
+        freqList[node->freq]->InsertAfterHead(node);
+    }
+public:
+    LFUCache(int capacity) {
+        k = capacity;
+        minFreq = 0;
+    }
+    
+    int get(int key) {
+        if(keyList.find(key) == keyList.end()) return -1;
+
+        //this node has been accessed so it needs to get a higher frequency
+        IncreaseFrequency(keyList[key]);
+        return keyList[key]->val;
+    }
+    
+    void put(int key, int value) {
+        Node* node;
+        // if the key is new, we will make a node out of it and insert it in the freqList[1]
+        if(keyList.find(key) == keyList.end()){
+            // if we are out of size then delete the LFU's LRU
+            if(keyList.size() == k) {
+                keyList.erase(freqList[minFreq]->tail->prev->key);
+                freqList[minFreq]->Delete(freqList[minFreq]->tail->prev);
+            }
+
+            //make a new node
+            node = new Node(key, value, 1);
+            minFreq = 1;
+            //add it to the keylist
+            keyList[key] = node;
+            //add it to the frerqList
+            if(freqList.find(node->freq) == freqList.end()) freqList[node->freq] = new LRUCache(k);
+            freqList[node->freq]->InsertAfterHead(node);
+        }
+        //if the node is already present in the keylist
+        else {
+            // update its value
+            keyList[key]->val = value;
+            //this node has been accessed so it needs to get a higher frequency
+            IncreaseFrequency(keyList[key]);
+        }
+        return;
+    }
+};
+
+/**
+ * Your LFUCache object will be instantiated and called as such:
+ * LFUCache* obj = new LFUCache(capacity);
+ * int param_1 = obj->get(key);
+ * obj->put(key,value);
+ */"
