@@ -3157,3 +3157,161 @@ public:
         return newHead;
     }
 };"
+d3a854ab,Koko Eating Bananas,https://leetcode.com/problems/koko-eating-bananas/,leetcode,medium,Binary Search,solved,"[STRIVER HARD] apply a bin search on no. of hours low will be 1 and high will be the max element in the pile, and no. of hours to finish this pile is (pile-1)/k + 1",2026-10-07,2026-10-07,https://www.youtube.com/watch?v=qyfekrNni90,"class Solution {
+private:
+    long long getHrs(vector<int>& piles, int k) {
+        long long ans = 0;
+
+        for(int pile : piles) {
+            ans += (pile - 1)/k + 1;
+        }
+
+        return ans;
+    }
+
+public:
+    int minEatingSpeed(vector<int>& piles, int h) {
+
+        int low = 1;
+        int high = *max_element(piles.begin(), piles.end());
+
+        while(low <= high) {
+
+            int mid = low + (high - low) / 2;
+
+            long long hrs = getHrs(piles, mid);
+
+            if(hrs <= h)
+                high = mid - 1;
+            else
+                low = mid + 1;
+        }
+
+        return low;
+    }
+};"
+57b0e4ed,Minimum days to make M bouquets,https://leetcode.com/problems/minimum-number-of-days-to-make-m-bouquets/description/,leetcode,medium,Binary Search,solved,"[STRIVER HARD] Apply Binary search on days, keep in mind that a bouquet can be maid only with adjacent flowers and avoid division and addition of large numbers to avoid int overflow",2026-10-07,2026-10-07,https://www.youtube.com/watch?v=TXAuxeYBTdg,"class Solution {
+private:
+    int getBouquets(vector<int>& bloomDay, int day, int flowerePerBouquet){
+        int bouquets = 0;
+        for(int i = 0; i<bloomDay.size(); ++i){
+            int adjFlowers = 0;
+            while(i < bloomDay.size() && bloomDay[i] <= day){
+                adjFlowers++;
+                i++;
+            }
+            // i--; //adjusting i after while loop, as the for loop will increase the i to
+            bouquets += adjFlowers/flowerePerBouquet;
+        }
+        return bouquets;
+    }
+public:
+    int minDays(vector<int>& bloomDay, int m, int k) {
+        int flowersThere = bloomDay.size();
+        int maxBouquets = flowersThere/k;
+        if(maxBouquets < m) return -1;
+
+        int low = *min_element(bloomDay.begin(), bloomDay.end()); //min day needed to bloom one flower
+        int high = *max_element(bloomDay.begin(), bloomDay.end()); //max day, by this time all flowers would have blooomed
+        //binary search on days needed
+        while(low <= high){
+            int mid = low + (high - low)/2 ;
+            int Bouquets = getBouquets(bloomDay, mid, k);
+            
+            if(Bouquets >= m){//maybe a less day value is possible
+                high = mid - 1;
+            }
+            else{
+                low = mid + 1;
+            }
+        }
+        return low; //by the end low will go from notPossible to just possible, and high will go from possible to just not possible
+    }
+};"
+ceb0fd91,Capacity to Ship Packages within D Days,https://leetcode.com/problems/capacity-to-ship-packages-within-d-days/description/,leetcode,medium,Binary Search,solved,"[STRIVER HARD}
+Binary search on the capacity of the ship. The minimum possible capacity is the maximum weight of any single package, and the maximum is the sum of all weights (ship everything in one day). For a fixed capacity, greedily put as many consecutive packages as possible in the current day; whenever the next package doesn't fit, start a new day. If daysNeeded > days, capacity is too small so increase it; otherwise capacity is possible, so try a smaller capacity. At the end low gives the minimum possible capacity. Time: O(n log(sum(weights))), Space: O(1).",2026-10-07,2026-10-07,https://www.youtube.com/watch?v=MG-Ac4TAvTY,"class Solution {
+private:
+    int getDays(vector<int>& weights, int capacity){
+        int daysNeeded = 0;
+        int sumW = 0;
+        for(auto w : weights){
+            if(sumW + w <= capacity) sumW += w;
+            else{
+                daysNeeded++;
+                sumW = w;
+            }
+        }
+        return ++daysNeeded;
+    }
+public:
+    int shipWithinDays(vector<int>& weights, int days) {
+        int low = *max_element(weights.begin(), weights.end()); //min weight capapcity of the ship
+        int high = accumulate(weights.begin(), weights.end(), 0); //max weight capacity of the ship is to ship all in one day
+
+        while(low<=high){
+            int mid = low + (high-low)/2 ;
+            int daysNeeded = getDays(weights, mid);
+
+            if(daysNeeded > days){ //need to inc the capacity
+                low = mid + 1;
+            }
+            else{ //capacity can be decreased to find the min no. of days
+                high = mid - 1;
+            }
+        }
+        return low;
+    }
+};"
+5abe2c35,Kth Missing Positive Number,https://leetcode.com/problems/kth-missing-positive-number/description/,leetcode,medium,Binary Search,solved,"[STRIVER HARD]
+very simple brute force code without Binary search O(n) and O(1) S.C., don't know why in striver hard
+
+But to solve it using Binary search is good in O(logn), we apply binary search to find the two indices between which the kth missing number would lie and then add the some diff to lower index's number.
+if k is smaller than the 1st element then kth smallest missing element does not lie between any indices of the array so kth  missing element is k
+and if k is greater than the last element then 
+kth missing element = lastElement + (k - elementsMissingTillLastElement) 
+                                      = arr[n-1] + k - (arr[n-1] - arr.size()) = arr.size() + k
+then we simply do Binary search to find a two indices which have missing elements just less and greater than k",2026-10-07,2026-10-07,https://www.youtube.com/watch?v=uZ0N_hZpyps,"//optimal O(logn) solution
+class Solution {
+public:
+    int findKthPositive(vector<int>& arr, int k) {
+        if(k < arr[0]) return k; 
+        int n = arr.size();
+        if(k > arr[n-1]) return k + arr.size();
+        int low = 0;
+        int high = n-1;
+
+        while(low <= high){
+            int mid = low + (high - low)/2;
+
+            int missingEleTillMid = arr[mid] - (mid + 1);
+
+            if(missingEleTillMid >= k){
+                high = mid - 1;
+            }
+            else{
+                low = mid + 1;
+            }
+        }
+        return k + high + 1;
+    }
+};
+
+//O(n)  brute force
+class Solution {
+public:
+    int findKthPositive(vector<int>& arr, int k) {
+        int cnt = 0;
+        int missingNumber = 1;
+        int i = 0;
+        while(i < 1001){
+            if(i < arr.size() && arr[i] == missingNumber) i++;
+            else{
+                cnt++;
+                if(cnt == k) return missingNumber;
+            }
+            missingNumber++;
+        }
+        return -1;
+    }
+};"
+d226d06d,Painter's Partition and Split Array,https://leetcode.com/problems/split-array-largest-sum/description/,leetcode,medium,Binary Search,solved,[STRIVER HARD],2026-10-07,2026-10-07,https://www.youtube.com/watch?v=thUd_WJn6wk&list=PLgUwDviBIf0pMFMWuuvDNMAkoQFi-h0ZF&index=21,
