@@ -2684,7 +2684,7 @@ public:
         }
     }
 };"
-6ce42126,Imlement LFU Cache,https://leetcode.com/problems/lfu-cache/description/,leetcode,gaand_faad,Stacks and Queues,solved,"[STRIVER HARD] main points are : 
+6ce42126,Implement LFU Cache,https://leetcode.com/problems/lfu-cache/description/,leetcode,gaand_faad,Stacks and Queues,solved,"[STRIVER HARD] main points are : 
 now we have to maintain a LRU for every frequency and maintain it and Node now stores frequency too
 so we define a increaseFrequency function that removes the node from the curr LRU, ince the freq, and puts it in the LRU of the higher freq - WHILE INSERTTING AFTER THE HEAD IN THE HIGHER FREQ LRU< DONT FORGET TO ALSO INSERT IT IN THE MAP OF THE HIGHER FREQ LRU, this handled by the insertAfterHead function here, rest is pretty self e xplanotory if you read the code",2026-10-05,2026-10-06,https://www.youtube.com/watch?v=0PSB9y8ehbk&list=PLgUwDviBIf0p4ozDR_kJJkONnb1wdx2Ma&index=80,"//LFU is implemented by having a list {freq,LRU} i.e. LRUs for every frequency
 struct Node { 
@@ -2814,3 +2814,346 @@ public:
  * int param_1 = obj->get(key);
  * obj->put(key,value);
  */"
+13757340,Kth largest Element in an array,https://leetcode.com/problems/kth-largest-element-in-an-array/,leetcode,medium,Heaps,solved,[STRIVER HARD] video ref is related and code is self explanatory,2026-10-06,2026-10-07,https://www.youtube.com/watch?v=3DdP6Ef8YZM,"class Solution {
+public:
+    int findKthLargest(vector<int>& nums, int k) {
+        priority_queue<int, vector<int>, greater<int> > pq; //min heap
+        
+        for(int i = 0; i<nums.size(); ++i){
+            pq.push(nums[i]);
+            if(pq.size() > k) pq.pop(); // we took a minheap as we had to pop the min element when the size of the heap exceeded k
+        }
+        return pq.top();
+    }
+};"
+37f189b0,Kth largest element in a stream of running integers,https://leetcode.com/problems/kth-largest-element-in-a-stream/description/,leetcode,easy,Heaps,solved,[STRIVER HARD] easy if you know the prev question just an implementation of the prev question,2026-10-06,2026-10-07,,"class KthLargest {
+private:
+    priority_queue<int, vector<int>, greater<int>> pq;
+    int k;
+public:
+    KthLargest(int K, vector<int>& nums) {
+        k = K;
+        for(int i = 0; i<nums.size(); i++){
+            pq.push(nums[i]);
+            if(pq.size() > k) pq.pop();
+        }
+    }
+    
+    int add(int val) {
+        pq.push(val);
+        if(pq.size() > k) pq.pop();
+        return pq.top();
+    }
+};
+
+/**
+ * Your KthLargest object will be instantiated and called as such:
+ * KthLargest* obj = new KthLargest(k, nums);
+ * int param_1 = obj->add(val);
+ */"
+518c4ab4,Merge K Sorted Lists,https://leetcode.com/problems/merge-k-sorted-lists/,leetcode,medium,Heaps,solved,[STRIVER HARD] approach is simple just maintain a min heap of size k with the iterators of all k lists and pop the one which has the min value and increment it and push it back in the queue,2026-10-06,2026-10-07,,"/**
+ * Definition for singly-linked list.
+ * struct ListNode {
+ *     int val;
+ *     ListNode *next;
+ *     ListNode() : val(0), next(nullptr) {}
+ *     ListNode(int x) : val(x), next(nullptr) {}
+ *     ListNode(int x, ListNode *next) : val(x), next(next) {}
+ * };
+ */
+class Solution {
+public:
+    ListNode* mergeKLists(vector<ListNode*>& lists) {
+        ListNode* head = new ListNode(0);
+        ListNode* itr = head;
+
+        priority_queue< pair<int, ListNode*>,
+                        vector<pair<int, ListNode*>>,
+                        greater<pair<int, ListNode*>>
+                        > pq; //pq to get the min element of the k inserted nodes
+        for(int i = 0; i<lists.size(); ++i) if(lists[i]) pq.push({lists[i]->val, lists[i]});
+
+        while(!pq.empty()){
+            auto [value, node] = pq.top();
+            pq.pop();
+
+            //push the next value of the node into the queue and clean the node
+            if(node->next) pq.push({node->next->val, node->next});
+            node->next = nullptr;
+
+            // push this node into the main list
+            itr->next = node;
+            itr = itr->next;
+        }
+        return head->next;
+    }
+};"
+961e0dc0,Find the Median From Data Stream,https://leetcode.com/problems/find-median-from-data-stream/description/,leetcode,hard,Heaps,solved,"[STRIVER HARD]
+Use 2 heaps: `left_half` is a max heap storing the smaller half of elements, and `right_half` is a min heap storing the larger half. We maintain 2 properties: `left.top() <= right.top()` so all elements in left are smaller than those in right, and the sizes differ by at most 1, with `left` allowed to have one extra element. We initially push every new element into `left`, then fix the ordering by moving `left.top()` to `right` if needed, and fix the size imbalance by moving the top element between heaps. Therefore, for odd `n`, `left.top()` is the median, while for even `n`, the median is `(left.top() + right.top()) / 2.0`.",2026-10-06,2026-10-07,,"class MedianFinder {
+private:
+    priority_queue<int> left_half; //MAX HEAP - stores the elements <= mediam
+    priority_queue<int, vector<int>, greater<int>> right_half; //MIN HEAP - stores the elements > mediam
+public:
+    void addNum(int num) {
+        left_half.push(num);
+
+        //checks to maintain the property of left and right half
+
+        //ordering check - every element in left_half <= every element in right_half
+        if(!right_half.empty() && left_half.top() > right_half.top()){
+            right_half.push(left_half.top());
+            left_half.pop();
+        }
+
+        //size check
+        if(left_half.size() > right_half.size() + 1){
+            right_half.push(left_half.top());
+            left_half.pop();
+        }
+        else if (left_half.size() < right_half.size()){
+            left_half.push(right_half.top());
+            right_half.pop();
+        }
+        
+    }
+    
+    double findMedian() {
+        int n = left_half.size() + right_half.size();
+        return (n&1)? left_half.top(): (left_half.top() + right_half.top())/2.0;
+
+    }
+};
+
+/**
+ * Your MedianFinder object will be instantiated and called as such:
+ * MedianFinder* obj = new MedianFinder();
+ * obj->addNum(num);
+ * double param_2 = obj->findMedian();
+ */"
+6e2b8523,Reverse Nodes in K Group Size of LinkedList,https://leetcode.com/problems/reverse-nodes-in-k-group/description/,leetcode,hard,Linked List,solved,"[STRIVER HARD]
+First find the length `n` of the linked list and calculate `groups = n/k`, so we only reverse complete groups of size `k` and leave the remaining nodes unchanged. For each group, `reverseKElements()` reverses `k` nodes and takes `head` by reference (`ListNode*&`), so updating `head = curr` also updates the outer `curr` to the start of the next group. `newTail` stores the original first node of the group, which becomes the tail after reversal, and `prevTail->next` is used to connect the previous reversed group with the current one. Finally, connect the last reversed group to the remaining nodes. Time: `O(n)`, Space: `O(1)`.",2026-10-06,2026-10-07,https://www.youtube.com/watch?v=lIar1skcQYI,"/**
+ * Definition for singly-linked list.
+ * struct ListNode {
+ *     int val;
+ *     ListNode *next;
+ *     ListNode() : val(0), next(nullptr) {}
+ *     ListNode(int x) : val(x), next(nullptr) {}
+ *     ListNode(int x, ListNode *next) : val(x), next(next) {}
+ * };
+ */
+class Solution {
+int getSizeOfLL(ListNode* node){
+    int n = 0;
+    while(node){
+        n++;
+        node = node->next;
+    }
+    return n;
+}
+//returns the head after reversing k elements
+ListNode* reverseKElements(int k, ListNode*& head){
+    ListNode* prev = nullptr;
+    ListNode* curr = head;
+    for(int i = 0; i<k; i++){
+        ListNode* temp = curr->next;
+        curr->next = prev;
+        prev = curr;
+        curr = temp;
+    }
+    head = curr;
+    return prev;
+}
+
+public:
+    ListNode* reverseKGroup(ListNode* head, int k) {
+        if(!head || k == 1 || !head->next) return head; //no change needed
+
+        int n = getSizeOfLL(head);
+        int groups = n/k;
+
+        ListNode* newHead = nullptr;
+        ListNode* curr = head;
+        ListNode* prevTail = nullptr;
+
+        while(curr && groups--){
+            ListNode* newTail = curr;
+
+            ListNode* headNode = reverseKElements(k, curr);
+
+            if(!prevTail) newHead = headNode;
+            else prevTail->next = headNode;
+
+            prevTail = newTail;   
+        }
+        prevTail->next = curr;
+        return newHead;
+    }
+};"
+61163722,Flattening a LinkedList,https://www.geeksforgeeks.org/problems/flattening-a-linked-list/1,gfg,medium,Linked List,solved,[STRIVER HARD] same as merge k sorted arrays in heaps topic,2026-10-06,2026-10-07,https://www.youtube.com/watch?v=ykelywHJWLg,"/* Structure of Linked List Node
+class Node {
+public:
+    int data;
+    Node* next;
+    Node* bottom;
+
+    Node(int x) {
+        data = x;
+        next = nullptr;
+        bottom = nullptr;
+    }
+};*/
+
+class Solution {
+  public:
+    Node* flatten(Node* lists) {
+        // code here
+        Node* head = new Node(0);
+        Node* itr = head;
+        Node* list = lists;
+        
+         priority_queue< pair<int, Node*>,
+                        vector<pair<int, Node*>>,
+                        greater<pair<int, Node*>>
+                        > pq;
+        while(list) {
+            pq.push({list->data, list});
+            list = list->next;
+        }
+        
+        while(!pq.empty()){
+            auto [value, node] = pq.top();
+            pq.pop();
+
+            //push the next value of the node into the queue and clean the node
+            if(node->bottom) pq.push({node->bottom->data, node->bottom});
+
+            // push this node into the main list
+            itr->bottom = node;
+            itr = itr->bottom;
+        }
+        return head->bottom;
+    }
+};"
+808eccbb,Clone a LinkedList with Next and Random Pointers,https://leetcode.com/problems/copy-list-with-random-pointer/description/,leetcode,medium,Linked List,solved,"[STRIVER HARD] the O(n) S.C. approach is simple by maintaining a hash map to store the old and corresponding new node, but the optimal approach is in O(1) Space, it goes in 3 passed:
+pass1 - insert copies of nodes in betwee
+pass2 - fix the random pointers
+pass3 - fix the next pointers and finally detach the new LL
+
+both optimised and hashmap approach is shown below",2026-10-07,2026-10-07,https://www.youtube.com/watch?v=q570bKdrnlw,"/*
+// Definition for a Node.
+class Node {
+public:
+    int val;
+    Node* next;
+    Node* random;
+    
+    Node(int _val) {
+        val = _val;
+        next = NULL;
+        random = NULL;
+    }
+};
+*/
+
+//Optimised approach O(1) S.C
+class Solution {
+// trying to copy it in one pass
+public:
+    Node* copyRandomList(Node* head) {
+        if(!head) return head;
+        
+        //pass 1 inseting new nodes in betwee 
+        Node* node = head;
+        while(node){
+            Node* newNode = new Node(node->val);
+            newNode->next = node->next;
+            node->next = newNode;
+
+            node = node->next->next;
+        }
+        //curr state : A-B-C-D
+        //pass 2 setting the random pointers in the copied nodes
+        node = head;
+        while(node){
+            if(node->random){
+                Node* newNode = node->next;
+                Node* newRand = node->random->next;
+                newNode->random = newRand;
+            }
+
+            node = node->next->next;
+        }
+        //curr state : A-A'-B-B'-C-C'-D-D' (random pointers not set yet)
+
+        Node* newHead = head->next;
+
+        //pass 3 setting the next pointrs that will detach the new list
+        //curr state : A-B-C-D A'-B'-C'-D' (random pointers are set too)
+        node = head;
+        while(node){
+            Node* newNode = node->next;
+            node->next = node->next->next;
+            if (newNode->next) newNode->next = newNode->next->next;
+
+            node = node->next;
+        }
+        return newHead;
+    }
+};
+//O(n) S.C. approach
+class Solution {
+public:
+    Node* copyRandomList(Node* head) {
+        if(!head) return head;
+        
+        unordered_map<Node*, Node*> mp; // stores new nodes corresponding to the old node oldNode->newNode
+
+        Node* newHead = new Node(head->val);
+        mp[head] = newHead;
+
+        //let's explore the list with a bfs traversal
+        queue<pair<Node*, Node*>> q; // {oldNode, corresponding newNode}
+        q.push({head, newHead});
+
+        while(!q.empty()){
+            auto [oldNode, newNode] = q.front();
+            q.pop();
+
+            //push next
+            if(oldNode->next){
+                if(mp.find(oldNode->next) == mp.end()){
+                    //make a new node
+                    Node* newNext = new Node(oldNode->next->val);
+                    //store it in the map
+                    mp[oldNode->next] = newNext;
+                    //connect the pointers
+                    newNode->next = newNext;
+                    //push in the queue since this was created
+                    q.push({oldNode->next, newNext});
+                }
+                else{
+                    //Node was already created just connect it
+                    newNode->next = mp[oldNode->next];
+                }
+            }
+            //push random
+            if(oldNode->random){
+                if(mp.find(oldNode->random) == mp.end()){
+                    //make a new node
+                    Node* newRand = new Node(oldNode->random->val);
+                    //store it in the map
+                    mp[oldNode->random] = newRand;
+                    //connect the pointers
+                    newNode->random = newRand;
+                    //push in the queue since this was created
+                    q.push({oldNode->random, newRand});
+                }
+                else{
+                    //Node was already created just connect it
+                    newNode->random = mp[oldNode->random];
+                }
+            }
+        }
+        return newHead;
+    }
+};"
