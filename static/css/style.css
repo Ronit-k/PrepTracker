@@ -1791,7 +1791,7 @@ a:hover { text-decoration: underline; }
 .is-editing .detail-topic .detail-select-trigger { padding: 6px 10px; background: #ffffff06; }
 .is-editing .detail-select-trigger:hover, .is-editing .detail-date-trigger:hover { background: #ffffff0a; }
 .detail-level-field .detail-select-trigger { width: 72px; padding: .15rem 0; border-radius: 999px; font-size: .65rem; font-weight: 600; justify-content: center; gap: 0; }
-.is-editing .detail-level-field .detail-select-trigger { width: 92px; gap: 6px; }
+.is-editing .detail-level-field .detail-select-trigger { width: auto; min-width: 92px; padding: 6px 8px; border-radius: 8px; font: inherit; justify-content: space-between; gap: 7px; }
 .detail-status-field .detail-select-trigger, .detail-date-trigger { padding: 0; }
 .is-editing .detail-status-field .detail-select-trigger, .is-editing .detail-date-trigger { padding: 6px 8px; background: #ffffff05; }
 .question-detail .detail-select-trigger:disabled, .question-detail .detail-date-trigger:disabled { opacity: 1; cursor: default; }
