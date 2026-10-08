@@ -1,5 +1,5 @@
 import {EditorState, Compartment} from '@codemirror/state';
-import {EditorView, keymap, lineNumbers, highlightActiveLineGutter, Decoration, ViewPlugin} from '@codemirror/view';
+import {EditorView, keymap, lineNumbers, highlightActiveLineGutter, Decoration, ViewPlugin, placeholder} from '@codemirror/view';
 import {defaultKeymap, history, historyKeymap, indentWithTab} from '@codemirror/commands';
 import {cpp} from '@codemirror/lang-cpp';
 import {foldGutter, codeFolding, foldKeymap, bracketMatching, indentUnit, syntaxHighlighting, HighlightStyle} from '@codemirror/language';
@@ -56,6 +56,7 @@ export function createCodeEditor(parent, code, onChange) {
   const editable = enabled => [EditorState.readOnly.of(!enabled), EditorView.editable.of(enabled)];
   const extensions = [
         cpp(), lineNumbers(), foldGutter(), codeFolding(), bracketMatching(), guides,
+        placeholder('Your C++ solution goes here…'),
         history(), highlightActiveLineGutter(), indentUnit.of('    '), EditorState.tabSize.of(4),
         keymap.of([...defaultKeymap, ...historyKeymap, ...foldKeymap, indentWithTab]),
         syntaxHighlighting(colors), mode.of(editable(false)),
@@ -66,7 +67,7 @@ export function createCodeEditor(parent, code, onChange) {
           '.cm-scroller': {fontFamily: "'SF Mono', 'Cascadia Code', Menlo, Consolas, monospace", fontSize: '13px', lineHeight: '1.8', overflow: 'auto'},
           '.cm-content': {padding: '18px 0', caretColor: '#74b7ff', minHeight: '100%'},
           '.cm-line': {padding: '0 18px 0 8px'},
-          '.cm-gutters': {backgroundColor: 'transparent', color: '#59606d', border: 'none', paddingRight: '6px'},
+          '.cm-gutters': {backgroundColor: '#111217', color: '#737b89', border: 'none', borderRight: '1px solid #ffffff0a', paddingRight: '6px', zIndex: '2'},
           '.cm-gutterElement': {fontSize: '11px'},
           '.cm-activeLineGutter': {backgroundColor: 'rgba(255,255,255,.04)', color: '#a8afbc'},
           '.cm-foldGutter .cm-gutterElement': {cursor: 'pointer', padding: '0 3px'},

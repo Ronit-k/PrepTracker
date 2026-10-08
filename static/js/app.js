@@ -5,6 +5,7 @@
 let RANKS = [];
 let XP_MAP = {};
 let DIFFS = [];
+let siteIcons;
 // Calendar dates use IST even when the browser or hosting server is elsewhere.
 function indiaDateKey(instant = new Date()) {
   const parts = new Intl.DateTimeFormat('en-CA', {
@@ -17,9 +18,7 @@ function indiaToday() { return new Date(indiaDateKey() + 'T00:00:00'); }
 
 const STATUS_CYCLE = ['solved', 'revisit', 'todo'];
 
-const LC_SVG = `<svg width="18" height="18" viewBox="0 0 24 24"><path d="M13.483 0a1.374 1.374 0 0 0-.961.438L7.116 6.226l-3.854 4.126a5.266 5.266 0 0 0-1.209 2.104 5.35 5.35 0 0 0-.125.513 5.527 5.527 0 0 0 .062 2.362 5.83 5.83 0 0 0 .349 1.017 5.938 5.938 0 0 0 1.271 1.818l4.277 4.193.039.038c2.248 2.165 5.852 2.133 8.063-.074l2.396-2.392c.54-.54.54-1.414.003-1.955a1.378 1.378 0 0 0-1.951-.003l-2.396 2.392a3.021 3.021 0 0 1-4.205.038l-.02-.019-4.276-4.193c-.652-.64-.972-1.469-.948-2.263a2.68 2.68 0 0 1 .066-.523 2.545 2.545 0 0 1 .619-1.164L9.13 8.114c1.058-1.134 3.204-1.27 4.43-.278l.257.258a1.381 1.381 0 0 0 1.95-.003c.54-.54.54-1.414-.003-1.955L15.507.97A1.383 1.383 0 0 0 14.545.5 1.374 1.374 0 0 0 13.483 0zm-2.866 12.815a1.38 1.38 0 0 0-1.38 1.382 1.38 1.38 0 0 0 1.38 1.382H18.35a1.38 1.38 0 0 0 1.38-1.382 1.38 1.38 0 0 0-1.38-1.382z" fill="#FFA116"/></svg>`;
 
-const GFG_SVG = `<svg width="18" height="18" viewBox="0 0 24 24"><path d="M21.45 14.315c-.143.28-.334.532-.565.745a3.691 3.691 0 0 1-1.104.695 4.51 4.51 0 0 1-3.116-.016 3.79 3.79 0 0 1-2.135-2.078 3.571 3.571 0 0 1-.16-.476h3.085a.474.474 0 0 0 .345-.142.475.475 0 0 0 .137-.349v-.715a.47.47 0 0 0-.137-.348.473.473 0 0 0-.345-.142h-3.262a1.5 1.5 0 0 1 .009-.145c0-.048 0-.097-.009-.145h3.262a.473.473 0 0 0 .345-.142.47.47 0 0 0 .137-.348v-.715a.475.475 0 0 0-.137-.349.474.474 0 0 0-.345-.142h-3.085c.073-.164.16-.322.258-.469a3.768 3.768 0 0 1 2.037-1.607 4.51 4.51 0 0 1 3.116-.016c.42.14.8.362 1.104.695.231.213.422.465.565.745a.477.477 0 0 0 .639.206l.647-.326a.478.478 0 0 0 .207-.655 4.515 4.515 0 0 0-.85-1.108 4.7 4.7 0 0 0-1.635-1.053 5.77 5.77 0 0 0-4.033.027 4.74 4.74 0 0 0-3.108 3.313H13.1V8.5a.474.474 0 0 0-.137-.349.473.473 0 0 0-.345-.142h-.715a.474.474 0 0 0-.345.142.474.474 0 0 0-.137.349v1.737H9.852a4.74 4.74 0 0 0-3.108-3.313 5.77 5.77 0 0 0-4.033-.027 4.7 4.7 0 0 0-1.635 1.053 4.51 4.51 0 0 0-.85 1.108.478.478 0 0 0 .207.655l.647.326a.477.477 0 0 0 .639-.206c.143-.28.334-.532.565-.745a3.691 3.691 0 0 1 1.104-.695 4.51 4.51 0 0 1 3.116.016 3.79 3.79 0 0 1 2.037 1.607c.098.147.185.305.258.469H5.714a.474.474 0 0 0-.345.142.475.475 0 0 0-.137.349v.715a.47.47 0 0 0 .137.348.473.473 0 0 0 .345.142h3.262a1.5 1.5 0 0 1-.009.145c0 .048 0 .097.009.145H5.714a.473.473 0 0 0-.345.142.47.47 0 0 0-.137.348v.715a.475.475 0 0 0 .137.349.474.474 0 0 0 .345.142h3.085a3.571 3.571 0 0 1-.16.476 3.79 3.79 0 0 1-2.135 2.078 4.51 4.51 0 0 1-3.116.016 3.691 3.691 0 0 1-1.104-.695 2.836 2.836 0 0 1-.565-.745.477.477 0 0 0-.639-.206l-.647.326a.478.478 0 0 0-.207.655c.216.427.501.819.85 1.108a4.7 4.7 0 0 0 1.635 1.053 5.77 5.77 0 0 0 4.033-.027 4.74 4.74 0 0 0 3.108-3.313h1.569v1.737a.474.474 0 0 0 .137.349.473.473 0 0 0 .345.142h.715a.474.474 0 0 0 .345-.142.474.474 0 0 0 .137-.349v-1.737h1.569a4.74 4.74 0 0 0 3.108 3.313 5.77 5.77 0 0 0 4.033.027 4.7 4.7 0 0 0 1.635-1.053c.349-.289.634-.681.85-1.108a.478.478 0 0 0-.207-.655l-.647-.326a.477.477 0 0 0-.639.206z" fill="#2F8D46"/></svg>`;
 
 /* ── State ──────────────────────────────────────────────────────── */
 let currentPage = 'dashboard';
@@ -172,7 +171,8 @@ document.addEventListener('click', (e) => {
 
 /* ── Init ──────────────────────────────────────────────────────── */
 (async function init() {
-  const cfg = await api('/api/config');
+  const [cfg, icons] = await Promise.all([api('/api/config'), import('/static/js/site-icons.js')]);
+  siteIcons = icons;
   RANKS = cfg.ranks;
   DIFFS = cfg.difficulties;
   XP_MAP = {};
@@ -884,24 +884,9 @@ function detectPlatform(url) {
   } catch { return ''; }
 }
 
-function faviconImg(url) {
-  try {
-    const domain = new URL(url).hostname;
-    return `<img src="https://www.google.com/s2/favicons?domain=${domain}&sz=32" width="18" height="18" style="border-radius:3px" alt="">`;
-  } catch { return null; }
-}
-
-function platformIcon(q) {
-  if (q.platform === 'leetcode') return LC_SVG;
-  if (q.platform === 'gfg') return GFG_SVG;
-  if (q.link) return faviconImg(q.link) || '';
-  return `<svg width="18" height="18" viewBox="0 0 18 18" fill="none"><circle cx="9" cy="9" r="7" stroke="currentColor" stroke-width="1.2" opacity="0.3"/></svg>`;
-}
-
-function refIcon(url) {
-  if (!url) return null;
-  return faviconImg(url);
-}
+function faviconImg(url) { return siteIcons.iconMarkup(url); }
+function platformIcon(q) { return faviconImg(q.link); }
+function refIcon(url) { return url ? faviconImg(url) : null; }
 
 function renderFileRow(q) {
   const platIcon = platformIcon(q);
@@ -980,27 +965,38 @@ function detailQuestions() {
   return [...treeContainer.querySelectorAll('.file-row[data-id]')]
     .map(row => subjectQuestions.find(q => q.id === row.dataset.id)).filter(Boolean);
 }
-async function showNotes(id) {
-  if (!window.matchMedia('(min-width: 900px) and (hover: hover) and (pointer: fine)').matches) {
-    showMobileNotes(id);
-    return;
-  }
+function useDesktopDetail() {
+  return window.matchMedia('(min-width: 900px) and (hover: hover) and (pointer: fine)').matches;
+}
+function showNotes(id) {
+  if (!useDesktopDetail()) { showMobileNotes(id); return; }
+  const question = subjectQuestions.find(q => q.id === id);
+  if (question) openDesktopDetail(question);
+}
+async function openDesktopDetail(question, {isNew = false, startEditing = false} = {}) {
   if (detailLoading || desktopDetail) return;
-  const q = subjectQuestions.find(q => q.id === id);
-  if (!q) return;
   const subject = currentSubject;
   detailLoading = true;
   try {
     const {openQuestionDetail} = await import('/static/vendor/question-detail.js');
-    desktopDetail = openQuestionDetail({question: q, questions: detailQuestions(), topics: subjectTopics, difficulties: DIFFS,
+    desktopDetail = openQuestionDetail({question, questions: isNew ? [question] : detailQuestions(),
+      topics: subjectTopics, difficulties: DIFFS, isNew, startEditing,
       onSave: async updated => {
         const {id, date_added, ...fields} = updated;
+        const adding = !id;
         fields.platform = detectPlatform(fields.link);
-        await api(`/api/${subject}/questions/${id}`, 'PUT', fields);
+        const result = await api(`/api/${subject}/questions${adding ? '' : `/${id}`}`, adding ? 'POST' : 'PUT', fields);
+        const saved = adding ? result : {...updated, ...fields};
         openFolders.add(fields.topic);
-        await loadSubject(subject);
-        await refreshNavCounts();
-        showToast('Question updated');
+        try {
+          await Promise.all([loadSubject(subject), refreshNavCounts()]);
+          showToast(adding ? 'Question added' : 'Question updated');
+        } catch (error) {
+          console.warn('Question saved; list refresh failed', error);
+          showToast('Saved. Refresh the page to update the list.');
+        }
+        if (adding && ['solved','revisit'].includes(fields.status)) showXpPopup(XP_MAP[fields.difficulty] || 0);
+        return saved;
       },
       onClosed: () => {desktopDetail = null;},
     });
@@ -1331,6 +1327,11 @@ function setupModal() {
 }
 
 function openModal(q, presetTopic) {
+  if (useDesktopDetail()) {
+    const question = q || {title:'', topic:presetTopic || subjectTopics[0] || '', difficulty:'medium', status:'solved', date_solved:indiaDateKey(), notes:'', code:'', link:'', video_link:'', platform:''};
+    openDesktopDetail(question, {isNew:!q, startEditing:true});
+    return;
+  }
   editingId = q ? q.id : null;
   $('#modalTitle').textContent = q ? 'Edit Question' : 'Add Question';
   $('#fTitle').value = q ? q.title : '';

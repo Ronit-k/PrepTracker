@@ -1,6 +1,7 @@
 import {createCodeEditor} from './code-editor.js';
 
-const escape = value => String(value ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+import {escape, safeUrl, editableText, mountSelect, mountDatePicker, mountResource} from './detail-controls.js';
+
 const icons = {
   pencil: '<path d="m12 3 3 3-8.5 8.5H3v-3.5Z"/><path d="m10 5 3 3"/>',
   close: '<path d="m5 5 8 8M13 5l-8 8"/>',
@@ -16,77 +17,21 @@ const statusOptions = [
   {key:'revisit',label:'Revisit',color:'#ff9f0a'},
   {key:'todo',label:'To do',color:'#8e8e93'},
 ];
-function safeUrl(value) {
-  try { const url = new URL(value); return ['https:', 'http:'].includes(url.protocol) ? url : null; }
-  catch { return null; }
-}
-function linkMarkup(value, label) {
-  const url = safeUrl(value);
-  if (!url) return '';
-  return `<a class="detail-resource" href="${escape(url.href)}" target="_blank" rel="noopener noreferrer" title="${escape(url.hostname)}">
-    <img src="https://www.google.com/s2/favicons?domain=${encodeURIComponent(url.hostname)}&sz=32" width="18" height="18" alt="">${escape(label)}${icon('link')}</a>`;
-}
-
-function mountSelect(parent, {label, value, options, searchable = false, onChange}) {
-  parent.innerHTML = `<span class="detail-field-label">${label}</span><div class="detail-select">
-    <button type="button" class="detail-select-trigger" aria-label="${label}" aria-haspopup="listbox" aria-expanded="false"><span></span>${icon('chevron')}</button>
-    <div class="detail-select-panel" hidden>${searchable ? '<input type="search" aria-label="Search topics" placeholder="Find a topic…" autocomplete="off">' : ''}
-      <div class="detail-select-options" role="listbox" aria-label="${label}"></div></div></div>`;
-  const trigger = parent.querySelector('button');
-  const panel = parent.querySelector('.detail-select-panel');
-  const list = parent.querySelector('[role=listbox]');
-  const search = parent.querySelector('input');
-  let selected = value;
-  const draw = () => {
-    const current = options.find(o => o.key === selected) || {label:selected};
-    trigger.querySelector('span').innerHTML = `${current.color ? `<i style="background:${current.color}"></i>` : ''}${escape(current.label)}`;
-    const matches = options.filter(o => o.label.toLowerCase().includes(search?.value.toLowerCase() || ''));
-    list.innerHTML = matches.map(o => `<button type="button" role="option" aria-selected="${o.key === selected}" data-key="${escape(o.key)}">${o.color ? `<i style="background:${o.color}"></i>` : ''}<span>${escape(o.label)}</span><b aria-hidden="true">${o.key === selected ? '✓' : ''}</b></button>`).join('') || '<p class="detail-muted">No matching topics</p>';
-  };
-  const close = () => { panel.hidden = true; trigger.setAttribute('aria-expanded', 'false'); };
-  trigger.onclick = () => {
-    const opening = panel.hidden;
-    parent.closest('.question-detail').dispatchEvent(new CustomEvent('close-detail-selects'));
-    if (opening) { panel.hidden = false; trigger.setAttribute('aria-expanded', 'true'); if (search) { search.value=''; draw(); search.focus(); } }
-  };
-  list.onclick = e => {
-    const option = e.target.closest('[data-key]');
-    if (!option) return;
-    selected = option.dataset.key;
-    onChange(selected); draw(); close(); trigger.focus();
-  };
-  if (search) search.oninput = draw;
-  parent.onkeydown = e => {
-    if (e.key === 'Escape' && !panel.hidden) { e.preventDefault(); e.stopPropagation(); close(); trigger.focus(); }
-    if (['ArrowDown', 'ArrowUp'].includes(e.key)) {
-      e.preventDefault();
-      panel.hidden = false; trigger.setAttribute('aria-expanded', 'true');
-      const buttons = [...list.querySelectorAll('button')];
-      const index = buttons.indexOf(document.activeElement);
-      buttons[(index + (e.key === 'ArrowDown' ? 1 : -1) + buttons.length) % buttons.length]?.focus();
-    }
-  };
-  draw();
-  return {close};
-}
-
-export function openQuestionDetail({question, questions = [question], topics, difficulties, onSave, onClosed}) {
+export function openQuestionDetail({question, questions = [question], topics, difficulties, isNew = false, startEditing = false, onSave, onClosed}) {
   const backdrop = document.querySelector('#notesPopover');
   const root = document.querySelector('#notesPopoverContent');
   const opener = document.activeElement;
-  let saved = {...question}, draft = {...question}, editing = false, busy = false, closed = false;
+  let saved = {...question}, draft = {...question}, editing = isNew || startEditing, busy = false, closed = false;
   const sequence = questions.map(q => ({...q}));
   let index = sequence.findIndex(q => q.id === question.id);
   if (index < 0) { sequence.push({...question}); index = sequence.length - 1; }
   let selects = [];
   const controller = new AbortController();
   const listen = (element, name, callback) => element.addEventListener(name, callback, {signal:controller.signal});
-  const status = () => statusOptions.find(s => s.key === saved.status) || statusOptions[0];
-  const diff = () => difficulties.find(d => d.key === saved.difficulty) || {label:saved.difficulty,color:'#a1a1aa',bg:'#ffffff0a'};
   root.classList.add('question-detail');
   root.setAttribute('role','dialog'); root.setAttribute('aria-modal','true'); root.setAttribute('aria-labelledby','detail-title');
   root.innerHTML = `
-    <header class="detail-toolbar"><div class="detail-heading"><span class="detail-eyebrow">QUESTION DETAILS</span><nav class="detail-navigation" aria-label="Browse questions">
+    <header class="detail-toolbar"><div class="detail-heading"><span class="detail-eyebrow"></span><nav class="detail-navigation" aria-label="Browse questions">
       <button type="button" class="detail-icon-button detail-prev" aria-label="Previous question" title="Previous question (←)">${icon('previous')}</button>
       <span class="detail-position" aria-live="polite"></span>
       <button type="button" class="detail-icon-button detail-next" aria-label="Next question" title="Next question (→)">${icon('next')}</button>
@@ -123,40 +68,50 @@ export function openQuestionDetail({question, questions = [question], topics, di
   document.body.style.overflow = 'hidden';
 
   function renderInfo() {
-    selects = [];
-    if (!editing) {
-      const level = diff();
-      info.innerHTML = `<div class="detail-topic">${escape(saved.topic || 'Uncategorized')}</div>
-        <h2 id="detail-title">${escape(saved.title)}</h2>
-        <div class="detail-meta"><span class="detail-difficulty" style="color:${level.color};background:${level.bg}">${escape(level.label)}</span><span class="detail-status"><i style="background:${status().color}"></i>${status().label}</span>${saved.date_solved ? `<span class="detail-date">${escape(new Date(saved.date_solved+'T12:00:00').toLocaleDateString('en-IN',{day:'numeric',month:'short',year:'numeric'}))}</span>` : ''}</div>
-        <div class="detail-notes-section"><h3>Notes</h3><div class="detail-notes-text${saved.notes?.trim() ? '' : ' detail-muted'}">${escape(saved.notes?.trim() ? saved.notes : 'No notes yet. Use Edit to capture your approach.')}</div></div>
-        <div class="detail-resources">${linkMarkup(saved.link,'Problem')}${linkMarkup(saved.video_link,'Reference')}${!safeUrl(saved.link) && !safeUrl(saved.video_link) ? '<span class="detail-muted">No links added</span>' : ''}</div>`;
-    } else {
-      info.innerHTML = `<form id="detail-form">
-        <h2 id="detail-title" class="sr-only">Edit question</h2>
-        <div class="detail-topic-field"></div>
-        <label class="detail-field-label" for="detail-name">Question name</label><input id="detail-name" name="title" required maxlength="500" value="${escape(draft.title)}">
-        <div class="detail-field-pair"><div class="detail-level-field"></div><div class="detail-status-field"></div></div>
-        <label class="detail-field-label" for="detail-date">Date solved <span>IST</span></label><input id="detail-date" name="date_solved" type="date" value="${escape(draft.date_solved)}">
-        <label class="detail-field-label" for="detail-notes">Notes</label><textarea id="detail-notes" name="notes" rows="7" placeholder="Your approach, key ideas, and things to revisit…">${escape(draft.notes)}</textarea>
-        <label class="detail-field-label" for="detail-problem">Problem link</label><input id="detail-problem" type="url" name="link" placeholder="https://leetcode.com/problems/…" value="${escape(draft.link)}">
-        <label class="detail-field-label" for="detail-reference">Reference material</label><input id="detail-reference" type="url" name="video_link" placeholder="https://…" value="${escape(draft.video_link)}">
-      </form>`;
-      const topicOptions = [...new Set([...topics, draft.topic].filter(Boolean))].map(t => ({key:t,label:t}));
-      selects.push(mountSelect(info.querySelector('.detail-topic-field'), {label:'Topic',value:draft.topic,options:topicOptions,searchable:true,onChange:value=>draft.topic=value}));
-      selects.push(mountSelect(info.querySelector('.detail-level-field'), {label:'Difficulty',value:draft.difficulty,options:difficulties,onChange:value=>draft.difficulty=value}));
-      selects.push(mountSelect(info.querySelector('.detail-status-field'), {label:'Status',value:draft.status,options:statusOptions,onChange:value=>draft.status=value}));
-      info.querySelector('form').onsubmit = e => {e.preventDefault(); save();};
-      info.querySelectorAll('input[name], textarea[name]').forEach(input => {
-        input.oninput = () => { draft[input.name] = input.value; };
-      });
-    }
-    root.querySelector('.detail-edit').hidden = editing;
-    root.querySelector('.detail-cancel').hidden = !editing;
-    root.querySelector('.detail-save').hidden = !editing;
-    root.querySelector('.detail-code-mode').textContent = editing ? 'EDITING SOLUTION' : 'SAVED SOLUTION';
+    selects.forEach(control=>control.destroy());
+    info.innerHTML = `<div class="detail-topic"></div>
+      <h2 id="detail-title" class="detail-inline-text" data-field="title" aria-label="Question name" data-placeholder="Question name" spellcheck="false">${escape(saved.title)}</h2>
+      <div class="detail-meta"><div class="detail-level-field"></div><div class="detail-status-field"></div><div class="detail-date"></div></div>
+      <div class="detail-notes-section"><h3>Notes</h3><div class="detail-notes-text detail-inline-text" data-field="notes" aria-label="Notes" data-placeholder="No notes yet. Capture your approach here…">${escape(saved.notes)}</div></div>
+      <div class="detail-resources"><div class="detail-problem"></div><div class="detail-reference"></div></div>`;
+    const topicOptions=[...new Set([...topics,draft.topic].filter(Boolean))].map(t=>({key:t,label:t}));
+    selects = [
+      mountSelect(info.querySelector('.detail-topic'),{label:'Topic',value:draft.topic,options:topicOptions,searchable:true,onChange:value=>{draft.topic=value;updateToolbar();}}),
+      mountSelect(info.querySelector('.detail-level-field'),{label:'Difficulty',value:draft.difficulty,options:difficulties,onChange:value=>draft.difficulty=value}),
+      mountSelect(info.querySelector('.detail-status-field'),{label:'Status',value:draft.status,options:statusOptions,onChange:value=>draft.status=value}),
+      mountDatePicker(info.querySelector('.detail-date'),{value:draft.date_solved,onChange:value=>draft.date_solved=value}),
+      mountResource(info.querySelector('.detail-problem'),{label:'Problem',value:draft.link,onChange:value=>draft.link=value}),
+      mountResource(info.querySelector('.detail-reference'),{label:'Reference',value:draft.video_link,onChange:value=>draft.video_link=value}),
+    ];
+    info.querySelectorAll('[data-field]').forEach(el=>{
+      el.oninput=()=>{draft[el.dataset.field]=editableText(el);};
+      el.onkeydown=e=>{if(el.dataset.field==='title' && e.key==='Enter'){e.preventDefault();}};
+    });
+    applyEditing();
+  }
+  function updateToolbar() {
+    const name=(editing?draft.topic:saved.topic)||'Uncategorized';
+    root.querySelector('.detail-eyebrow').textContent=name;
+    root.querySelector('.detail-eyebrow').title=name;
+  }
+  function applyEditing() {
+    selects.forEach(control=>control.setEnabled(editing));
+    info.querySelectorAll('[data-field]').forEach(el=>{
+      el.setAttribute('contenteditable',editing?'plaintext-only':'false');
+      if(editing) {
+        el.setAttribute('role','textbox');
+        el.setAttribute('aria-label',el.dataset.field==='title'?'Question name':'Notes');
+        el.setAttribute('aria-multiline',String(el.dataset.field==='notes'));
+      } else {el.removeAttribute('role');el.removeAttribute('aria-label');el.removeAttribute('aria-multiline');}
+    });
+    root.querySelector('.detail-edit').hidden=editing;
+    root.querySelector('.detail-cancel').hidden=!editing;
+    root.querySelector('.detail-save').hidden=!editing;
+    if (!busy) root.querySelector('.detail-save').textContent=isNew?'Add question':'Save changes';
+    root.querySelector('.detail-navigation').hidden=isNew;
+    root.querySelector('.detail-code-mode').textContent=editing?'EDITING SOLUTION':'SAVED SOLUTION';
     root.classList.toggle('is-editing',editing);
-    updateNavigation();
+    updateToolbar();updateNavigation();
   }
 
   function updateNavigation() {
@@ -183,7 +138,7 @@ export function openQuestionDetail({question, questions = [question], topics, di
     }
     closed = true;
     backdrop.classList.remove('open');
-    controller.abort(); editor.destroy();
+    controller.abort(); selects.forEach(control=>control.destroy()); editor.destroy();
     inerted.forEach(({el,was})=>el.inert=was);
     document.body.style.overflow = bodyOverflow;
     if (opener?.isConnected) opener.focus();
@@ -193,30 +148,31 @@ export function openQuestionDetail({question, questions = [question], topics, di
     setTimeout(() => { if (!backdrop.classList.contains('open')) {root.classList.remove('question-detail'); root.removeAttribute('role'); root.removeAttribute('aria-modal'); root.innerHTML='';} }, 220);
   }
   function cancel() {
+    if (isNew) { close(); return; }
     draft={...saved}; editing=false; editor.setEditable(false); editor.setValue(saved.code || '');
     root.querySelector('.detail-discard').hidden=true; setError(''); renderInfo(); root.querySelector('.detail-edit').focus();
   }
   async function save() {
     if (busy || !editing) return;
-    const form = root.querySelector('form');
-    if (!form.reportValidity()) return;
+    if (draft.title.length > 500) {setError('Keep the question name within 500 characters.'); return;}
     if (!draft.title.trim() || !draft.topic) {setError('Enter a question name and choose a topic.'); return;}
-    if ([draft.link,draft.video_link].some(url=>url && !safeUrl(url))) {setError('Links must start with https:// or http://.'); return;}
+    if ([draft.link,draft.video_link].some(url=>url.trim() && !safeUrl(url.trim()))) {setError('Links must start with https:// or http://.'); return;}
     busy=true; setError(''); closeSelects();
     root.querySelector('.detail-save').textContent='Saving…';
     root.querySelectorAll('button,input,textarea').forEach(el=>el.disabled=true);
+    info.querySelectorAll('[data-field]').forEach(el=>el.contentEditable='false');
     editor.setEditable(false);
     try {
       const updated={...draft,title:draft.title.trim(),link:draft.link.trim(),video_link:draft.video_link.trim(),code:editor.getValue()};
-      await onSave(updated);
-      saved=updated; draft={...updated}; editing=false; renderInfo();
-      sequence[index] = {...updated};
+      const persisted = await onSave(updated);
+      saved={...updated,...persisted}; draft={...saved}; isNew=false; editing=false; renderInfo();
+      sequence[index] = {...saved};
       root.querySelector('.detail-save-state').textContent='Saved';
     } catch (error) {setError(error.message || 'Could not save. Your changes are still here.'); editor.setEditable(true);}
     finally {
       busy=false; root.querySelectorAll('button,input,textarea').forEach(el=>el.disabled=false);
       root.querySelector('.detail-save').textContent='Save changes';
-      updateNavigation();
+      applyEditing();
       if (!editing) root.querySelector('.detail-edit').focus();
     }
   }
@@ -228,9 +184,11 @@ export function openQuestionDetail({question, questions = [question], topics, di
       e.preventDefault(); e.stopPropagation(); navigate(e.key === 'ArrowRight' ? 1 : -1);
     }
   },{capture:true,signal:controller.signal});
-  listen(root,'click',e=>{ if (!e.target.closest('.detail-select')) closeSelects(); });
+  listen(root,'click',e=>{ if (!e.target.closest('.detail-select,.detail-date-picker,.detail-resource-control,[data-detail-popup]')) closeSelects(); });
+  listen(info,'scroll',closeSelects);
+  listen(window,'resize',closeSelects);
   listen(root.querySelector('.detail-edit'),'click',()=>{
-    editing=true; draft={...saved}; root.querySelector('.detail-save-state').textContent=''; renderInfo(); editor.setEditable(true); info.querySelector('#detail-name').focus();
+    editing=true; draft={...saved}; root.querySelector('.detail-save-state').textContent=''; applyEditing(); editor.setEditable(true); info.querySelector('#detail-title').focus({preventScroll:true});
   });
   listen(root.querySelector('.detail-cancel'),'click',cancel);
   listen(root.querySelector('.detail-save'),'click',save);
@@ -247,12 +205,13 @@ export function openQuestionDetail({question, questions = [question], topics, di
     if (e.key==='Escape') {e.preventDefault();e.stopPropagation();close();}
     if ((e.ctrlKey || e.metaKey) && e.key==='Enter' && editing) {e.preventDefault();save();}
     if (e.key==='Tab') {
-      const focusable=[...root.querySelectorAll('button:not(:disabled),input:not(:disabled),textarea:not(:disabled),a[href],[tabindex="0"]')].filter(el=>el.getClientRects().length && !el.closest('[hidden]'));
+      const focusable=[...root.querySelectorAll('button:not(:disabled),input:not(:disabled),textarea:not(:disabled),a[href],[contenteditable="plaintext-only"],[tabindex="0"]')].filter(el=>el.getClientRects().length && !el.closest('[hidden]'));
       const first=focusable[0], last=focusable.at(-1);
       if (e.shiftKey && document.activeElement===first) {e.preventDefault();last?.focus();}
       else if (!e.shiftKey && document.activeElement===last) {e.preventDefault();first?.focus();}
     }
   });
-  renderInfo(); backdrop.classList.add('open'); root.querySelector('.detail-edit').focus();
+  renderInfo(); editor.setEditable(editing); backdrop.classList.add('open');
+  (editing ? info.querySelector('#detail-title') : root.querySelector('.detail-edit')).focus({preventScroll:true});
   return {close};
 }

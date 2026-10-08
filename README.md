@@ -253,6 +253,9 @@ question IDs, order, notes, code, and progress. Deletion moves questions to
 **Uncategorized** by default; select **Also delete all questions** to delete the
 questions and progress too.
 
+Click anywhere on a topic header to expand or collapse it. Its **+** and **•••**
+buttons keep their separate actions.
+
 Difficulty checkboxes start unchecked. Select one or more to filter; selecting
 all or clicking **Clear selection** restores all levels. While searching or
 filtering, topics without matching questions are hidden.
@@ -264,11 +267,24 @@ notes, and links on the left; a C++ editor on the right. The editor includes
 syntax highlighting, line numbers, indentation guides, and fold arrows for code
 blocks. Copy always copies the full solution, including folded code.
 
+The **+** on a topic opens this same card ready to add a question, with that
+topic and today's IST date prefilled. Phones keep the existing add-question form.
+Search, difficulty filters, and **New Topic** share the subject toolbar.
+
 Use the card's top-right pencil to edit the question's fields and code in place.
-Topic, difficulty, and status use matching dropdowns. Save with **Save changes**
+The title and notes become editable at their existing positions; topic,
+difficulty, and status turn into matching dropdowns. The date opens the same
+frosted calendar as the add-question form, using IST. Click a problem/reference
+chip while editing to update its URL. The card header shows the topic name.
+Save with **Save changes**
 or **Ctrl/Cmd+Enter**. **Escape** closes the card; unsaved changes require a discard
 choice. Phones and touch tablets retain the stacked notes/code viewer and row
 edit button.
+
+LeetCode, GeeksforGeeks, and YouTube marks are served from bundled SVGs, so they
+do not depend on a third-party favicon lookup. Other websites use their favicon
+with a neutral link icon as a fallback. Code line numbers remain on an opaque,
+fixed gutter when you scroll horizontally.
 
 Press **Left/Right** to browse questions in the current topic/filter order.
 Desktop also has previous/next buttons and a position counter. Navigation pauses
