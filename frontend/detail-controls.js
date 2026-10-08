@@ -123,24 +123,28 @@ export function mountDatePicker(parent,{value,onChange}) {
 }
 
 export function mountResource(parent,{label,value,onChange}) {
-  let current=value || '', enabled=false;
+  let current=value || '';
+  const fieldLabel=label==='Problem'?'Problem link':'Reference material';
   parent.classList.add('detail-resource-control');
-  parent.innerHTML=`<a class="detail-resource" target="_blank" rel="noopener noreferrer"></a><div class="detail-link-panel" hidden><label>${label==='Problem'?'Problem link':'Reference material'}<input type="url" aria-label="${label==='Problem'?'Problem link':'Reference material'}" placeholder="https://…"></label><span class="detail-muted">Changes are saved with the question.</span></div>`;
-  const trigger=parent.querySelector('a'),panel=parent.querySelector('.detail-link-panel'),input=panel.querySelector('input');
-  const control=floatingControl(parent,trigger,panel);
+  parent.innerHTML=`<a class="detail-resource" target="_blank" rel="noopener noreferrer"></a>
+    <label class="detail-url-field" hidden><span class="detail-url-label">${fieldLabel}</span>
+      <span class="detail-url-input"><span class="detail-url-icon" aria-hidden="true"></span><input type="url" aria-label="${fieldLabel}" placeholder="https://…" spellcheck="false" autocomplete="off"></span>
+    </label>`;
+  const link=parent.querySelector('a'),field=parent.querySelector('label'),input=parent.querySelector('input');
   function draw() {
     const url=safeUrl(current);
-    trigger.innerHTML=`${iconMarkup(current)}${label}<span class="detail-resource-edit-hint" aria-hidden="true">↗</span>`;
-    trigger.href=url?.href || '#'; trigger.setAttribute('aria-label',enabled?`Edit ${label.toLowerCase()} link`:`Open ${label.toLowerCase()} link`);
-    trigger.title=url?.hostname || `No ${label.toLowerCase()} link added`;
-    trigger.classList.toggle('detail-resource-missing',!url);
+    link.innerHTML=`${iconMarkup(current)}${label}`;
+    link.href=url?.href || '#'; link.setAttribute('aria-label',`Open ${label.toLowerCase()} link`);
+    link.title=url?.hostname || `No ${label.toLowerCase()} link added`;
+    link.classList.toggle('detail-resource-missing',!url);
+    parent.querySelector('.detail-url-icon').innerHTML=iconMarkup(current);
   }
-  trigger.onclick=e=>{
-    if(!enabled){if(!safeUrl(current))e.preventDefault();return;}
-    e.preventDefault();if(control.isOpen()){control.close();return;}control.open();input.focus();
-  };
+  link.onclick=e=>{if(!safeUrl(current))e.preventDefault();};
   input.value=current;
   input.oninput=()=>{current=input.value;onChange(current);draw();};
-  input.onkeydown=e=>{if(e.key==='Enter'){e.preventDefault();control.close();trigger.focus();}};
-  draw();return {...control,setEnabled:active=>{enabled=active;if(!active)control.close();trigger.setAttribute('aria-haspopup',active?'dialog':'false');draw();}};
+  draw();
+  return {
+    close() {}, destroy() {},
+    setEnabled(active) {link.hidden=active;field.hidden=!active;input.disabled=!active;},
+  };
 }

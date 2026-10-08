@@ -31,7 +31,7 @@ export function openQuestionDetail({question, questions = [question], topics, di
   root.classList.add('question-detail');
   root.setAttribute('role','dialog'); root.setAttribute('aria-modal','true'); root.setAttribute('aria-labelledby','detail-title');
   root.innerHTML = `
-    <header class="detail-toolbar"><div class="detail-heading"><span class="detail-eyebrow"></span><nav class="detail-navigation" aria-label="Browse questions">
+    <header class="detail-toolbar"><div class="detail-heading"><div class="detail-topic"></div><nav class="detail-navigation" aria-label="Browse questions">
       <button type="button" class="detail-icon-button detail-prev" aria-label="Previous question" title="Previous question (←)">${icon('previous')}</button>
       <span class="detail-position" aria-live="polite"></span>
       <button type="button" class="detail-icon-button detail-next" aria-label="Next question" title="Next question (→)">${icon('next')}</button>
@@ -69,14 +69,13 @@ export function openQuestionDetail({question, questions = [question], topics, di
 
   function renderInfo() {
     selects.forEach(control=>control.destroy());
-    info.innerHTML = `<div class="detail-topic"></div>
-      <h2 id="detail-title" class="detail-inline-text" data-field="title" aria-label="Question name" data-placeholder="Question name" spellcheck="false">${escape(saved.title)}</h2>
+    info.innerHTML = `<h2 id="detail-title" class="detail-inline-text" data-field="title" aria-label="Question name" data-placeholder="Question name" spellcheck="false">${escape(saved.title)}</h2>
       <div class="detail-meta"><div class="detail-level-field"></div><div class="detail-status-field"></div><div class="detail-date"></div></div>
       <div class="detail-notes-section"><h3>Notes</h3><div class="detail-notes-text detail-inline-text" data-field="notes" aria-label="Notes" data-placeholder="No notes yet. Capture your approach here…">${escape(saved.notes)}</div></div>
       <div class="detail-resources"><div class="detail-problem"></div><div class="detail-reference"></div></div>`;
     const topicOptions=[...new Set([...topics,draft.topic].filter(Boolean))].map(t=>({key:t,label:t}));
     selects = [
-      mountSelect(info.querySelector('.detail-topic'),{label:'Topic',value:draft.topic,options:topicOptions,searchable:true,onChange:value=>{draft.topic=value;updateToolbar();}}),
+      mountSelect(root.querySelector('.detail-topic'),{label:'Topic',value:draft.topic,options:topicOptions,searchable:true,onChange:value=>{draft.topic=value;updateToolbar();}}),
       mountSelect(info.querySelector('.detail-level-field'),{label:'Difficulty',value:draft.difficulty,options:difficulties,onChange:value=>draft.difficulty=value}),
       mountSelect(info.querySelector('.detail-status-field'),{label:'Status',value:draft.status,options:statusOptions,onChange:value=>draft.status=value}),
       mountDatePicker(info.querySelector('.detail-date'),{value:draft.date_solved,onChange:value=>draft.date_solved=value}),
@@ -91,8 +90,7 @@ export function openQuestionDetail({question, questions = [question], topics, di
   }
   function updateToolbar() {
     const name=(editing?draft.topic:saved.topic)||'Uncategorized';
-    root.querySelector('.detail-eyebrow').textContent=name;
-    root.querySelector('.detail-eyebrow').title=name;
+    root.querySelector('.detail-topic .detail-select-trigger').title=name;
   }
   function applyEditing() {
     selects.forEach(control=>control.setEnabled(editing));

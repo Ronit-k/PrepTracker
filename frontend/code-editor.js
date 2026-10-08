@@ -67,7 +67,7 @@ export function createCodeEditor(parent, code, onChange) {
           '.cm-scroller': {fontFamily: "'SF Mono', 'Cascadia Code', Menlo, Consolas, monospace", fontSize: '13px', lineHeight: '1.8', overflow: 'auto'},
           '.cm-content': {padding: '18px 0', caretColor: '#74b7ff', minHeight: '100%'},
           '.cm-line': {padding: '0 18px 0 8px'},
-          '.cm-gutters': {backgroundColor: '#111217', color: '#737b89', border: 'none', borderRight: '1px solid #ffffff0a', paddingRight: '6px', zIndex: '2'},
+          '.cm-gutters': {backgroundColor: 'var(--detail-code-surface, #111217)', color: '#737b89', border: 'none', borderRight: '1px solid #ffffff0a', paddingRight: '6px', zIndex: '2'},
           '.cm-gutterElement': {fontSize: '11px'},
           '.cm-activeLineGutter': {backgroundColor: 'rgba(255,255,255,.04)', color: '#a8afbc'},
           '.cm-foldGutter .cm-gutterElement': {cursor: 'pointer', padding: '0 3px'},

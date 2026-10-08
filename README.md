@@ -262,8 +262,8 @@ filtering, topics without matching questions are hidden.
 
 ## Question details
 
-On desktop, the notes icon opens a wide, two-pane card: topic, title, difficulty,
-notes, and links on the left; a C++ editor on the right. The editor includes
+On desktop, the notes icon opens a wide, two-pane card: the topic appears once
+in the header, with title, difficulty, notes, and links on the left; a C++ editor on the right. The editor includes
 syntax highlighting, line numbers, indentation guides, and fold arrows for code
 blocks. Copy always copies the full solution, including folded code.
 
@@ -272,10 +272,11 @@ topic and today's IST date prefilled. Phones keep the existing add-question form
 Search, difficulty filters, and **New Topic** share the subject toolbar.
 
 Use the card's top-right pencil to edit the question's fields and code in place.
-The title and notes become editable at their existing positions; topic,
+The title and notes become softly inset editable fields; topic,
 difficulty, and status turn into matching dropdowns. The date opens the same
 frosted calendar as the add-question form, using IST. Click a problem/reference
-chip while editing to update its URL. The card header shows the topic name.
+chip to open its page in view mode. Editing reveals both URLs as labeled fields,
+so there is no extra click to find them. Change the topic in the header dropdown.
 Save with **Save changes**
 or **Ctrl/Cmd+Enter**. **Escape** closes the card; unsaved changes require a discard
 choice. Phones and touch tablets retain the stacked notes/code viewer and row
