@@ -71,7 +71,7 @@ export function openQuestionDetail({question, questions = [question], topics, di
     selects.forEach(control=>control.destroy());
     info.innerHTML = `<h2 id="detail-title" class="detail-inline-text" data-field="title" aria-label="Question name" data-placeholder="Question name" spellcheck="false">${escape(saved.title)}</h2>
       <div class="detail-meta"><div class="detail-level-field"></div><div class="detail-status-field"></div><div class="detail-date"></div></div>
-      <div class="detail-notes-section"><h3>Notes</h3><div class="detail-notes-text detail-inline-text" data-field="notes" aria-label="Notes" data-placeholder="No notes yet. Capture your approach here…">${escape(saved.notes)}</div></div>
+      <div class="detail-notes-section"><h3>Notes</h3><div class="detail-notes-scroll" tabindex="0" aria-label="Scroll notes"><div class="detail-notes-text detail-inline-text" data-field="notes" aria-label="Notes" data-placeholder="No notes yet. Capture your approach here…">${escape(saved.notes)}</div></div></div>
       <div class="detail-resources"><div class="detail-problem"></div><div class="detail-reference"></div></div>`;
     const topicOptions=[...new Set([...topics,draft.topic].filter(Boolean))].map(t=>({key:t,label:t}));
     selects = [
@@ -123,7 +123,7 @@ export function openQuestionDetail({question, questions = [question], topics, di
     index = next; saved = {...sequence[index]}; draft = {...saved};
     editor.reset(saved.code || ''); updateLines(saved.code);
     root.querySelector('.detail-save-state').textContent = '';
-    setError(''); renderInfo(); info.scrollTop = 0;
+    setError(''); renderInfo();
     root.querySelector('.detail-edit').focus();
   }
 

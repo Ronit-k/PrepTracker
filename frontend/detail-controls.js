@@ -58,6 +58,7 @@ export function mountSelect(parent, {label,value,options,searchable=false,onChan
   const trigger=parent.querySelector('button'), panel=parent.querySelector('.detail-select-panel');
   const list=panel.querySelector('[role=listbox]'), search=panel.querySelector('input');
   const control=floatingControl(parent,trigger,panel);
+  if (label==='Difficulty') trigger.classList.add('file-diff');
   let selected=value;
   function draw() {
     const current=options.find(o=>o.key===selected) || {label:selected};

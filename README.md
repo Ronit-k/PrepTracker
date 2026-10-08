@@ -282,10 +282,11 @@ or **Ctrl/Cmd+Enter**. **Escape** closes the card; unsaved changes require a dis
 choice. Phones and touch tablets retain the stacked notes/code viewer and row
 edit button.
 
-LeetCode, GeeksforGeeks, and YouTube marks are served from bundled SVGs, so they
-do not depend on a third-party favicon lookup. Other websites use their favicon
-with a neutral link icon as a fallback. Code line numbers remain on an opaque,
-fixed gutter when you scroll horizontally.
+Site icons come from the problem/reference URL, with a favicon lookup and
+a neutral inline icon as fallbacks. No site-specific icon files are bundled. Code line numbers remain on an opaque,
+fixed gutter when you scroll horizontally. The title, metadata, and resource
+links stay fixed while only the notes and code panes scroll. Difficulty pills
+match the subject list; edit highlighting stays inside editable fields.
 
 Press **Left/Right** to browse questions in the current topic/filter order.
 Desktop also has previous/next buttons and a position counter. Navigation pauses

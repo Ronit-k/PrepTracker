@@ -65,7 +65,7 @@ export function createCodeEditor(parent, code, onChange) {
         EditorView.theme({
           '&': {height: '100%', backgroundColor: 'transparent', color: '#d4d7de'},
           '.cm-scroller': {fontFamily: "'SF Mono', 'Cascadia Code', Menlo, Consolas, monospace", fontSize: '13px', lineHeight: '1.8', overflow: 'auto'},
-          '.cm-content': {padding: '18px 0', caretColor: '#74b7ff', minHeight: '100%'},
+          '.cm-content': {padding: '0 0 8px', caretColor: '#74b7ff', minHeight: '100%'},
           '.cm-line': {padding: '0 18px 0 8px'},
           '.cm-gutters': {backgroundColor: 'var(--detail-code-surface, #111217)', color: '#737b89', border: 'none', borderRight: '1px solid #ffffff0a', paddingRight: '6px', zIndex: '2'},
           '.cm-gutterElement': {fontSize: '11px'},
