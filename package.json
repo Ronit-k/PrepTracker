@@ -1,0 +1,16 @@
+{
+  "name": "preptracker-ui",
+  "private": true,
+  "scripts": {
+    "build": "esbuild frontend/question-detail.js --bundle --format=esm --minify --legal-comments=eof --outfile=static/vendor/question-detail.js"
+  },
+  "dependencies": {
+    "@codemirror/commands": "^6.0.0",
+    "@codemirror/lang-cpp": "^6.0.0",
+    "@codemirror/language": "^6.0.0",
+    "@codemirror/state": "^6.0.0",
+    "@codemirror/view": "^6.0.0",
+    "@lezer/highlight": "^1.0.0"
+  },
+  "devDependencies": { "esbuild": "^0.25.0" }
+}

@@ -254,7 +254,40 @@ question IDs, order, notes, code, and progress. Deletion moves questions to
 questions and progress too.
 
 Difficulty checkboxes start unchecked. Select one or more to filter; selecting
-all or clicking **Clear selection** restores all levels.
+all or clicking **Clear selection** restores all levels. While searching or
+filtering, topics without matching questions are hidden.
+
+## Question details
+
+On desktop, the notes icon opens a wide, two-pane card: topic, title, difficulty,
+notes, and links on the left; a C++ editor on the right. The editor includes
+syntax highlighting, line numbers, indentation guides, and fold arrows for code
+blocks. Copy always copies the full solution, including folded code.
+
+Use the card's top-right pencil to edit the question's fields and code in place.
+Topic, difficulty, and status use matching dropdowns. Save with **Save changes**
+or **Ctrl/Cmd+Enter**. **Escape** closes the card; unsaved changes require a discard
+choice. Phones and touch tablets retain the stacked notes/code viewer and row
+edit button.
+
+Press **Left/Right** to browse questions in the current topic/filter order.
+Desktop also has previous/next buttons and a position counter. Navigation pauses
+while editing, so arrow keys still move the cursor normally. There is no wrap
+from the last question back to the first.
+
+### Rebuilding the desktop editor
+
+The CodeMirror bundle is committed in `static/vendor/question-detail.js`, so
+normal local setup and PythonAnywhere deployment require only Python. If you
+change `frontend/` or editor dependencies, rebuild and commit the bundle too:
+
+```bash
+npm ci
+npm run build
+```
+
+Third-party license notices are in `static/vendor/THIRD_PARTY_LICENSES.txt`;
+update them when changing bundled dependencies.
 
 ## Project structure
 
@@ -270,6 +303,8 @@ PrepTracker/
 │   └── generate_backup_workflow.py # Build the schedule from config.py
 ├── .github/workflows/data-backup.yml
 ├── templates/index.html
+├── frontend/                       # Desktop detail card and CodeMirror source
+├── package.json                    # Optional editor build tooling
 ├── static/                         # CSS, JavaScript, favicon
 ├── data/                           # Local data / hosted-data backup in GitHub
 ├── tests/

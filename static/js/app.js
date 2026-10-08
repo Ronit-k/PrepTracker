@@ -830,10 +830,11 @@ function renderTree() {
     grouped[topic].push(q);
   });
 
-  const orderedTopics = Object.keys(grouped);
+  const filtering = searchInput.value.trim() !== '' || filterDiff.querySelector('.cs-option.selected') !== null;
+  const orderedTopics = Object.keys(grouped).filter(topic => !filtering || grouped[topic].length > 0);
 
   if (!orderedTopics.length) {
-    treeContainer.innerHTML = '<div class="tree-empty">No topics yet. Create one to get started!</div>';
+    treeContainer.innerHTML = `<div class="tree-empty">${filtering ? 'No questions match your filters.' : 'No topics yet. Create one to get started!'}</div>`;
     return;
   }
 
@@ -918,7 +919,7 @@ function renderFileRow(q) {
   const hasNotes = q.notes && q.notes.trim();
   const hasCode = q.code && q.code.trim();
   const hasContent = hasNotes || hasCode;
-  const notesBtn = `<button class="btn-icon btn-notes ${hasContent ? '' : 'btn-notes-empty'}" onclick="showNotes('${q.id}')" title="${hasContent ? 'View summary' : 'No notes'}">
+  const notesBtn = `<button class="btn-icon btn-notes ${hasContent ? '' : 'btn-notes-empty'}" onclick="showNotes('${q.id}')" title="View question details" aria-label="View question details">
     <svg width="15" height="15" viewBox="0 0 16 16" fill="none"><path d="M3 2.5h10a1 1 0 0 1 1 1v9a1 1 0 0 1-1 1H3a1 1 0 0 1-1-1v-9a1 1 0 0 1 1-1z" stroke="currentColor" stroke-width="1.2"/><path d="M5 5.5h6M5 8h6M5 10.5h3" stroke="currentColor" stroke-width="1.1" stroke-linecap="round"/></svg>
   </button>`;
 
@@ -945,7 +946,7 @@ function renderFileRow(q) {
       ${platLink}
       ${notesBtn}
       <div class="file-actions">
-        <button class="btn-icon" onclick="editQuestion('${q.id}')" title="Edit">
+        <button class="btn-icon btn-row-edit" onclick="editQuestion('${q.id}')" title="Edit">
           <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M10 2l2 2-7 7H3v-2z" stroke="currentColor" stroke-width="1.2" stroke-linejoin="round"/></svg>
         </button>
         <button class="btn-icon" onclick="deleteQuestion('${q.id}')" title="Delete">
@@ -973,11 +974,51 @@ async function cycleStatus(id) {
 }
 window.cycleStatus = cycleStatus;
 
-function showNotes(id) {
+let detailLoading = false;
+let desktopDetail = null;
+function detailQuestions() {
+  return [...treeContainer.querySelectorAll('.file-row[data-id]')]
+    .map(row => subjectQuestions.find(q => q.id === row.dataset.id)).filter(Boolean);
+}
+async function showNotes(id) {
+  if (!window.matchMedia('(min-width: 900px) and (hover: hover) and (pointer: fine)').matches) {
+    showMobileNotes(id);
+    return;
+  }
+  if (detailLoading || desktopDetail) return;
+  const q = subjectQuestions.find(q => q.id === id);
+  if (!q) return;
+  const subject = currentSubject;
+  detailLoading = true;
+  try {
+    const {openQuestionDetail} = await import('/static/vendor/question-detail.js');
+    desktopDetail = openQuestionDetail({question: q, questions: detailQuestions(), topics: subjectTopics, difficulties: DIFFS,
+      onSave: async updated => {
+        const {id, date_added, ...fields} = updated;
+        fields.platform = detectPlatform(fields.link);
+        await api(`/api/${subject}/questions/${id}`, 'PUT', fields);
+        openFolders.add(fields.topic);
+        await loadSubject(subject);
+        await refreshNavCounts();
+        showToast('Question updated');
+      },
+      onClosed: () => {desktopDetail = null;},
+    });
+  } catch (error) {
+    showToast('Could not load the detail editor. Please refresh and try again.');
+    console.error(error);
+  } finally {detailLoading = false;}
+}
+
+function showMobileNotes(id) {
   const q = subjectQuestions.find(q => q.id === id);
   if (!q) return;
   const popover = $('#notesPopover');
   const content = $('#notesPopoverContent');
+  content.classList.remove('question-detail');
+  content.removeAttribute('role');
+  content.removeAttribute('aria-modal');
+  content.removeAttribute('aria-labelledby');
   const hasNotes = q.notes && q.notes.trim();
   const hasCode = q.code && q.code.trim();
 
@@ -1000,7 +1041,7 @@ function showNotes(id) {
     }
     content.innerHTML = html;
     if (hasCode) {
-      content.querySelectorAll('pre code').forEach(el => hljs.highlightElement(el));
+      if (window.hljs) content.querySelectorAll('pre code').forEach(el => hljs.highlightElement(el));
     }
   }
   popover.classList.add('open');
@@ -1014,6 +1055,12 @@ function showNotes(id) {
   };
   const escClose = (e) => {
     if (e.key === 'Escape') closePopover();
+    if (e.key === 'ArrowLeft' || e.key === 'ArrowRight') {
+      const questions = detailQuestions();
+      const index = questions.findIndex(item => item.id === id);
+      const next = questions[index + (e.key === 'ArrowRight' ? 1 : -1)];
+      if (next) { e.preventDefault(); closePopover(); showMobileNotes(next.id); }
+    }
   };
   setTimeout(() => {
     document.addEventListener('pointerdown', clickClose);
