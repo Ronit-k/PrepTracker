@@ -3312,8 +3312,8 @@ public:
         return -1;
     }
 };"
-d226d06d,Painter's Partition and Split Array,https://leetcode.com/problems/split-array-largest-sum/description/,leetcode,medium,Binary Search,solved,"[STRIVER HARD] this type of min(max) or max(min) question we apply Binary Search in the answer
-his is a Binary Search on Answer problem where we binary search on the largestSum allowed for each subarray. low = max(nums) because every subarray is non-empty, and high = sum(nums) because one partition can contain the whole array. For a given largestSum, getPartitions() greedily creates a new partition whenever adding the current element would exceed largestSum, giving the minimum number of partitions possible for that maximum sum. If partitions > k, largestSum is too small, so increase low; otherwise it is possible to split into at most k partitions, so try a smaller value by decreasing high. At the end low is the minimum possible largest subarray sum. Time: O(n log(sum(nums))), Space: O(1).",2026-10-07,2026-10-07,https://www.youtube.com/watch?v=thUd_WJn6wk&list=PLgUwDviBIf0pMFMWuuvDNMAkoQFi-h0ZF&index=21,"class Solution {
+d226d06d,Painter's Partition and Split Array,https://leetcode.com/problems/split-array-largest-sum/description/,leetcode,medium,Binary Search,solved,"[STRIVER HARD] this type of min(max) or max(min) question we apply Binary Search on the answer
+We binary search on the largestSum allowed for each subarray. low = max(nums) because every subarray is non-empty, and high = sum(nums) because one partition can contain the whole array. For a given largestSum, getPartitions() greedily creates a new partition whenever adding the current element would exceed largestSum, giving the minimum number of partitions possible for that maximum sum. If partitions > k, largestSum is too small, so increase low; otherwise it is possible to split into at most k partitions, so try a smaller value by decreasing high. At the end low is the minimum possible largest subarray sum. Time: O(n log(sum(nums))), Space: O(1).",2026-10-07,2026-10-07,https://www.youtube.com/watch?v=thUd_WJn6wk&list=PLgUwDviBIf0pMFMWuuvDNMAkoQFi-h0ZF&index=21,"class Solution {
 private:
     int getPartitions(vector<int>& nums, int largestSum){
         //it is gauranteed that largestSum >= num for all num in nums as larestSum >= max(nums)
@@ -3458,3 +3458,156 @@ public:
         return 69;
     }
 };"
+26f38615,K-th element of two sorted arrays,https://www.geeksforgeeks.org/problems/k-th-element-of-two-sorted-array1317/1,gfg,hard,Binary Search,solved,"[STRIVER HARD]
+Same partition approach as Median of Two Sorted Arrays, but here we need exactly k elements in the left half. We keep 'a' as the smaller array and binary search on cut1 = number of elements taken from 'a'; cut2 = k - cut1 is then fixed. The valid range of cut1 is max(0,k-n2) to min(k,n1) so that both cuts remain within their arrays. TAKE A NOTE OF THESE RANGES FOR LOW AND HIGH CAREFULLY AS simply puttin low = 0 wont work
+
+O(log(min(n1,n2))), Space: O(1).",2026-10-08,2026-10-08,https://www.youtube.com/watch?v=nv7F4PiLUzo&list=PLgUwDviBIf0p4ozDR_kJJkONnb1wdx2Ma&index=68,"class Solution {
+  public:
+    int kthElement(vector<int> &a, vector<int> &b, int k) {
+        // code here
+        int n1 = a.size();
+        int n2 = b.size();
+        if(n2 < n1) return kthElement(b, a, k); //we want to keep the first array smaller to reduce th esize of the binary search
+        
+        int low = max(0, k - n2); //min we can take max(0, k - n2) elements from array a
+        int high = min(k, n1); // max we can take min(k,n1) elements from the array
+        
+        while(low <= high){
+            int cut1 = low + (high - low)/2;//cut 1 basically tells how many element from the 1st array we are taking to be the left half
+            int cut2 = k - cut1; //cut2 tells how many element from the 2nd array we are taking to be the left half
+            
+            int l1 = (cut1 != 0)? a[cut1-1] : INT_MIN;
+            int l2 = (cut2 != 0)? b[cut2-1] : INT_MIN;
+            int r1 = (cut1 < n1)? a[cut1] : INT_MAX; 
+            int r2 = (cut2 < n2)? b[cut2] : INT_MAX;
+            
+            if(l1 <= r2 && l2 <= r1){ //we have found a valid cut
+                return max(l1, l2);
+            }
+            else if(l1 > r2){//cut1 should be reduced
+                high = cut1 - 1;
+            }
+            else{
+                low = cut1 + 1;
+            }
+        }
+        return 69;
+    }
+};"
+3384085b,Minimise Maximum Distance between Gas Stations,https://www.geeksforgeeks.org/problems/minimize-max-distance-to-gas-station/1,gfg,hard,Binary Search,solved,"[STRIVER HARD] there are two approaches the Binary Search on answers one and the greedy approach using heaps
+The heap approach may give TLE
+
+In the Binary Search approach we apply binary search on the answer.
+now some important points to note here are 
+1) We exploit the fact that we need a accuracy of only upto 1e-6 by writing the condition as (high - low > 1e-6) inside while loop. 2) Since we are dealing with doubles here we cannot do 
+low = mid+1, as we might be skipping a lot of possible answers there so we just equate high and low to mid.
+3) In the ""getNumberOfGasStationsRequired"" function don't forget to do gasStations-- if the gap is a multiple of maxDist, as between 1 and 2 only one gasStation can be placed at 0.5 distance but 1/0.5 = 2.
+
+",2026-10-08,2026-10-08,https://www.youtube.com/watch?v=kMSBvlZ-_HA&list=PLgUwDviBIf0pMFMWuuvDNMAkoQFi-h0Z1F&index=22,"//optimal binary search approach
+class Solution {
+  private:
+    int getNumberOfGasStationsRequired(vector<int>& stations, double maxDist){
+        int cntGasStations = 0;
+        for(int i = 1; i< stations.size(); ++i){
+            int gap = stations[i] - stations[i-1];
+            int gasStations = gap/maxDist;
+            if(gasStations*maxDist == gap) gasStations--; //if the gap is a multiple of maxDist, then the divisions counts one extra
+            cntGasStations += gasStations;
+        }
+        return cntGasStations;
+    }
+  public:
+    double minMaxDist(vector<int> &stations, int k) {
+        // Code here
+        int maxGap;
+        for(int i = 1; i<stations.size(); ++i) maxGap = max(maxGap, stations[i] - stations[i-1]);
+        double low = 0;
+        double high = maxGap;
+        
+        //we will perform a binary search on the max distance between any two gas station and try to minimise it
+        while(high - low > 1e-6){//we will make use of the fact that we have to calculate the answer upto 6 decimal place accuracy only
+            double mid = low + (high - low)/2.0 ;
+
+            if(getNumberOfGasStationsRequired(stations, mid) > k){ //we need to increase the distance
+                low = mid;
+            }
+            else{
+                high = mid;
+            }
+        }
+        return high;
+    }
+};
+
+//This maxHeap approach may give TLE
+class Solution {
+  public:
+    double minMaxDist(vector<int> &stations, int k) {
+        // Code here
+        int n = stations.size();
+
+        if(n <= 1) return 0.0;
+
+        vector<int> stationsInBetween(n-1, 0); // i-> stations in between i and i+1
+        priority_queue<pair<double,int>> pq; //max heap storing {distInBetween, index i}
+
+        //pushing all the initial elements in the pq
+        for(int i = 0; i<n-1; i++){
+            pq.push({(double)(stations[i+1] - stations[i]), i});
+        }
+
+        for(int i = 0; i<k; i++){
+            auto [dist, idx] = pq.top();
+            pq.pop();
+
+            // insert one stastion between the most far apart one
+            dist = (dist*(stationsInBetween[idx] + 1))/(stationsInBetween[idx] + 2);
+            stationsInBetween[idx]++;
+            pq.push({dist, idx});
+        }
+
+        return pq.top().first;
+    }
+};"
+62d2b903,Median in a Row-Wise Sorted Matrix,https://www.geeksforgeeks.org/problems/median-in-a-row-wise-sorted-matrix1527/1,gfg,hard,Binary Search,solved,"[STRIVER HARD]
+Since every row is sorted, we binary search on the value
+For a given mid, getEleLessthanOrEql() counts how many elements are <= mid using upper_bound on each row. 
+
+We need the smallest value having more than m*n/2 elements <= it, so if count <= m*n/2, mid is too small and we move low right; otherwise mid can be the median, so move high left. At the end low gives the median. 
+
+Time: O(m log n · log(maxElement-minElement)), Space: O(1).
+",2026-10-08,2026-10-08,https://www.youtube.com/watch?v=Q9wXgdxJq48,"class Solution {
+  private:
+    int getEleLessthanOrEql(vector<vector<int>> &mat, int num){
+        int cnt = 0;
+        for(int i = 0; i<mat.size(); ++i){
+            cnt += upper_bound(mat[i].begin(), mat[i].end(), num) - mat[i].begin();
+        }
+        return cnt;
+    }
+  public:
+    int median(vector<vector<int>> &mat) {
+        // code here
+        int m = mat.size();
+        int n = mat[0].size();
+        
+        int low = INT_MAX;
+        for(int i = 0; i<m; ++i) low = min(low, mat[i][0]);
+        int high = INT_MIN;
+        for(int i = 0; i<m; ++i) high = max(high, mat[i][n-1]);
+        
+        //we are basically searching for the 1st elements that has (no. of ele <= that elemnet) > mn/2 
+        while(low <= high){
+            int mid = low + (high - low)/2;
+            
+            if(getEleLessthanOrEql(mat,  mid) <= m*n/2){
+                low = mid + 1;
+            }
+            else{
+                high = mid - 1;
+            }
+        }
+        return low;
+    }
+};
+"
