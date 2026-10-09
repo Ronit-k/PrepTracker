@@ -3611,4 +3611,125 @@ Time: O(m log n · log(maxElement-minElement)), Space: O(1).
     }
 };
 "
-70963ef6,Longest Substring With At Most K Distinct Characters,https://www.geeksforgeeks.org/problems/longest-k-unique-characters-substring0853/1,gfg,medium,Sliding Window / 2 Pointer,solved,[STRIVER HARD],2026-10-09,2026-10-09,https://www.youtube.com/watch?v=teM9ZsVRQyc,
+70963ef6,Longest Substring With At Most K Distinct Characters,https://www.geeksforgeeks.org/problems/longest-k-unique-characters-substring0853/1,gfg,medium,Sliding Window / 2 Pointer,solved,"[STRIVER HARD]
+We use a sliding window [i, j] and maintain the last occurrence index of each character. Whenever we encounter a new distinct character, we increment cntDistinct. If the number of distinct characters exceeds k, we remove the character whose last occurrence is the smallest, since that character cannot appear in the remaining window; hence, we move i to one position after its last occurrence and decrement cntDistinct. At each step, we update the maximum window length. If the string never contains exactly k distinct characters, return -1.
+",2026-10-09,2026-10-09,https://www.youtube.com/watch?v=teM9ZsVRQyc,"class Solution {
+  private:
+    int getLeastLastOccurance(vector<int>& lastOccurance){
+        int minIdx = 1e5;
+        int minChar;
+        for(int i = 0; i<26; ++i){
+            int idx = lastOccurance[i];
+            
+            if(idx == -1) continue;
+            else if (idx < minIdx){
+                minIdx = idx;
+                minChar = i;
+            }
+        }
+        lastOccurance[minChar] = -1; //since we are removing this char from the current string in consideration
+        return minIdx;
+    }
+  public:
+    int longestKSubstr(string &s, int k) {
+        // code here
+        int cntDistinct = 0;
+        int maxLen = 0;
+        vector<int> lastOccurance(26, -1);
+        
+        int i = 0;
+        int j = 0;
+        
+        //our string is from i to j
+        
+        for(; j<s.size(); ++j){
+            if(lastOccurance[s[j] - 'a'] == -1) {//we found a new distinct element
+                cntDistinct++; 
+            }
+            if(cntDistinct > k){
+                //go to the index which contain the least last occurance of a char
+                i = getLeastLastOccurance(lastOccurance) + 1;
+                cntDistinct--; //we removed the char with least last occurance to maintain the longest possible length with k distinct elements
+            }
+            lastOccurance[s[j] - 'a'] = j;
+            maxLen = max(maxLen, j-i+1);
+        }
+        if(cntDistinct < k) return -1;
+        return maxLen;
+    }
+};"
+7fb3fd45,Longest Repeating Character Replacement,https://leetcode.com/problems/longest-repeating-character-replacement/description/,leetcode,hard,Sliding Window / 2 Pointer,solved,"[STRIVER HARD]
+1. Logical and intuitive approach 
+We use a sliding window [i, j] and maintain the frequency of each character. maxFreq stores the maximum frequency of any character in the current window. The minimum number of replacements required to make all characters the same is (j-i+1) - maxFreq, since we keep the most frequent character and replace all the others. If this exceeds k, we shrink the window from the left using 'while loop' until the window becomes valid again. After that, we update maxLen with the current window length. This approach maintains a valid window at every step.
+
+2. Optimized approach 
+In the optimized approach, maxFreq stores the maximum frequency encountered so far, not necessarily the maximum frequency in the current window. because:
+
+-  We never decrease maxFreq because a lower frequency cannot help us discover a new, larger answer. We only need to track historical maximum frequency.
+
+- We use if instead of while because when the window becomes invalid, we move i forward once. Since j also moves forward once in the next iteration, the window size stays the same instead of repeatedly shrinking. It grows only when the condition permits it.
+
+- The window can temporarily be invalid according to its actual frequency counts, because maxFreq may be stale. But the algorithm still finds the correct maximum length; it doesn't need every intermediate window to be valid.
+
+see the video for better clarity
+
+",2026-10-09,2026-10-09,https://www.youtube.com/watch?v=_eNhaDCr6P0,"//optimised approach
+class Solution {
+public:
+    int characterReplacement(string s, int k) {
+        int n = s.size();
+        vector<int> freq(26, 0);
+        int maxFreq = 0;
+        int maxLen = 0;
+
+        int i = 0;
+        int j = 0;
+        for(; j<n; ++j){
+            freq[s[j] - 'A']++;
+            maxFreq = max(maxFreq, freq[s[j] - 'A']);
+            int defaulters = (j-i+1) - maxFreq;
+
+            if(defaulters > k){
+                freq[s[i] - 'A']--;
+                i++;
+                defaulters = (j-i+1) - maxFreq;
+            }
+            maxLen = max(maxLen, j-i+1);
+        }
+        return maxLen;
+    }
+};
+
+//intuitive approach (same asymptotic time complexity)
+class Solution {
+public:
+    int characterReplacement(string s, int k) {
+        int n = s.size();
+        vector<int> freq(26, 0);
+        int maxFreq = 0;
+        int maxLen = 0;
+
+        int i = 0;
+        int j = 0;
+        for(; j<n; ++j){
+            freq[s[j] - 'A']++;
+            maxFreq = 0;
+            //calculating the max freq of current window (constant time)
+            for(int f : freq) maxFreq = max(maxFreq, f);
+            int defaulters = (j-i+1) - maxFreq;
+
+            while(defaulters > k){
+                freq[s[i] - 'A']--;
+                i++;
+                //updating the max frequency for the current window
+                maxFreq = 0;
+                for(int f : freq) maxFreq = max(maxFreq, f);
+
+                defaulters = (j-i+1) - maxFreq;
+            }
+            maxLen = max(maxLen, j-i+1);
+        }
+        return maxLen;
+    }
+};"
+9e052039,Minimum Window Substring,https://leetcode.com/problems/minimum-window-substring/description/,leetcode,medium,Sliding Window / 2 Pointer,solved,,2026-10-09,2026-10-09,https://www.youtube.com/watch?v=WJaij9ffOIY,
