@@ -2410,7 +2410,7 @@ public:
         }
     }
 };"
-2ffcc262,Largest BST in Binary Tree,https://www.geeksforgeeks.org/problems/largest-bst/1,gfg,hard,Binary Search Tree,solved,[STRIVER HARD] main thing is we return the max bst sizr till now in this subtree and its min and max node values then we recursively see if we can make a BST with the current node and update and return the values appropriately,2026-10-04,2026-10-04,https://www.youtube.com/watch?v=X0oXMdtUDwo,"/* Structure of a Binary Search Tree node
+2ffcc262,Largest BST in Binary Tree,https://www.geeksforgeeks.org/problems/largest-bst/1,gfg,hard,Binary Search Tree,solved,[STRIVER HARD] main thing is we return the max BST size till now in this subtree and its min and max node values then we recursively see if we can make a BST with the current node and update and return the values appropriately,2026-10-04,2026-10-04,https://www.youtube.com/watch?v=X0oXMdtUDwo,"/* Structure of a Binary Search Tree node
 class Node {
 public:
     int data;
@@ -3611,3 +3611,4 @@ Time: O(m log n · log(maxElement-minElement)), Space: O(1).
     }
 };
 "
+70963ef6,Longest Substring With At Most K Distinct Characters,https://www.geeksforgeeks.org/problems/longest-k-unique-characters-substring0853/1,gfg,medium,Sliding Window / 2 Pointer,solved,[STRIVER HARD],2026-10-09,2026-10-09,https://www.youtube.com/watch?v=teM9ZsVRQyc,
