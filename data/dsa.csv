@@ -3821,6 +3821,111 @@ public:
         return (startIdx != -1)? s.substr(startIdx, endIdx - startIdx + 1) : """";
     }
 };"
-61330abd,Minimum Window Subsequence,https://www.geeksforgeeks.org/problems/minimum-window-subsequence/1,gfg,medium,Sliding Window / 2 Pointer,solved,"[STRIVER HARD]
+61330abd,Minimum Window Subsequence,https://www.geeksforgeeks.org/problems/minimum-window-subsequence/1,gfg,gaand_faad,Sliding Window / 2 Pointer,solved,"[STRIVER HARD]
+We use the Two Pointers approach. Pointer i traverses s1 and pointer j traverses s2 to find a subsequence of s2 in s1 while maintaining the character order. Whenever s1[i] == s2[j], we increment j. Once j == m, we have found a valid window ending at i. We then scan backward from this position, matching s2 in reverse to find the earliest possible starting point for this window. After finding currStart and currEnd, we update the minimum window if its length is smaller than the best one found so far. We then reset i to currStart and j to 0 so that the next iteration can search for another potentially smaller window. Finally, we return the minimum window substring, or an empty string if no valid window exists.
 
-",2026-10-11,2026-10-11,,
+TC: O(nm) in the worst case, because for each valid window we may scan backward through s1 to match s2.
+
+SC: O(1), since we use only a constant number of extra variables.
+",2026-10-11,2026-10-11,https://www.youtube.com/watch?v=W2DvQcDPD9A,"class Solution {
+  public:
+    string minWindow(string& s1, string& s2) {
+        // Code here
+        int n = s1.size();
+        int m = s2.size();
+        
+        int startIdx = -1;
+        int endIdx = 1e6;
+        
+        int i = 0; //traverses s1
+        int j = 0; //traverses s2
+        
+        for(i ; i<n; ++i){
+            if(s1[i] == s2[j]) j++;
+            
+            //if we have exhaustd s2 then scan in reverse to to get the minimum starting point then see if this window is min or not
+            if(j == m){
+                int currStart, currEnd = i;
+                j--; //make the j point back to the last character of s2
+                while(j >= 0){
+                    if(s1[i] == s2[j]) j--;
+                    i--;
+                }
+                //now the i points just one position behind the current start
+                currStart = i+1;
+                //update the min window
+                if(endIdx - startIdx > currEnd - currStart){
+                    startIdx = currStart;
+                    endIdx = currEnd;
+                }
+                i = currStart; //fix the i back to currStart so next time it can start from currStart + 1 like any valid window will be from currStart+1 - so that for loop can continue
+                j = 0; //and j back to 0 for next scan
+            }
+        }
+        return (startIdx == -1)? """" : s1.substr(startIdx, endIdx - startIdx + 1);
+    }
+};"
+2867c4a4,Binary Subarrays With Sum,https://leetcode.com/problems/binary-subarrays-with-sum/description/,leetcode,hard,Sliding Window / 2 Pointer,solved,"[STRIVER MEDIUM]
+this is the exact same problem as 
+""Hashing\Count Subarray with given sum""
+but we can do better that that by omitting the map and using two pointer this is what makes it hard a bit
+
+",2026-10-11,2026-10-12,https://www.youtube.com/watch?v=XnMdNUkX6VM,"
+
+
+
+//hashing approach
+class Solution {
+public:
+    int numSubarraysWithSum(vector<int>& nums, int goal) {
+        int n = nums.size();
+        int cntSubarrays = 0;
+        unordered_map<int, int> prefixFreq; //stores prefixSum->its frequency;
+        prefixFreq[0] = 1;
+
+        int prefixSum;
+        prefixSum = nums[0];
+        if(prefixSum == goal) cntSubarrays++;
+        prefixFreq[prefixSum]++;
+
+        for(int i = 1; i<n; ++i){
+            prefixSum += nums[i];
+
+            cntSubarrays += prefixFreq[prefixSum - goal];
+
+            prefixFreq[prefixSum]++;
+        }
+        return cntSubarrays;
+    }
+};"
+f30f61a1,Count number of Nice Subarrays,https://leetcode.com/problems/count-number-of-nice-subarrays/description/,leetcode,hard,Sliding Window / 2 Pointer,solved,"[STRIVER HARD]
+
+",2026-10-12,2026-10-12,https://www.youtube.com/watch?v=j_QOv9OT9Og,
+315ff777,Count Subarray with given  sum,https://leetcode.com/problems/subarray-sum-equals-k/description/,leetcode,medium,Hashing,solved,"[STRIVER MEDIUM]
+We use the Prefix Sum + Hash Map approach to count the number of subarrays whose sum is equal to k. The map stores prefixSum -> frequency, i.e. how many times a particular prefix sum has occurred so far. We initialize prefixFreq[0] = 1 to handle subarrays starting from index 0. For every element, we update the current prefixSum and check how many previous prefix sums are equal to prefixSum - k. This is because current prefixSum - previous prefixSum = k, meaning the subarray between those two positions has sum k. We add the frequency of prefixSum - k to cntSubarrays, then insert the current prefixSum into the map. We must check before inserting the current prefix sum so that we only count non-empty subarrays.
+
+TC: O(n) average
+SC: O(n), for storing prefix sum frequencies.
+",2026-10-11,2026-10-12,https://www.youtube.com/watch?v=xvNwoz-ufXA,"class Solution {
+public:
+    int subarraySum(vector<int>& nums, int k) {
+        int n = nums.size();
+        int cntSubarrays = 0;
+        unordered_map<int, int> prefixFreq; //stores prefixSum->its frequency;
+        prefixFreq[0] = 1;
+
+        int prefixSum;
+        prefixSum = nums[0];
+        if(prefixSum == k) cntSubarrays++;
+        prefixFreq[prefixSum]++;
+
+        for(int i = 1; i<n; ++i){
+            prefixSum += nums[i];
+
+            cntSubarrays += prefixFreq[prefixSum - k];
+
+            prefixFreq[prefixSum]++;
+        }
+        return cntSubarrays;
+    }
+};"
