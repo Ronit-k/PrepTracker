@@ -1348,7 +1348,8 @@ public:
         return getMinOperations(0, 0, word1, word2, dp);
     }
 };"
-310365bb,Wildcard Matching,https://leetcode.com/problems/wildcard-matching/description/,leetcode,medium,DP,solved,"[STRIVER HARD] getMatch(i,j) means whether s[i...] can be matched with p[j...]. If the current characters match (or pattern has ?), move both pointers. If the pattern has *, there are two choices: * matches nothing, so move j, or * matches the current character, so move i while keeping j unchanged because * can match more characters. If neither condition is satisfied, the match fails.",2026-09-29,2026-09-29,https://www.youtube.com/watch?v=ZmlQ3vgAOMo,"class Solution {
+310365bb,Wildcard Matching,https://leetcode.com/problems/wildcard-matching/description/,leetcode,medium,DP,solved,"[STRIVER HARD] 
+getMatch(i,j) means whether s[i...] can be matched with p[j...]. If the current characters match (or pattern has ?), move both pointers. If the pattern has *, there are two choices: * matches nothing, so move j, or * matches the current character, so move i while keeping j unchanged because * can match more characters. If neither condition is satisfied, the match fails.",2026-09-29,2026-09-29,https://www.youtube.com/watch?v=ZmlQ3vgAOMo,"class Solution {
 private:
     bool getMatch(int i, int j, string &s, string &p, vector<vector<int>> &dp) {
         int n = s.size();
@@ -3732,4 +3733,94 @@ public:
         return maxLen;
     }
 };"
-9e052039,Minimum Window Substring,https://leetcode.com/problems/minimum-window-substring/description/,leetcode,medium,Sliding Window / 2 Pointer,solved,,2026-10-09,2026-10-09,https://www.youtube.com/watch?v=WJaij9ffOIY,
+562ca729,Longest Palindromic Substring,https://leetcode.com/problems/longest-palindromic-substring/description/,leetcode,hard,Sliding Window / 2 Pointer,solved,"[FINMECHANICS OA]
+IDK a bit tough to click, i wasn't able to do this in FinMech OA ig exam pressure, but the solution is not that hard 
+
+We use the Expand Around Center approach to find the longest palindromic substring. We consider every index as the centre of the palindrome. First, we move `start` left and `end` right to include all the characters equal to `s[mid]`, so that we handle even-length palindromes also. Then we keep expanding outwards as long as `s[start] == s[end]`. After coming out of the loop, we adjust the pointers because they have gone one position outside the palindrome, and update `startIdx` and `endIdx` if we found a longer palindrome. Finally, we return the substring from `startIdx` to `endIdx`.
+
+Time Complexity: O(n²)
+Space Complexity: O(1)
+",2026-10-10,2026-10-11,,"class Solution {
+public:
+    string longestPalindrome(string s) {
+        int n = s.size();
+        int startIdx = 0;
+        int endIdx = 0;
+
+        for(int mid = 0; mid < n; mid++){
+            int start = mid-1;
+            int end = mid+1;
+
+            //creating the centre of the pallindrome
+
+            //putting all the elements equal to mid in left
+            while(start >= 0 && s[start] == s[mid]){
+                start--;
+            }
+            //putting all the elemnets equal to mid in right
+            while(end <n && s[mid] == s[end]){
+                end++;
+            }
+            //now going palindromically
+            while(start >= 0 && end < n  && s[start] == s[end]) {
+                start--;
+                end++;
+            }
+
+            //adjust the pointers after coming out of while loop
+            start++;
+            end--;
+            
+            //store the max length palindrome
+            if(end - start > endIdx - startIdx) {
+                startIdx = start; 
+                endIdx = end;  
+            }
+        }              
+        return s.substr(startIdx, endIdx - startIdx + 1);
+    }
+};"
+9e052039,Minimum Window Substring,https://leetcode.com/problems/minimum-window-substring/description/,leetcode,hard,Sliding Window / 2 Pointer,solved,"[STRIVER HARD]
+We use the Sliding Window approach with a frequency array. First, we store the frequency of every character in t. We expand the window by moving j and decrementing the frequency of each character encountered. If the character's freq is +ve before decrementing that means it's there in sting t, we increment cntMatched. 
+When cntMatched == m, the current window contains all characters of t with the required frequencies. We store the window if it is smaller than the minimum window found so far, then shrink it from the left by moving i and restoring the character's frequency. If the frequency becomes positive, a required character is missing, so we decrement cntMatched and stop shrinking. Finally, we return the minimum window substring, or an empty string if no valid window exists.
+
+TC: O(n + m)
+SC: O(1), since the frequency array has a fixed size.
+",2026-10-09,2026-10-09,https://www.youtube.com/watch?v=WJaij9ffOIY,"class Solution {
+public:
+    string minWindow(string s, string t) {
+        int n = s.size();
+        int m = t.size();
+        vector<int> freq(60,0); //freq map for letters
+        for(int i = 0; i<m; ++i) freq[t[i]-'A']++;
+
+        int cntMatched = 0;
+        int startIdx = -1;
+        int endIdx = 1e6;
+
+        //two pointer
+        int i = 0;
+        int j = 0;
+        for(; j<n; ++j){
+            if(freq[s[j]-'A'] > 0) cntMatched++; //that means it's there in sting t
+            freq[s[j] - 'A']--;
+
+            //shortening the window till its valid
+            while (cntMatched == m) {
+                // Store the current valid window first
+                if (endIdx - startIdx + 1 > j - i + 1) {
+                    startIdx = i;
+                    endIdx = j;
+                }
+                //delete the left most letter
+                freq[s[i] - 'A']++;
+                if (freq[s[i] - 'A'] > 0) cntMatched--;
+                i++;
+            }
+        }
+        return (startIdx != -1)? s.substr(startIdx, endIdx - startIdx + 1) : """";
+    }
+};"
+61330abd,Minimum Window Subsequence,https://www.geeksforgeeks.org/problems/minimum-window-subsequence/1,gfg,medium,Sliding Window / 2 Pointer,solved,"[STRIVER HARD]
+
+",2026-10-11,2026-10-11,,
