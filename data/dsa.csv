@@ -3870,9 +3870,37 @@ this is the exact same problem as
 ""Hashing\Count Subarray with given sum""
 but we can do better that that by omitting the map and using two pointer this is what makes it hard a bit
 
-",2026-10-11,2026-10-12,https://www.youtube.com/watch?v=XnMdNUkX6VM,"
+Optimal approach:
+Since the array contains only 0s and 1s, we can use the sliding window approach. We create a helper function that counts the number of subarrays having sum less than or equal to a given goal. We expand the window by moving j and adding nums[j] to sum. If sum becomes greater than goal, we shrink the window from the left by subtracting nums[i] and moving i forward until sum <= goal. Now all subarrays ending at j and starting anywhere from i to j have sum <= goal, so we add j - i + 1 to the count. To find subarrays with sum exactly equal to goal, we subtract the number of subarrays with sum <= goal - 1 from the number with sum <= goal. We also handle the edge case where goal < 0 by returning 0, since a non-negative array cannot have a negative sum.
 
+TC: O(n) SC: O(1)
+",2026-10-11,2026-10-12,https://www.youtube.com/watch?v=XnMdNUkX6VM,"//optimal solution
+class Solution {
+private:
+    int getSubarrayWithSumLessThanOrEqual(int goal, vector<int>& nums){
+        //edge case
+        if(goal < 0) return 0;
+        int n = nums.size();
+        int sum = 0;
+        int cntSubarray = 0;
 
+        int i = 0;
+        int j = 0;
+        for(; j<n; ++j){
+            sum += nums[j];
+            while(sum > goal){
+                sum -= nums[i];
+                i++;
+            }
+            cntSubarray += j - i + 1; //add all the sub arrays ending at j having sum <= goal
+        }
+        return cntSubarray;   
+    }
+public:
+    int numSubarraysWithSum(vector<int>& nums, int goal) {
+        return getSubarrayWithSumLessThanOrEqual(goal, nums) - getSubarrayWithSumLessThanOrEqual(goal - 1, nums);
+    }
+};
 
 //hashing approach
 class Solution {
@@ -3899,8 +3927,33 @@ public:
     }
 };"
 f30f61a1,Count number of Nice Subarrays,https://leetcode.com/problems/count-number-of-nice-subarrays/description/,leetcode,hard,Sliding Window / 2 Pointer,solved,"[STRIVER HARD]
+Here ""Nice"" subarray is a subarray with at most k odd numbers, so in the previous question where we calculated number of subarrays in a binary array using two pointers, this can be done in a similar fashion, by treating odd numbers as 1 and even as 0 - rest all of the code is same. so this idea can be extended to any problem where we have to find no. of subarrays and there are only two type of elements in the array",2026-10-11,2026-10-12,https://www.youtube.com/watch?v=j_QOv9OT9Og,"class Solution {
+private:
+    int getSubarrayWithSumLessThanOrEqual(int goal, vector<int>& nums){
+        //edge case
+        if(goal < 0) return 0;
+        int n = nums.size();
+        int sum = 0;
+        int cntSubarray = 0;
 
-",2026-10-12,2026-10-12,https://www.youtube.com/watch?v=j_QOv9OT9Og,
+        int i = 0;
+        int j = 0;
+        for(; j<n; ++j){
+            sum += nums[j]&1;
+            while(sum > goal){
+                sum -= nums[i]&1;
+                i++;
+            }
+            cntSubarray += j - i + 1; //add all the sub arrays ending at j having sum <= goal
+        }
+        return cntSubarray;   
+    }
+public:
+    int numberOfSubarrays(vector<int>& nums, int k) {
+        return getSubarrayWithSumLessThanOrEqual(k, nums) - getSubarrayWithSumLessThanOrEqual(k - 1, nums);
+
+    }
+};"
 315ff777,Count Subarray with given  sum,https://leetcode.com/problems/subarray-sum-equals-k/description/,leetcode,medium,Hashing,solved,"[STRIVER MEDIUM]
 We use the Prefix Sum + Hash Map approach to count the number of subarrays whose sum is equal to k. The map stores prefixSum -> frequency, i.e. how many times a particular prefix sum has occurred so far. We initialize prefixFreq[0] = 1 to handle subarrays starting from index 0. For every element, we update the current prefixSum and check how many previous prefix sums are equal to prefixSum - k. This is because current prefixSum - previous prefixSum = k, meaning the subarray between those two positions has sum k. We add the frequency of prefixSum - k to cntSubarrays, then insert the current prefixSum into the map. We must check before inserting the current prefix sum so that we only count non-empty subarrays.
 
