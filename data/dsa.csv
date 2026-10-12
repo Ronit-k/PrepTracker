@@ -1837,7 +1837,7 @@ public:
         return false;
     }
 };"
-a47aefb4,Candy,https://leetcode.com/problems/candy/description/,leetcode,gaand_faad,Greedy,solved,"[STRIVER HARD] this rpblem is rather medium if done in O(n) S.C. main challenge is to think and implement the O(1) S.C. solution (both solutions are given below)
+a47aefb4,Candy,https://leetcode.com/problems/candy/description/,leetcode,gaand_faad,Greedy,solved,"[STRIVER HARD] this problem is rather medium if done in O(n) S.C. main challenge is to think and implement the O(1) S.C. solution (both solutions are given below)
 
 to solve in O(n) S.C., just maintain two arrays left and right satisfying only the left and right neighbours respectively, then take the max if left and right array for ith element and add it to the sum - you can omit making right array by calculating it on the fly
 
@@ -3261,7 +3261,7 @@ public:
         return low;
     }
 };"
-5abe2c35,Kth Missing Positive Number,https://leetcode.com/problems/kth-missing-positive-number/description/,leetcode,medium,Binary Search,solved,"[STRIVER HARD]
+5abe2c35,Kth Missing Positive Number,https://leetcode.com/problems/kth-missing-positive-number/description/,leetcode,hard,Binary Search,solved,"[STRIVER HARD]
 very simple brute force code without Binary search O(n) and O(1) S.C., don't know why in striver hard
 
 But to solve it using Binary search is good in O(logn), we apply binary search to find the two indices between which the kth missing number would lie and then add the some diff to lower index's number.
@@ -3865,7 +3865,7 @@ SC: O(1), since we use only a constant number of extra variables.
         return (startIdx == -1)? """" : s1.substr(startIdx, endIdx - startIdx + 1);
     }
 };"
-2867c4a4,Binary Subarrays With Sum,https://leetcode.com/problems/binary-subarrays-with-sum/description/,leetcode,hard,Sliding Window / 2 Pointer,solved,"[STRIVER MEDIUM]
+2867c4a4,Count Binary Subarrays With Sum,https://leetcode.com/problems/binary-subarrays-with-sum/description/,leetcode,hard,Sliding Window / 2 Pointer,solved,"[STRIVER MEDIUM]
 this is the exact same problem as 
 ""Hashing\Count Subarray with given sum""
 but we can do better that that by omitting the map and using two pointer this is what makes it hard a bit
@@ -3982,3 +3982,173 @@ public:
         return cntSubarrays;
     }
 };"
+31b959a4,Count Subarrays with k different integers,https://leetcode.com/problems/subarrays-with-k-different-integers/description/,leetcode,hard,Sliding Window / 2 Pointer,solved,"[STRIVER HARD]
+very similar to previous question, ig all counting problems in sliding window is solved like this
+
+We create a helper function that counts subarrays containing distinct elements <= k. We expand the window by moving j and incrementing the frequency of nums[j]. If its frequency was previously zero, it means we have encountered a new distinct element, so we increment cntDistinct. If cntDistinct becomes greater than k, we shrink the window from the left by decrementing the frequency of nums[i]. Whenever a frequency becomes zero, that distinct element is no longer present in the window, so we decrement cntDistinct. Once the window contains at most k distinct elements, all subarrays ending at j and starting anywhere from i to j are valid, so we add j - i + 1 to the count. Finally, we subtract the number of subarrays with at most k - 1 distinct elements from those with at most k distinct elements to get the number with exactly k distinct elements.
+
+TC: O(n) SC: O(n)
+",2026-10-12,2026-10-12,https://www.youtube.com/watch?v=7wYGbV_LsX4,"class Solution {
+private:
+    int getSubarrayWithDistinctLessThanOrEqual(int k, vector<int>& nums){
+        if (k<=0) return 0;
+        int n = nums.size();
+        unordered_map<int, int> freq;
+        int cntDistinct = 0;
+        int cntSubarray = 0;
+
+        int i = 0;
+        int j = 0;
+        for(; j<n; ++j){
+            if(freq.find(nums[j]) == freq.end() || freq[nums[j]] == 0) cntDistinct++; //this is a new element in this window
+            freq[nums[j]]++;
+            while(cntDistinct > k){
+                freq[nums[i]]--;
+                if(freq[nums[i]] == 0) cntDistinct--;
+                i++;
+            }
+            cntSubarray += j - i + 1; // add all the arrays ending at j as they have k or less than k distinct elements
+        }
+        return cntSubarray;
+    }
+public:
+    int subarraysWithKDistinct(vector<int>& nums, int k) {
+        return getSubarrayWithDistinctLessThanOrEqual(k, nums) - getSubarrayWithDistinctLessThanOrEqual(k-1, nums);
+    }
+};"
+800c8712,Single Number III,https://leetcode.com/problems/single-number-iii/description/,leetcode,medium,Bit Manipulation,solved,"[STRIVER HARD]
+We use the XOR + Bit Manipulation approach. First, we take the XOR of all elements. Since every number except the two unique numbers appears twice, their XOR cancels out, leaving the XOR of the two unique numbers. This XOR must have at least one set bit because the two unique numbers are different. We find a set bit position in this XOR, which means the two unique numbers have different bits at that position. We then divide all the elements into two groups based on whether that bit is set or not. Since duplicate elements always fall into the same group, they cancel out when XORed. Thus, XORing the elements in each group gives us the two unique numbers.
+
+TC: O(n) SC: O(1)
+",2026-10-12,2026-10-12,https://www.youtube.com/watch?v=UA5JnV1J2sI,"class Solution {
+public:
+    vector<int> singleNumber(vector<int>& nums) {
+        int n = nums.size();
+        //base case
+        if(n == 2) return nums;
+
+        int allXor = 0;
+        for(int i = 0; i<n; ++i) allXor ^= nums[i];
+
+        //find the position first set bit in allXor
+        int setBitPos;
+        for(int i = 31; i>=0; i--){
+            if(allXor & 1<<i){
+                setBitPos = i;
+                break;
+            }
+        }
+
+        //now devide the elements in nums in grp0 and grp1 based of whether or not they have a set bit at setBitPos
+        //and then if we take the xor of all the elements in that grp we will get our respective elements 
+        int grp0Xor = 0;
+        int grp1Xor = 0;
+        for(int i = 0; i<nums.size(); ++i){
+            if(nums[i] & 1<<setBitPos) grp1Xor ^= nums[i];
+            else grp0Xor ^= nums[i];
+        }
+        return {grp0Xor, grp1Xor};
+    }
+};"
+7f4703ac,Count Subarrays with given XOR,https://www.geeksforgeeks.org/problems/count-subarray-with-given-xor/1,gfg,medium,Hashing,solved,"[STRIVER HARD]
+We use the Prefix XOR + Hash Map approach to count subarrays whose XOR is equal to k. The map stores how many times a particular prefix XOR has occurred so far. We initialize prefixFreq[0] = 1 to handle subarrays starting from index 0. For every element, we update the current prefixXor using XOR with arr[i]. We then calculate target = prefixXor ^ k, because if current prefixXor ^ previous prefixXor = k, then the XOR of the subarray between those two prefix positions is k. We add the frequency of target to cntSubarrays, then insert the current prefixXor into the map. We check before inserting the current prefix XOR so that only non-empty subarrays are counted.
+
+TC: O(n) SC: O(n)
+",2026-10-12,2026-10-12,https://www.youtube.com/watch?v=eZr-6p0B7ME,"
+class Solution {
+public:
+    long subarrayXor(vector<int>& arr, int k) {
+        int n = arr.size();
+        long cntSubarrays = 0;
+        unordered_map<int, int> prefixFreq; //stores prefixXor -> its frequency
+
+        int prefixXor = 0;
+        prefixFreq[0] = 1;
+
+        for(int i = 0; i < n; ++i){
+            prefixXor ^= arr[i];
+
+            int target = prefixXor ^ k;
+            cntSubarrays += prefixFreq[target];
+
+            prefixFreq[prefixXor]++;
+        }
+
+        return cntSubarrays;
+    }
+};
+"
+04c2a1d1,2 Sum,https://leetcode.com/problems/two-sum/description/,leetcode,easy,Arrays,solved,"[STRIVER EASY]
+while traversing the array store which all numbers appeared in a map for O(1) lookup and at any value see if target-value appeared somewhere previously or not via the map
+
+Sorting solution:
+sort the array and maintain two pointer at 0 and n-1 then sum those element if the sum > target move the right pointer left to reduce the sum, if sum < target then move the left pointer right to increase the sum, return the indices when they become equal.",2026-10-12,2026-10-12,https://www.youtube.com/watch?v=UXDSeD9mN-k,"//hashing solution
+class Solution {
+public:
+    vector<int> twoSum(vector<int>& nums, int target) {
+        unordered_map<int,int> mp; // stores value, index
+        vector<int> ans;
+        for(int i=0; i<nums.size(); i++){
+            if (mp.find(target - nums[i]) != mp.end()) {
+                ans.push_back(i);
+                ans.push_back(mp[target-nums[i]]);
+                break;
+            }
+            else{
+                mp[nums[i]] = i;
+            }
+        }
+        return ans;
+    }
+};"
+e2a481b9,3 Sum,https://leetcode.com/problems/3sum/,leetcode,medium,Arrays,solved,"[STRIVER MEDIUM]
+basically just apply n times 2 sum, by fixing the 1st element you can get the target for twoSum to get the 2nd and 3rd element
+
+",2026-10-12,2026-10-12,https://www.youtube.com/watch?v=DhFh8Kw7ymk,"class Solution {
+private:
+    vector<vector<int>> twoSum(vector<int>& nums, int i, int target){
+        int n = nums.size();
+        vector<vector<int>> ansTwoSum;
+        //nums is sorted so applying two pointer approach for twoSum
+        int l = i+1;
+        int r = n-1;
+        while(l<r){
+            int curr_sum = nums[l] + nums[r];
+            if(curr_sum == target){
+                vector<int> duplet(2);
+                duplet[0] = nums[l];
+                duplet[1] = nums[r];
+                ansTwoSum.push_back(duplet);
+                l++;
+                r--;
+                //to elemenate duplicates in this case
+                while(l<r && nums[l] == nums[l-1]) l++;
+                while(l<r && nums[r] == nums[r+1]) r--;
+            }
+            else if (curr_sum < target) l++;
+            else r--;
+        }
+        return ansTwoSum;
+    }
+public:
+    vector<vector<int>> threeSum(vector<int>& nums) {
+        vector<vector<int>> ansThreeSum;
+        sort(nums.begin(), nums.end());
+
+        // basically n times 2 sum
+        int target = 0;
+        int n = nums.size();
+
+        for(int i = 0; i<n-1; i++){
+            //fix 1st element then apply 2 sum in the rest
+            if(i>0 && nums[i] == nums[i-1]) continue;
+
+            auto duplets = twoSum(nums, i, target - nums[i]);
+            for(auto duplet : duplets) ansThreeSum.push_back({nums[i], duplet[0], duplet[1]});
+        }
+        return ansThreeSum;
+    }
+};"
+6d80dc9e,4 Sum,https://leetcode.com/problems/4sum/description/,leetcode,medium,Arrays,solved,"[STRIVER HARD]
+
+",2026-10-12,2026-10-12,https://www.youtube.com/watch?v=eD95WRfh81c,
