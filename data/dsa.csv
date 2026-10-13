@@ -3500,7 +3500,8 @@ The heap approach may give TLE
 
 In the Binary Search approach we apply binary search on the answer.
 now some important points to note here are 
-1) We exploit the fact that we need a accuracy of only upto 1e-6 by writing the condition as (high - low > 1e-6) inside while loop. 2) Since we are dealing with doubles here we cannot do 
+1) We exploit the fact that we need a accuracy of only upto 1e-6 by writing the condition as (high - low > 1e-6) inside while loop. 
+2) Since we are dealing with doubles here we cannot do 
 low = mid+1, as we might be skipping a lot of possible answers there so we just equate high and low to mid.
 3) In the ""getNumberOfGasStationsRequired"" function don't forget to do gasStations-- if the gap is a multiple of maxDist, as between 1 and 2 only one gasStation can be placed at 0.5 distance but 1/0.5 = 2.
 
@@ -4273,5 +4274,285 @@ TC: O(n log n) SC: O(n)
         getInversions(cnt, 0, arr.size(), a);
         return cnt;
     }
+};
+
+
+//even this code works - similar to next one
+class Solution {
+  private:
+    void merge(int& cnt, int left, int mid, int right, vector<int>& a){
+        int i = left;
+        int j = mid;
+        vector<int> temp;
+        //count inverse pairs in sorted array [left, mid) and [mid, right) before merge
+        while(i<mid && j<right){
+            if(a[i] > a[j]){
+                j++;
+            }
+            else{
+                cnt += j - mid; //since a[i] > 2*a[j] for j-mid elements
+                i++;
+            }
+        }
+        // if elements are left in i wala array and we have exhausted j then those elements in i are greater then all elements of j wala array
+        while(i<mid) {cnt += j - mid; i++;}
+        //reset pointers
+        i = left;
+        j = mid;
+        //merge
+        while(i<mid && j<right){
+            if(a[i] <= a[j]){
+                temp.push_back(a[i]);
+                i++;
+            }
+            else{
+                temp.push_back(a[j]);
+                j++;
+            }
+        }
+        //pushing the elements that were left
+        while(i < mid) temp.push_back(a[i++]);
+        while(j < right) temp.push_back(a[j++]);
+        //copying temp into our original array
+        for(int it = left; it<right; it++) a[it] = temp[it-left];
+    }
+
+    void getInversions(int& cnt, int left, int right, vector<int>& a){
+        //base case if array contains only one element
+        if (right - left <= 1) return;
+
+        int mid = left + (right - left)/2;
+
+        //right is not inclusive
+        getInversions(cnt, left, mid, a);  //[left, mid)
+        getInversions(cnt, mid, right, a); //[mid, right)
+
+        merge(cnt, left, mid, right, a);
+    }
+
+  public:
+    int inversionCount(vector<int> &arr) {
+        // code here
+        int cnt = 0;
+        vector<int> a(arr);
+        getInversions(cnt, 0, arr.size(), a);
+        return cnt;
+    }
 };"
-6ebd25db,Reverse Pairs,https://leetcode.com/problems/reverse-pairs/description/,leetcode,medium,Arrays,solved,[STRIVER HARD],2026-10-12,2026-10-13,https://www.youtube.com/watch?v=0e4bZaP3MDI,
+6ebd25db,Reverse Pairs,https://leetcode.com/problems/reverse-pairs/description/,leetcode,hard,Arrays,solved,"[STRIVER HARD]
+the main idea in such questions is, if you can solve these questions in two separate sorted arrays then you can just put a counting code snippet in merge sort algo before merging the two halves and it'll count the reversed or inversed whatever pair and store it in the count.
+this exact code ccan be used for previous question also just remove the 2* condition. the code is there in previous question.
+
+here, before merging, we have two sorted arrays and we are seeing how many elements in right half are there whose 2x is smaller than current ith element in left half",2026-10-12,2026-10-13,https://www.youtube.com/watch?v=0e4bZaP3MDI,"class Solution {
+  private:
+    void merge(int& cnt, int left, int mid, int right, vector<int>& a){
+        int i = left;
+        int j = mid;
+        vector<int> temp;
+        //count reverse pairs in sorted array [left, mid) and [mid, right)
+        while(i<mid && j<right){
+            if(a[i] > 2LL*a[j]){
+                j++;
+            }
+            else{
+                cnt += j - mid; //since a[i] > 2*a[j] for j-mid elements
+                i++;
+            }
+        }
+        // if elements are left in i wala array and we have exhausted j then those elements in i are 2x greater then all elements of j wala array
+        while(i<mid) {cnt += j - mid; i++;}
+        //reset pointers
+        i = left;
+        j = mid;
+        //merge
+        while(i<mid && j<right){
+            if(a[i] <= a[j]){
+                temp.push_back(a[i]);
+                i++;
+            }
+            else{
+                temp.push_back(a[j]);
+                j++;
+            }
+        }
+        //pushing the elements that were left
+        while(i < mid) temp.push_back(a[i++]);
+        while(j < right) temp.push_back(a[j++]);
+        //copying temp into our original array
+        for(int it = left; it<right; it++) a[it] = temp[it-left];
+    }
+
+    void getInversions(int& cnt, int left, int right, vector<int>& a){
+        //base case if array contains only one element
+        if (right - left <= 1) return;
+        
+        int mid = left + (right - left)/2;
+        
+        //right is not inclusive
+        getInversions(cnt, left, mid, a);  //[left, mid)
+        getInversions(cnt, mid, right, a); //[mid, right)
+        
+        merge(cnt, left, mid, right, a);
+    }
+
+  public:
+    int reversePairs(vector<int> &arr) {
+        // code here
+        int cnt = 0;
+        vector<int> a(arr);
+        getInversions(cnt, 0, arr.size(), a);
+        return cnt;
+    }
+};"
+6a86da0a,Merge Sorted Array,https://leetcode.com/problems/merge-sorted-array/description/,leetcode,medium,Arrays,solved,"[STRIVER MEDIUM]
+We first shift the m valid elements of nums1 to the right by n positions to make space for the elements of nums2. We iterate backwards while shifting so that the original elements are not overwritten.
+
+We then use three pointers: p1 points to the shifted elements of nums1, p2 points to nums2, and i points to the next position to fill in nums1.
+
+At every step, we compare nums1[p1] and nums2[p2] and place the smaller element at nums1[i], advancing the corresponding pointer. If either array gets exhausted, we copy the remaining elements of the other array. If both arrays are exhausted, we stop.
+
+TC: O(m + n)
+SC: O(1) 
+
+there are other methods like gap method to do this too - discussed in striver video but this is my way ",2026-10-13,2026-10-13,https://www.youtube.com/watch?v=n7uwj04E0I4,"
+class Solution {
+public:
+    void merge(vector<int>& nums1, int m, vector<int>& nums2, int n) {
+        //if nums1 has no elements then simply copy nums2 into nums1
+        if(m == 0){
+            for(int i = 0; i<n; i++) nums1[i] = nums2[i];
+            return;
+        }
+        if(n == 0) return;
+
+        //shifting original elements of nums1 to the right to make space for nums2
+        for(int i = m-1; i>=0; i--){
+            nums1[n+i] = nums1[i];
+        }
+
+        int p1 = n;   //pointer to the original elements of nums1
+        int p2 = 0;   //pointer to nums2
+
+        //merging both sorted arrays into nums1
+        for(int i = 0; i<n+m; i++){
+            //if nums2 is exhausted then copy remaining elements from nums1
+            if(p2 >= n && p1 < n+m){
+                nums1[i] = nums1[p1];
+                p1++;
+                continue;
+            }
+
+            //if nums1 is exhausted then copy remaining elements from nums2
+            if(p2 < n && p1 >= n+m){
+                nums1[i] = nums2[p2];
+                p2++;
+                continue;
+            }
+
+            //if both arrays are exhausted then merging is complete
+            if(p2 >= n && p1 >= n+m) break;
+
+            //compare current elements and put the smaller one into nums1
+            if(nums1[p1] >= nums2[p2]){
+                nums1[i] = nums2[p2];
+                p2++;
+            }
+            else{
+                nums1[i] = nums1[p1];
+                p1++;
+            }
+        }
+    }
+};
+"
+d07d1a63,Maximum Product Subarray,https://leetcode.com/problems/maximum-product-subarray/description/,leetcode,medium,Arrays,solved,"[STRIVER MEDIUM]
+if there are [all +ve elements/even -ve elements] then the max_prod is just the prod of all the elements 
+if there are odd -ve elements then we have to drop any one -ve elements and then the product will be max product of suffix product and prefix prduct to that dropped -ve no. - so overall in n run, we want the ultimate max product that occured either in suffix or prefix. 
+And whenever we encountered a 0 as prefix or suffix product, we are resetting the prefixProducts and suffixProducts to 1 as we will we breaking our subarrays there and will not carry that 0.
+",2026-10-13,2026-10-13,https://www.youtube.com/watch?v=hnswaLJvr6g,"class Solution {
+public:
+    int maxProduct(vector<int>& nums) {
+        int n = nums.size();
+        int ans = INT_MIN;
+        
+        //if there are [all +ve elements/even -ve elements] then the max_prod is just the prod of all the elements
+        //if there are odd -ve elements then we have to drop any one -ve elements and then the product will be max product of suffix product and
+        //prefix prduct to that dropped -ve no. - so overall in n run, we want the ultimate max product that occured either in suffix or prefix.
+        //and whenever we encountered a 0 as prefix or suffix product, we are resetting the prefixProducts and suffixProducts to 1 as we will we 
+        //breaking our subarrays there and will not carry that 0
+        int pre_prod = 1, suf_prod = 1;
+        for(int i = 0; i<n; i++){
+            if (pre_prod == 0) pre_prod = 1;
+            if (suf_prod == 0) suf_prod = 1;
+            pre_prod*=nums[i];
+            suf_prod*=nums[n-1-i];
+            ans = max(ans,max(pre_prod, suf_prod));
+        }
+        return ans;
+    }
+};"
+610ebf50,Sieve of Eratosthenes,https://leetcode.com/problems/count-primes/description/,leetcode,medium,Maths,solved,"[STRIVER HARD]
+simple concept to mark all the factors of i as not prime in an array, then we can ceck whether any number is prime or not in O(1). 
+some optimizations:
+we can start the inner for loop from i*i and not i*2 as it will be marked from before.
+And have to run the loop till sqrt(N) not N, since we are starting from i*i and it should be less than N",2026-10-13,2026-10-13,https://www.youtube.com/watch?v=g5Fuxn_AvSk,"class Solution {
+public:
+    int countPrimes(int n) {
+
+        vector<bool> isPrime(n+1, true);
+        for(int i = 2; i*i < n; ++i){
+            if(!isPrime[i]) continue;
+            for(int j = i*i; j < n; j+=i){
+                isPrime[j] = false;
+            }
+        }
+
+        int cntPrime = 0;
+        for(int i = 2; i<n; ++i) if(isPrime[i]) cntPrime++;
+        return cntPrime;
+    }
+};"
+3576027c,Minimum Operations to Make Numbers Non-positive,https://www.tutorialspoint.com/practice/minimum-operations-to-make-numbers-non-positive.htm#,tutorialspoint.com,gaand_faad,Binary Search,solved,"[NATWEST IIT BHU OA]
+So the pattern in general for any Binary Search question is apply binary search on answer and see how can you eliminate either left or right half, this generally has to do something using the mid value. Usually if any other parameter constraint is given we try to estimate that parameter using the mid value and then compare and eliminate one of the halves - here we estimate the required operations using operations only since the questions allows us to do so - the main task here was to think of this ""canFinish"" boolean function.
+rest of the code and procedure you can see by reading the code",2026-10-13,2026-10-13,https://www.youtube.com/watch?v=D56Nhsm7Ekk,"class Solution {
+private:
+    bool canFinish(int ops, vector<int>& nums, int x, int y){
+        //step 1 perform ops operations i.e subtract ops*y from every element
+        //step 2 if any element is left +ve calculate how many extra times it needs to be 
+        //selected i.e how many time we would have subtracted x from it or (x-y) now, 
+        //since y we have already subtracted from all the eleemnts 
+        //step 3 get the total extra selections required across all elements
+        //if total extra selections <= ops then we can finish in ops operations
+
+        long long requiredOps = 0;
+        for(auto num : nums){
+            int newNum = num - ops * y;
+            if(newNum > 0){
+                requiredOps += (newNum + (x-y) - 1) / (x-y); //basically ceil(newNum/(x-y))
+            }
+            if(requiredOps > ops) return false;
+        }
+        return true;
+    }
+public:
+    int getMinOps(vector<int>& nums, int x, int y){
+        //we will apply binary search on minimum operations
+        //if we can finish the array in mid operations then try finding a smaller answer
+        //otherwise we need to increase the number of operations
+
+        if(x == y) return (*max_element(nums.begin(), nums.end()) + y - 1) / y;
+
+        int low = 0;
+        int high = *max_element(nums.begin(), nums.end());
+        while(low <= high){
+            int mid = low + (high - low) / 2;
+            if(canFinish(mid, nums, x, y)){
+                high = mid - 1;
+            }
+            else{
+                low = mid + 1;
+            }
+        }
+        return low;
+    }
+};"
