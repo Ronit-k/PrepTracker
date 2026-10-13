@@ -1116,7 +1116,7 @@ public:
 
 In Binary search approach our main goal is to find the length of LIS not the LIS, so we are overwriting in the same temp array to save space
 
-There is also one O(n^2) algorithmic approach which ises O(n) space complexity which basically stores the length of LIS ending at ith index in a dp(n) array - see the printing LIS question where this algo is used and then backtracked to print the LIS",2026-09-28,2026-09-28,https://www.youtube.com/watch?v=on2hvxBXJH4&t=70s,"//Binar Search O(nlogn)
+There is also one O(n^2) algorithmic approach which uses O(n) space complexity which basically stores the length of LIS ending at ith index in a dp(n) array - see the printing LIS question where this algo is used and then backtracked to print the LIS",2026-09-28,2026-09-28,https://www.youtube.com/watch?v=on2hvxBXJH4&t=70s,"//Binar Search O(nlogn)
 class Solution {
 public:
     int lengthOfLIS(vector<int>& nums) {
@@ -1134,8 +1134,26 @@ public:
         return temp.size();
     }
 };
+//1D DP O(n^2)
+class Solution {
+public:
+    int lengthOfLIS(vector<int>& nums) {
+        int n = nums.size();
+        vector<int> dp(n, 1);
+ 
+        for(int i = 1; i<n; ++i){
+            for(int p = 0; p<i; ++p){
+                if (nums[i] > nums[p] && dp[i] < 1 + dp[p]){
+                    //update the dp[i] to store this maxLen and its frequency
+                    dp[i] = 1 + dp[p];
+                }
+            }
+        }
+        return *max_element(dp.begin(), dp.end());
+    }
+};
 
-//DP O(n^2)
+//2D DP O(n^2)
 class Solution {
 private:
     int f(int i, int prev, vector<int> &nums, vector<vector<int>> &dp){
@@ -1188,6 +1206,50 @@ public:
         return lis;
     }
 };"
+96178271,Number of Longest Increasing Subsequences,https://leetcode.com/problems/number-of-longest-increasing-subsequence/description/?envType=problem-list-v2&envId=segment-tree,leetcode,medium,DP,solved,"[STRIVER MEDIUM]
+uses 1D dp variant of LIS question to solve, and maintains a pair to store count as well - rest see the code",2026-10-13,2026-10-13,https://www.youtube.com/watch?v=cKVl1TFdNXg&t=2s,"class Solution {
+public:
+    int findNumberOfLIS(vector<int>& nums) {
+        //lets try to write the tabulation directly
+        //dp[i] -> simply denotes the LIS ending at i
+        //so dp[0] = 1, since the first element, infact we can initialize dp[i] = 1, since all the elements are an IS of length 1
+        int n = nums.size();
+
+        //now we will iterate from 0 to i in nums and see which element is smaller that nums[i], so that it can be attached to nums[i]
+        //to form and IS, and the length of IS at ith index will we {1+(length of IS at that num which is smaller than nums[i])}
+        //we will ofc store the maxValue of all dp[i] seen in dp[i]
+
+        //now to also keep track of count we will make the dp array to contain pair<int,int> storing LIs ending at i and its frequency
+        vector<pair<int,int>> dp(n, {1, 1});
+ 
+        for(int i = 1; i<n; ++i){
+            for(int p = 0; p<i; ++p){
+                if (nums[i] > nums[p] && dp[i].first < 1 + dp[p].first){
+                    //update the dp[i] to store this maxLen and its frequency
+                    dp[i].first = 1 + dp[p].first;
+                    dp[i].second = dp[p].second;
+                }
+                else if (nums[i] > nums[p] && dp[i].first == 1 + dp[p].first){
+                    //if we found one more sequence of same maxLen then we increment the freq of dp[i]
+                    dp[i].second += dp[p].second;
+                }
+            }
+        }
+        //finding max len of IS and its frequencies
+        int lenLIS = 0; int cntLIS = 0;
+        for(auto [len, freq] : dp){
+            if(len > lenLIS){
+                lenLIS = len;
+                cntLIS = freq;
+            }
+            else if (len == lenLIS){
+                cntLIS += freq;
+            }
+        }
+        return cntLIS;
+    }
+};
+"
 ecda53f4,Minimum Insertion Steps to Make a String Palindrome,https://leetcode.com/problems/minimum-insertion-steps-to-make-a-string-palindrome/description/,leetcode,hard,DP,solved,[STRIVER HARD] the main trick is to understand that min no. of insertions to form a palindrome is nothing but {n - length of longest palindromic sequence} = {n - length of LCS of word and reversed word},2026-09-29,2026-09-29,https://www.youtube.com/watch?v=xPBLEj41rFU,"class Solution {
 private:
     int getLCSLength(int i, int j, string &s, string &reversedS, vector<vector<int>> &dp) {
@@ -4556,3 +4618,88 @@ public:
         return low;
     }
 };"
+a9ca9f71,Range Sum Query,https://leetcode.com/problems/range-sum-query-mutable/description/,leetcode,medium,Segment Trees,solved,"Tree concept is simple only just tedious to write the code and implement
+see the video from 00:00 to 01:36 (hh:mm)",2026-10-13,2026-10-14,https://www.youtube.com/watch?v=NEG-SoyigGE,"class SegmentTree {
+private:
+    //storing the tree in an array
+    vector<int> sgmnt;
+
+    int buildTree(int node ,int numsLow, int numsHigh, vector<int>& nums){
+        if(numsLow == numsHigh){
+            sgmnt[node] = nums[numsLow];
+            return sgmnt[node];
+        }
+        int numsMid = numsLow + (numsHigh - numsLow)/2;
+        //building left and right subtree
+        int leftNodeVal = buildTree(2*node + 1, numsLow, numsMid, nums); //[low, mid]
+        int rightNodeVal = buildTree(2*node + 2, numsMid+1, numsHigh, nums); //[mid+1, high]
+
+        return sgmnt[node] = leftNodeVal + rightNodeVal;
+    }
+public:
+    SegmentTree(vector<int>& nums){
+        int n = nums.size();
+        sgmnt.resize(4*n);
+        buildTree(0, 0, n-1, nums);
+    }
+    int sumRange(int node, int nodeLow, int nodeHigh, int rangeLeft, int rangeRight){
+        //full overlap i.e entire node is in the range [rangeLeft <= nodeLow <= nodeHigh <= rangeRight]
+        if(rangeLeft <= nodeLow && nodeHigh <= rangeRight){
+            return sgmnt[node];
+        }
+        //no overlap i.e [rangeLeft <= rangeRight < nodeLow <= nodeHigh] or [nodeLow <= nodeHigh < rangeLeft <= rangeRight]
+        else if(rangeRight < nodeLow || nodeHigh < rangeLeft){
+            return 0;
+        }
+        // now partial overlap case 
+        int nodeMid = nodeLow + (nodeHigh - nodeLow)/2;
+        int leftSum = sumRange(2*node + 1, nodeLow, nodeMid, rangeLeft, rangeRight);
+        int rightSum = sumRange(2*node + 2, nodeMid + 1, nodeHigh, rangeLeft, rangeRight);
+        return leftSum + rightSum;
+    }
+
+    void update(int node, int nodeLow, int nodeHigh, int numIdx, int newVal){
+        if(nodeLow == numIdx && nodeHigh == numIdx){
+            sgmnt[node] = newVal;
+            return;
+        } 
+        else{
+            int nodeMid = nodeLow + (nodeHigh - nodeLow)/2;
+            if(numIdx <= nodeMid){//search in left tree
+                update(2*node+1, nodeLow, nodeMid, numIdx, newVal);
+            }
+            else{//search in right tree
+                update(2*node+2, nodeMid + 1, nodeHigh, numIdx, newVal);
+            }
+        }
+        sgmnt[node] = sgmnt[2*node+1] + sgmnt[2*node+2];
+        return;
+    }
+};
+
+
+class NumArray {
+private:
+    SegmentTree* sgt;
+    int n;
+public:
+    NumArray(vector<int>& nums) {
+        sgt = new SegmentTree(nums);
+        n = nums.size();
+    }
+    
+    void update(int index, int val) {
+        sgt->update(0, 0, n-1, index, val);
+    }
+    
+    int sumRange(int left, int right) {
+        return sgt->sumRange(0, 0, n-1, left, right);
+    }
+};
+
+/**
+ * Your NumArray object will be instantiated and called as such:
+ * NumArray* obj = new NumArray(nums);
+ * obj->update(index,val);
+ * int param_2 = obj->sumRange(left,right);
+ */"
