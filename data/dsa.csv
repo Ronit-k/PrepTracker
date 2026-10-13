@@ -4106,11 +4106,11 @@ basically just apply n times 2 sum, by fixing the 1st element you can get the ta
 
 ",2026-10-12,2026-10-12,https://www.youtube.com/watch?v=DhFh8Kw7ymk,"class Solution {
 private:
-    vector<vector<int>> twoSum(vector<int>& nums, int i, int target){
+    vector<vector<int>> twoSum(vector<int>& nums, int start, int target){
         int n = nums.size();
         vector<vector<int>> ansTwoSum;
         //nums is sorted so applying two pointer approach for twoSum
-        int l = i+1;
+        int l = start;
         int r = n-1;
         while(l<r){
             int curr_sum = nums[l] + nums[r];
@@ -4143,12 +4143,135 @@ public:
             //fix 1st element then apply 2 sum in the rest
             if(i>0 && nums[i] == nums[i-1]) continue;
 
-            auto duplets = twoSum(nums, i, target - nums[i]);
+            auto duplets = twoSum(nums, i+1, target - nums[i]);
             for(auto duplet : duplets) ansThreeSum.push_back({nums[i], duplet[0], duplet[1]});
         }
         return ansThreeSum;
     }
 };"
 6d80dc9e,4 Sum,https://leetcode.com/problems/4sum/description/,leetcode,medium,Arrays,solved,"[STRIVER HARD]
+basically its n times 3 sum
+keep in mind the conditions you put re move duplicates like
+if(i > start && nums[i] == nums[i-1]) continue;
+is correct not
+if(i > 0 && nums[i] == nums[i-1]) continue;
+in three Sum code
 
-",2026-10-12,2026-10-12,https://www.youtube.com/watch?v=eD95WRfh81c,
+",2026-10-12,2026-10-12,https://www.youtube.com/watch?v=eD95WRfh81c,"class Solution {
+private:
+    vector<vector<int>> twoSum(vector<int>& nums, int start, long long target){
+        int n = nums.size();
+        vector<vector<int>> ansTwoSum;
+        //nums is sorted so applying two pointer approach for twoSum
+        int l = start;
+        int r = n-1;
+        while(l<r){
+            long long curr_sum = (long long)nums[l] + nums[r];
+            if(curr_sum == target){
+                vector<int> duplet(2);
+                duplet[0] = nums[l];
+                duplet[1] = nums[r];
+                ansTwoSum.push_back(duplet);
+                l++;
+                r--;
+                //to elemenate duplicates in this case
+                while(l<r && nums[l] == nums[l-1]) l++;
+                while(l<r && nums[r] == nums[r+1]) r--;
+            }
+            else if (curr_sum < target) l++;
+            else r--;
+        }
+        return ansTwoSum;
+    }
+
+    vector<vector<int>> threeSum(vector<int>& nums, int start, long long target) {
+        int n = nums.size();
+        vector<vector<int>> ansThreeSum;
+
+        // basically n times 2 sum
+        for(int i = start; i<n-1; i++){
+            //fix 1st element then apply 2 sum in the rest
+            if(i > start && nums[i] == nums[i-1]) continue;
+
+            auto duplets = twoSum(nums, i+1, target - (long long)nums[i]);
+            for(auto duplet : duplets) ansThreeSum.push_back({nums[i], duplet[0], duplet[1]});
+        }
+        return ansThreeSum;
+    }
+public:
+    vector<vector<int>> fourSum(vector<int>& nums, int target) {
+        int n = nums.size();
+        vector<vector<int>> ansFourSum;
+        sort(nums.begin(), nums.end());
+
+        // basically n times 3 sum
+        for(int i = 0; i<n-1; i++){
+            //fix 1st element then apply 3 sum in the rest
+            if(i>0 && nums[i] == nums[i-1]) continue;
+
+            auto triplets = threeSum(nums, i+1, (long long)target - nums[i]);
+            for(auto triplet : triplets) ansFourSum.push_back({nums[i], triplet[0], triplet[1], triplet[2]});
+        }
+        return ansFourSum;
+    }
+};"
+84ddca40,Count Inversions in an Array,https://www.geeksforgeeks.org/problems/inversion-of-array-1587115620/1,gfg,hard,Arrays,solved,"[STRIVER HARD]
+We use merge sort to count inversions while sorting the array. An inversion is a pair of indices (i, j) such that i < j and a[i] > a[j].
+
+We divide the array into two halves recursively and count inversions in each half. Then, while merging the two sorted halves, if the left element is smaller than or equal to the right element, we simply add the left element to the temporary array because it does not form any inversion with the remaining right elements.
+
+If the right element is smaller than the left element, we add mid - i to the count because all the remaining elements in the left half are greater than the current right element, forming inversions with it.
+
+After merging, we copy the temporary array back into the original array. We use a separate copy of the input array so that the original array remains unchanged.
+
+TC: O(n log n) SC: O(n) 
+",2026-10-12,2026-10-12,https://www.youtube.com/watch?v=AseUmwVNaoY,"class Solution {
+  private:
+    void merge(int& cnt, int left, int mid, int right, vector<int>& a){
+        int i = left;
+        int j = mid;
+        vector<int> temp;
+        
+        while(i<mid && j<right){
+            //left side is smaller - ok - this is how it should be if it were sorted
+            if(a[i] <= a[j]){
+                temp.push_back(a[i]);
+                i++;
+            }
+            //right side is smaller - we can increase the count - this is the inversion in the sorted array, and since a[j] < a[i] so it is smaller from mid - i elements
+            else{
+                temp.push_back(a[j]);
+                j++;
+                cnt+=mid-i;
+            }
+        }
+        //pushing the elements that were left
+        while(i < mid) temp.push_back(a[i++]);
+        while(j < right) temp.push_back(a[j++]);
+        //copying temp into our original array
+        for(int it = left; it<right; it++) a[it] = temp[it-left];
+    }
+
+    void getInversions(int& cnt, int left, int right, vector<int>& a){
+        //base case if array contains only one element
+        if (right - left <= 1) return;
+        
+        int mid = left + (right - left)/2;
+        
+        //right is not inclusive
+        getInversions(cnt, left, mid, a);  //[left, mid)
+        getInversions(cnt, mid, right, a); //[mid, right)
+        
+        merge(cnt, left, mid, right, a);
+    }
+
+  public:
+    int inversionCount(vector<int> &arr) {
+        // code here
+        int cnt = 0;
+        vector<int> a(arr);
+        getInversions(cnt, 0, arr.size(), a);
+        return cnt;
+    }
+};"
+6ebd25db,Reverse Pairs,https://leetcode.com/problems/reverse-pairs/description/,leetcode,medium,Arrays,solved,[STRIVER HARD],2026-10-12,2026-10-13,https://www.youtube.com/watch?v=0e4bZaP3MDI,
