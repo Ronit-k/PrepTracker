@@ -4619,7 +4619,7 @@ public:
     }
 };"
 a9ca9f71,Range Sum Query,https://leetcode.com/problems/range-sum-query-mutable/description/,leetcode,medium,Segment Trees,solved,"Tree concept is simple only just tedious to write the code and implement
-see the video from 00:00 to 01:36 (hh:mm)",2026-10-13,2026-10-14,https://www.youtube.com/watch?v=NEG-SoyigGE,"class SegmentTree {
+see the video from start to 01:36:00",2026-10-13,2026-10-14,https://www.youtube.com/watch?v=NEG-SoyigGE,"class SegmentTree {
 private:
     //storing the tree in an array
     vector<int> sgmnt;
@@ -4703,3 +4703,6 @@ public:
  * obj->update(index,val);
  * int param_2 = obj->sumRange(left,right);
  */"
+c6bf48b8,Xenia and Bit Operations,https://codeforces.com/problemset/problem/339/D,codeforces.com,hard,Segment Trees,solved,"see the video for 01:40:00 for solution
+
+",2026-10-16,2026-10-16,https://www.youtube.com/watch?v=NEG-SoyigGE,
