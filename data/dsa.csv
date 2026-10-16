@@ -4618,8 +4618,10 @@ public:
         return low;
     }
 };"
-a9ca9f71,Range Sum Query,https://leetcode.com/problems/range-sum-query-mutable/description/,leetcode,medium,Segment Trees,solved,"Tree concept is simple only just tedious to write the code and implement
-see the video from start to 01:36:00",2026-10-13,2026-10-14,https://www.youtube.com/watch?v=NEG-SoyigGE,"class SegmentTree {
+a9ca9f71,Range Sum Query,https://leetcode.com/problems/range-sum-query-mutable/description/,leetcode,medium,Segment Trees,solved,"see the video from start to 01:36:00
+SegmentTree concept is simple only just tedious to write the code and implement
+
+",2026-10-13,2026-10-14,https://www.youtube.com/watch?v=NEG-SoyigGE,"class SegmentTree {
 private:
     //storing the tree in an array
     vector<int> sgmnt;
@@ -4703,6 +4705,169 @@ public:
  * obj->update(index,val);
  * int param_2 = obj->sumRange(left,right);
  */"
-c6bf48b8,Xenia and Bit Operations,https://codeforces.com/problemset/problem/339/D,codeforces.com,hard,Segment Trees,solved,"see the video for 01:40:00 for solution
+c6bf48b8,Xenia and Bit Operations,https://codeforces.com/problemset/problem/339/D,codeforces.com,hard,Segment Trees,solved,"See the video from 01:40:00 for solution
+Mostly same segment tree code from the previous question, just removed the rageSum function since not needed in this question and ORed and XORed is alternatively is the flag isOr   ",2026-10-16,2026-10-16,https://www.youtube.com/watch?v=NEG-SoyigGE,"#include <bits/stdc++.h>
+#include <cmath>
 
-",2026-10-16,2026-10-16,https://www.youtube.com/watch?v=NEG-SoyigGE,
+using namespace std;
+
+class SegmentTree {
+    private:
+        //storing the tree in an array
+        vector<int> sgmnt;
+
+        int buildTree(int node ,int numsLow, int numsHigh, vector<int>& nums, bool isOr){
+            if(numsLow == numsHigh){
+                sgmnt[node] = nums[numsLow];
+                return sgmnt[node];
+            }
+            int numsMid = numsLow + (numsHigh - numsLow)/2;
+            //building left and right subtree
+            int leftNodeVal = buildTree(2*node + 1, numsLow, numsMid, nums, !isOr); //[low, mid]
+            int rightNodeVal = buildTree(2*node + 2, numsMid+1, numsHigh, nums, !isOr); //[mid+1, high]
+
+            if(isOr) return sgmnt[node] = leftNodeVal | rightNodeVal;
+            return sgmnt[node] = leftNodeVal ^ rightNodeVal;
+        }
+    public:
+        SegmentTree(vector<int>& nums, bool isOr){
+            int n = nums.size();
+            sgmnt.resize(4*n);
+            buildTree(0, 0, n-1, nums, isOr);
+        }
+
+        void update(int node, int nodeLow, int nodeHigh, int numIdx, int newVal, bool isOr){
+            if(nodeLow == numIdx && nodeHigh == numIdx){
+                sgmnt[node] = newVal;
+                return;
+            } 
+            else{
+                int nodeMid = nodeLow + (nodeHigh - nodeLow)/2;
+                if(numIdx <= nodeMid){//search in left tree
+                    update(2*node+1, nodeLow, nodeMid, numIdx, newVal, !isOr);
+                }
+                else{//search in right tree
+                    update(2*node+2, nodeMid + 1, nodeHigh, numIdx, newVal, !isOr);
+                }
+            }
+            if (isOr) sgmnt[node] = sgmnt[2*node+1] | sgmnt[2*node+2];
+            else      sgmnt[node] = sgmnt[2*node+1] ^ sgmnt[2*node+2];
+            return;
+        }
+
+        int getRoot(){
+            return sgmnt[0];
+        }
+};
+
+int main(){
+    int n, m;
+    cin >> n >> m;
+
+    // inputting 2^n elements for main nums array
+    int len = 1 << n;
+    vector<int> nums(len);
+    for(int i = 0; i<len; ++i) cin >> nums[i];
+
+    //taking m queries
+    vector<pair<int,int>> queries(m); //{index, newVal}
+    for(int i = 0; i<m; ++i) cin >> queries[i].first >> queries[i].second;
+
+    //building the segment tree, if n is odd and we are starting by ORing so the top most element will have a final OR
+    SegmentTree* sgt;
+    bool isOr;
+    isOr = (n&1)? 1 : 0;
+    sgt = new SegmentTree(nums, isOr);
+
+    //solving each querry
+    for(auto& query : queries){
+        sgt->update(0, 0, len-1, --query.first, query.second, isOr); //index is 1 based in the input so we decrement it by 1
+        cout << sgt->getRoot() << endl;
+    }
+    return 0;
+}"
+476c6dd9,Sereja and Brackets,https://codeforces.com/problemset/problem/380/C,codeforces.com,gaand_faad,Segment Trees,solved,"See the video from 01:57:00 for solution
+Same segment tree code without update since its not needed here and the range query function is ""getMaxmatchedBrackets"" 
+the main challenge here is to thing of this concept to maintain open, close and matched brackets and then while performing range query return the merged node",2026-10-16,2026-10-16,https://www.youtube.com/watch?v=NEG-SoyigGE,"#include <bits/stdc++.h>
+using namespace std;
+
+struct Node{
+    int openingBrackets = 0;
+    int closingBrackets = 0;
+    int matchedBrackets = 0;
+};
+
+class SegmentTree {
+    private:
+        //storing the tree in an array of custom Nodes
+        vector<Node> sgmnt;
+
+        Node mergeNodes(Node left, Node right){
+            Node node;
+            node.matchedBrackets = left.matchedBrackets + right.matchedBrackets + min(left.openingBrackets, right.closingBrackets);
+            node.openingBrackets = left.openingBrackets + right.openingBrackets - min(left.openingBrackets, right.closingBrackets);
+            node.closingBrackets = left.closingBrackets + right.closingBrackets - min(left.openingBrackets, right.closingBrackets);
+            return node;
+        }
+
+        void buildTree(int node ,int sLow, int sHigh, string& s){
+            if(sLow == sHigh){
+                if(s[sLow] == '(') sgmnt[node].openingBrackets = 1;
+                else sgmnt[node].closingBrackets = 1;
+                return;
+            }
+            int sMid = sLow + (sHigh - sLow)/2;
+            //building left and right subtree
+            buildTree(2*node + 1, sLow, sMid, s); //[low, mid]
+            buildTree(2*node + 2, sMid+1, sHigh, s); //[mid+1, high]
+
+            //merge the values of left and right nodes approprietly to populate current node
+            sgmnt[node] = mergeNodes(sgmnt[2*node + 1], sgmnt[2*node + 2]);
+            return;
+        }
+    public:
+        SegmentTree(string& s){
+            int n = s.size();
+            sgmnt.resize(4*n);
+            buildTree(0, 0, n-1, s);
+        }
+        Node getMaxmatchedBrackets(int node, int nodeLow, int nodeHigh, int rangeLeft, int rangeRight){
+            //full overlap i.e entire node is in the range [rangeLeft <= nodeLow <= nodeHigh <= rangeRight]
+            if(rangeLeft <= nodeLow && nodeHigh <= rangeRight){
+                return sgmnt[node];
+            }
+            //no overlap i.e [rangeLeft <= rangeRight < nodeLow <= nodeHigh] or [nodeLow <= nodeHigh < rangeLeft <= rangeRight]
+            else if(rangeRight < nodeLow || nodeHigh < rangeLeft){
+                Node node;
+                return node;
+            }
+            //now partial overlap case 
+            int nodeMid = nodeLow + (nodeHigh - nodeLow)/2;
+            Node leftNode = getMaxmatchedBrackets(2*node + 1, nodeLow, nodeMid, rangeLeft, rangeRight);
+            Node rightNode = getMaxmatchedBrackets(2*node + 2, nodeMid + 1, nodeHigh, rangeLeft, rangeRight);
+            return mergeNodes(leftNode, rightNode);
+        }
+};
+
+int main() {
+    //input the bracket string
+    string s;
+    cin >> s;
+    //input the number of queries
+    int m;
+    cin >> m;
+    vector<pair<int,int>> queries(m); //{left, right}
+    for(int i = 0; i<m; ++i) cin >> queries[i].first >> queries[i].second;
+
+    //putting the bracket string into a segment tree, where each node will store the number of unmatched 
+    //opening brackets, closing brackets and the number of matched pairs of brackets in the range represented by that node
+    SegmentTree* sgt = new SegmentTree(s);
+
+    //solving each query
+    for(auto& query : queries){
+        int left = query.first - 1; //converting to 0 based indexing
+        int right = query.second - 1; //converting to 0 based indexing
+        cout << sgt->getMaxmatchedBrackets(0, 0, s.size()-1, left, right).matchedBrackets * 2 << endl; //each matched pair contributes 2 to the length of the longest regular bracket sequence
+    }
+    return 0;
+}"
