@@ -534,6 +534,53 @@ public:
         return -1;
     }
 };"
+b25cab1f,Redundant Connection,https://leetcode.com/problems/redundant-connection/description/,leetcode,medium,Graph,solved,Simple application of DSU - we are using DSU here since we need to return the edge that comes last in the input edges,2026-10-16,2026-10-17,,"class DSU {
+	private:
+		vector<int> parent, rank;
+	public:
+		//constructor
+		DSU(int n) {
+			rank.resize(n, 0);
+			parent.resize(n);
+			for(int i = 0; i<n; i++) parent[i] = i;
+		}
+		int ultimateParent(int node){
+			if (node == parent[node]) return node;
+			return parent[node] = ultimateParent(parent[node]);
+		}
+		bool unionByRank(int u, int v){
+			int ultimateParentU = ultimateParent(u);
+			int ultimateParentV = ultimateParent(v);
+			if (ultimateParentU == ultimateParentV) return 0; //already in same grp
+
+			//rank of u should always be less
+			if(rank[ultimateParentU] > rank[ultimateParentV]) return unionByRank(v, u);
+			
+			//since rank of u is small it'll get attached to v
+			parent[ultimateParentU] = ultimateParentV;
+			//increase the rank of V grp if equally big chunk gets attached
+			if (rank[ultimateParentU] == rank[ultimateParentV]) rank[ultimateParentV]++;
+			return 1;
+		}
+};
+
+class Solution {
+
+public:
+    vector<int> findRedundantConnection(vector<vector<int>>& edges) {
+        int n = edges.size(); //this works here since there are n nodes and n edges
+        DSU dsu(n);
+        vector<int> extraEdges;
+        for(auto& edge : edges){
+            if(!dsu.unionByRank(edge[0]-1, edge[1]-1)){
+                extraEdges.push_back(edge[0]);
+                extraEdges.push_back(edge[1]);
+                return extraEdges;
+            }
+        }
+        return extraEdges;
+    }
+};"
 c0a9b647,Number of Island II,https://www.naukri.com/code360/problems/number-of-islands-ii_1266048,naukri.com,hard,Graph,solved,"[STRIVER HARD] The Number of Islands II problem is solved efficiently using DSU (Disjoint Set Union). Initially, every cell is treated as a separate component, but only cells that are converted to land are considered active. For each query, we turn the cell into land and increase the island count by 1. Then we check its four neighbouring cells; if a neighbour is already land and belongs to a different DSU component, we union the two components and decrease the island count by 1. Path compression and union by rank keep DSU operations nearly constant time, giving an overall complexity of approximately O(Q · α(NM)), where Q is the number of queries and α is the inverse Ackermann function.",2026-09-25,2026-09-25,https://www.youtube.com/watch?v=Rn6B-Q4SNyA,"class DSU {
 	private:
 		vector<int> parent, rank;
@@ -4352,7 +4399,7 @@ class Solution {
                 j++;
             }
             else{
-                cnt += j - mid; //since a[i] > 2*a[j] for j-mid elements
+                cnt += j - mid; //since a[i] > a[j] for j-mid elements
                 i++;
             }
         }
