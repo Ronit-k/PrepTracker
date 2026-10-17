@@ -4673,38 +4673,24 @@ private:
     //storing the tree in an array
     vector<int> sgmnt;
 
-    int buildTree(int node ,int numsLow, int numsHigh, vector<int>& nums){
+    void buildTree(int node ,int numsLow, int numsHigh, vector<int>& nums){
         if(numsLow == numsHigh){
             sgmnt[node] = nums[numsLow];
-            return sgmnt[node];
+            return;
         }
         int numsMid = numsLow + (numsHigh - numsLow)/2;
         //building left and right subtree
-        int leftNodeVal = buildTree(2*node + 1, numsLow, numsMid, nums); //[low, mid]
-        int rightNodeVal = buildTree(2*node + 2, numsMid+1, numsHigh, nums); //[mid+1, high]
+        buildTree(2*node + 1, numsLow, numsMid, nums); //[low, mid]
+        buildTree(2*node + 2, numsMid+1, numsHigh, nums); //[mid+1, high]
 
-        return sgmnt[node] = leftNodeVal + rightNodeVal;
+        sgmnt[node] = sgmnt[2*node + 1] + sgmnt[2*node + 2];
+        return;
     }
 public:
     SegmentTree(vector<int>& nums){
         int n = nums.size();
         sgmnt.resize(4*n);
         buildTree(0, 0, n-1, nums);
-    }
-    int sumRange(int node, int nodeLow, int nodeHigh, int rangeLeft, int rangeRight){
-        //full overlap i.e entire node is in the range [rangeLeft <= nodeLow <= nodeHigh <= rangeRight]
-        if(rangeLeft <= nodeLow && nodeHigh <= rangeRight){
-            return sgmnt[node];
-        }
-        //no overlap i.e [rangeLeft <= rangeRight < nodeLow <= nodeHigh] or [nodeLow <= nodeHigh < rangeLeft <= rangeRight]
-        else if(rangeRight < nodeLow || nodeHigh < rangeLeft){
-            return 0;
-        }
-        // now partial overlap case 
-        int nodeMid = nodeLow + (nodeHigh - nodeLow)/2;
-        int leftSum = sumRange(2*node + 1, nodeLow, nodeMid, rangeLeft, rangeRight);
-        int rightSum = sumRange(2*node + 2, nodeMid + 1, nodeHigh, rangeLeft, rangeRight);
-        return leftSum + rightSum;
     }
 
     void update(int node, int nodeLow, int nodeHigh, int numIdx, int newVal){
@@ -4724,8 +4710,23 @@ public:
         sgmnt[node] = sgmnt[2*node+1] + sgmnt[2*node+2];
         return;
     }
-};
 
+    int getSumRange(int node, int nodeLow, int nodeHigh, int rangeLeft, int rangeRight){
+        //full overlap i.e entire node is in the range [rangeLeft <= nodeLow <= nodeHigh <= rangeRight]
+        if(rangeLeft <= nodeLow && nodeHigh <= rangeRight){
+            return sgmnt[node];
+        }
+        //no overlap i.e [rangeLeft <= rangeRight < nodeLow <= nodeHigh] or [nodeLow <= nodeHigh < rangeLeft <= rangeRight]
+        else if(rangeRight < nodeLow || nodeHigh < rangeLeft){
+            return 0;
+        }
+        // now partial overlap case 
+        int nodeMid = nodeLow + (nodeHigh - nodeLow)/2;
+        int leftSum = getSumRange(2*node + 1, nodeLow, nodeMid, rangeLeft, rangeRight);
+        int rightSum = getSumRange(2*node + 2, nodeMid + 1, nodeHigh, rangeLeft, rangeRight);
+        return leftSum + rightSum;
+    }
+};
 
 class NumArray {
 private:
@@ -4742,7 +4743,7 @@ public:
     }
     
     int sumRange(int left, int right) {
-        return sgt->sumRange(0, 0, n-1, left, right);
+        return sgt->getSumRange(0, 0, n-1, left, right);
     }
 };
 
