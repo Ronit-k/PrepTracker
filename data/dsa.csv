@@ -5330,10 +5330,7 @@ class Trie{
 "
 2943f485,Longest Word With All Prefixes,https://www.geeksforgeeks.org/problems/longest-valid-word-with-all-prefixes/1,gfg,medium,Tries,solved,"[STRIVER MEDIUM]
 In this question, we have to find the longest word such that all its prefixes are also present in the given array of words. We first insert all the words into a Trie and mark the end of each word using a flag. Then we perform a BFS traversal from the root, and we only move to a child node if it represents the end of a valid word. This ensures that we only consider words whose prefixes are all present in the Trie. Whenever we find a longer valid word, we update our answer. Since we traverse the children in alphabetical order, if two valid words have the same maximum length, we should keep the lexicographically smaller one. Therefore, we update the answer only when the current word is strictly longer than the best answer found so far.
-",2026-10-18,2026-10-18,https://www.youtube.com/watch?v=AWnBa91lThI&list=PLgUwDviBIf0pcIDCZnxhv0LkHf5KzG9zp&index=4,"#include <bits/stdc++.h>
-using namespace std;
-
-struct Node {
+",2026-10-18,2026-10-18,https://www.youtube.com/watch?v=AWnBa91lThI&list=PLgUwDviBIf0pcIDCZnxhv0LkHf5KzG9zp&index=4,"struct Node {
     Node* links[26];
     bool flag = false;
 
@@ -5422,5 +5419,219 @@ class Solution {
 };
 "
 d001cd48,Number of Distinct Substrings in a String,https://www.geeksforgeeks.org/problems/count-of-distinct-substrings/1,gfg,medium,Tries,solved,"[STRIVER HARD]
+here we were asked to find all the distinct substrings of a string, so the idea is to push all the substrings in a trie and then if while inserting we were forced to create a new node then we increase the counter.
+so generating all the substring in O(n^2) then inserting them into the trie is quite inefficient since in the n^2 way of generating the substrings the consicutive substrings often differ from each other by just a letter, So we skin the trie class and directly handle the trie nodes, we just keep appending one letter and moving the pointer to next - this boils down the overall T.C. to O(n^2) ",2026-10-18,2026-10-18,https://www.youtube.com/watch?v=RV0QeTyHZxo&list=PLgUwDviBIf0pcIDCZnxhv0LkHf5KzG9zp&index=5,"struct Node {
+    Node* links[26];
 
-",2026-10-18,2026-10-18,https://www.youtube.com/watch?v=RV0QeTyHZxo&list=PLgUwDviBIf0pcIDCZnxhv0LkHf5KzG9zp&index=5,
+    bool containsKey(char letter){
+        if (!links[letter - 'a']) return false;
+        return true;
+    }
+
+    Node* goNext(char letter){
+        return links[letter - 'a'];
+    }
+
+    void put(char letter, Node* node){
+        links[letter - 'a'] = node;
+        return;
+    }
+};
+
+class Solution {
+  public:
+    int countSubs(string& s) {
+        // code here
+        int n = s.size();
+        int cntDistinct = 0;
+
+        Node* root = new Node();
+        for (int i = 0; i < n; i++) {
+            Node* node = root;
+            for (int j = i; j < n; j++) {
+                if (!node->containsKey(s[j])) {
+                    node->put(s[j], new Node());
+                    cntDistinct++;
+                }
+                node = node->goNext(s[j]);
+            }
+        }
+        return cntDistinct;     
+    }
+};"
+760db798,Maximum XOR of Two Numbers in an Array,https://leetcode.com/problems/maximum-xor-of-two-numbers-in-an-array/,leetcode,hard,Tries,solved,"[STRIVER MEDIUM]
+good question conceptually so marked hard else medium only
+
+In this question, we have to find the maximum XOR of any two elements in the given array. We use a Trie to store the binary representation of each number, considering all 32 bits from the most significant bit to the least significant bit. First, we insert all the numbers into the Trie. Then, for every number, we traverse the Trie again and greedily try to choose the opposite bit at each position, because XOR is maximized when the two bits are different. If the opposite bit exists, we take it and set that bit in our answer; otherwise, we take the same bit. We calculate the maximum XOR obtained for every number and return the overall maximum.
+Time complexity: O(32N) = O(N), since we insert and query each number by traversing 32 bits.
+Space complexity: O(32N) = O(N) in the worst case, since each of the N numbers can create at most 32 Trie nodes.
+",2026-10-18,2026-10-19,https://www.youtube.com/watch?v=EIhAwfHubE8&list=PLgUwDviBIf0pcIDCZnxhv0LkHf5KzG9zp&index=7,"// implementing it using trie
+struct Node{
+    Node* links[2] = {NULL, NULL};
+    
+    bool containsBit(int& bit){
+        return (links[bit])? true : false;
+    }
+
+    void putBit(int& bit, Node* node){
+        links[bit] = node;
+    }
+
+    Node* goNext(int& bit){
+        return links[bit];
+    }
+};
+
+class Trie {
+private:
+    Node* root;
+public:
+    Trie(){
+        root = new Node();
+    }
+
+    void putNum(int& num){
+        Node* node = root;
+
+        for(int i = 31; i>=0; i--){
+            int bit = (num >> i) & 1;
+
+            if(!node->containsBit(bit)){
+                node->putBit(bit, new Node());
+            }
+
+            node = node->goNext(bit);
+        }
+    }
+
+    int getMaxXor(int& num){
+        Node* node = root;
+        int ans = 0;
+
+        for(int i = 31; i>=0; i--){
+            int bit = (num >> i) & 1;
+            int oppBit = 1 - bit;
+
+            if(node->containsBit(oppBit)){
+                node = node->goNext(oppBit);
+                ans |= (1 << i);
+            }
+            else{
+                node = node->goNext(bit);
+            }
+        }
+
+        return ans;
+    }
+};
+
+class Solution {
+public:
+    int findMaximumXOR(vector<int>& nums) {
+        Trie trie;
+
+        for(auto num : nums){
+            trie.putNum(num);
+        }
+
+        int maxXor = 0;
+
+        for(auto num : nums){
+            maxXor = max(maxXor, trie.getMaxXor(num));
+        }
+
+        return maxXor;
+    }
+};"
+3a230262,Maximum XOR With an Element From Array,https://leetcode.com/problems/maximum-xor-with-an-element-from-array/description/,leetcode,hard,Tries,solved,"[STRIVER HARD]
+In this question, we have to find the maximum XOR for each query, where each query contains x and m, and we can only choose an element from the array that is less than or equal to m. We use the same Trie approach as the previous maximum XOR problem, where we store the binary representation of numbers and greedily choose the opposite bit at every position to maximize XOR. However, inserting all numbers into the Trie for every query would be inefficient. So, we sort the array and sort the queries by m, while storing each query's original index. We process the queries in increasing order of m and insert all array elements less than or equal to the current m into the Trie. We then use getMaxXor(x) to find the maximum XOR for that query. If no element has been inserted, we store -1. Finally, we place the answers at their original query indices to return them in the required order.
+Time complexity: O(N log N + Q log Q + 32(N + Q)) = O(N log N + Q log Q), where N is the number of array elements and Q is the number of queries.
+Space complexity: O(32N + Q) = O(N + Q), for the Trie, sorted queries, and answer array.
+",2026-10-18,2026-10-19,https://www.youtube.com/watch?v=Q8LhG9Pi5KM&list=PLgUwDviBIf0pcIDCZnxhv0LkHf5KzG9zp&index=8,"// implementing it using trie
+struct Node{
+    Node* links[2] = {NULL, NULL};
+    
+    bool containsBit(int bit){
+        return (links[bit])? true : false;
+    }
+
+    void putBit(int bit, Node* node){
+        links[bit] = node;
+    }
+
+    Node* goNext(int bit){
+        return links[bit];
+    }
+};
+
+class Trie {
+private:
+    Node* root;
+public:
+    Trie(){
+        root = new Node();
+    }
+
+    void putNum(int num){
+        Node* node = root;
+
+        for(int i = 31; i>=0; i--){
+            int bit = (num >> i) & 1;
+
+            if(!node->containsBit(bit)){
+                node->putBit(bit, new Node());
+            }
+
+            node = node->goNext(bit);
+        }
+    }
+
+    int getMaxXor(int num){
+        Node* node = root;
+        int ans = 0;
+
+        for(int i = 31; i>=0; i--){
+            int bit = (num >> i) & 1;
+            int oppBit = 1 - bit;
+
+            if(node->containsBit(oppBit)){
+                node = node->goNext(oppBit);
+                ans |= (1 << i);
+            }
+            else{
+                node = node->goNext(bit);
+            }
+        }
+class Solution {
+public:
+    vector<int> maximizeXor(vector<int>& nums, vector<vector<int>>& queries) {
+        
+    }
+};
+        return ans;
+    }
+};
+
+class Solution {
+public:
+    vector<int> maximizeXor(vector<int>& nums, vector<vector<int>>& queries) {
+        vector<vector<int>> q;
+        int cntQ = 0;
+
+        for(auto query : queries) q.push_back({query[1], cntQ++, query[0]}); // {m_1, index, x_i}
+
+        sort(q.begin(), q.end());
+        sort(nums.begin(), nums.end());
+
+        vector<int> ans(cntQ, -1);
+        int j = 0;
+        Trie trie;
+        for(int i = 0; i<cntQ; i++){
+            //push all the elements <= m_i in the trie
+            while(j < nums.size() && nums[j] <= q[i][0]) {trie.putNum(nums[j]); j++;}
+            if(!j) continue; //no elements were pushed into the trie
+            ans[q[i][1]] = trie.getMaxXor(q[i][2]);
+        }
+        return ans;
+    }
+};"
