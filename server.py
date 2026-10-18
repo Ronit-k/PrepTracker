@@ -259,6 +259,15 @@ def get_topics(subject):
     return jsonify(merged)
 
 
+@app.route('/api/<subject>/topics/reorder', methods=['PUT'])
+def reorder_topics(subject):
+    names = (request.json or {}).get('names', [])
+    known = list(dict.fromkeys(read_topics(subject) + [r['topic'] for r in read_all(subject) if r.get('topic')]))
+    ordered = [t for t in names if t in known]
+    write_topics(subject, ordered + [t for t in known if t not in set(ordered)])
+    return jsonify({'ok': True})
+
+
 @app.route('/api/<subject>/topics', methods=['POST'])
 def add_topic(subject):
     name = (request.json or {}).get('name', '').strip()

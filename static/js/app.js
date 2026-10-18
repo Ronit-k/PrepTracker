@@ -846,6 +846,16 @@ function renderTree() {
     html += `
       <div class="tree-folder${openFolders.has(topic) ? ' open' : ''}" data-topic="${esc(topic)}">
         <div class="folder-header">
+          <div class="folder-drag" aria-label="Reorder topic" title="Drag to reorder">
+            <svg width="10" height="16" viewBox="0 0 10 16" fill="none">
+              <circle cx="3" cy="2.5" r="1.2" fill="currentColor"/>
+              <circle cx="7" cy="2.5" r="1.2" fill="currentColor"/>
+              <circle cx="3" cy="8" r="1.2" fill="currentColor"/>
+              <circle cx="7" cy="8" r="1.2" fill="currentColor"/>
+              <circle cx="3" cy="13.5" r="1.2" fill="currentColor"/>
+              <circle cx="7" cy="13.5" r="1.2" fill="currentColor"/>
+            </svg>
+          </div>
           <button type="button" class="folder-left" data-topic-action="toggle" aria-expanded="${openFolders.has(topic)}">
             <svg class="folder-chevron" width="12" height="12" viewBox="0 0 12 12" fill="none"><path d="M4.5 2.5l3.5 3.5-3.5 3.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
             <svg class="folder-icon" width="18" height="18" viewBox="0 0 18 18" fill="none"><path d="M2 4.5A1.5 1.5 0 0 1 3.5 3h3.586a1 1 0 0 1 .707.293L9.5 5H14.5A1.5 1.5 0 0 1 16 6.5v7a1.5 1.5 0 0 1-1.5 1.5h-11A1.5 1.5 0 0 1 2 13.5z" stroke="currentColor" stroke-width="1.3"/></svg>
@@ -981,6 +991,7 @@ async function openDesktopDetail(question, {isNew = false, startEditing = false}
     const {openQuestionDetail} = await import('/static/vendor/question-detail.js');
     desktopDetail = openQuestionDetail({question, questions: isNew ? [question] : detailQuestions(),
       topics: subjectTopics, difficulties: DIFFS, isNew, startEditing,
+      getSequence: () => detailQuestions(),
       onSave: async updated => {
         const {id, date_added, ...fields} = updated;
         const adding = !id;
@@ -1079,129 +1090,189 @@ window.showNotes = showNotes;
 /* ── Drag reorder ─────────────────────────────────────────────── */
 function initDragReorder() {
   treeContainer.querySelectorAll('.drag-handle').forEach(handle => {
-    handle.addEventListener('pointerdown', onDragStart);
+    handle.addEventListener('pointerdown', onRowDragStart);
+  });
+  treeContainer.querySelectorAll('.folder-drag').forEach(handle => {
+    handle.addEventListener('pointerdown', onFolderDragStart);
   });
 }
 
 let dragState = null;
 
-function onDragStart(e) {
+function onRowDragStart(e) {
   const row = e.currentTarget.closest('.file-row');
-  const body = row.closest('.folder-body');
+  const body = row?.closest('.folder-body');
   if (!body) return;
+  startDrag(e, {
+    item: row,
+    container: body,
+    items: [...body.querySelectorAll('.file-row')],
+    draggingClass: 'dragging',
+    activeClass: 'drag-active',
+    lockHeight: true,
+    commit: commitRowOrder,
+  });
+}
 
-  const rows = [...body.querySelectorAll('.file-row')];
-  if (rows.length < 2) return;
+function onFolderDragStart(e) {
+  const folder = e.currentTarget.closest('.tree-folder');
+  if (!folder) return;
+  startDrag(e, {
+    item: folder,
+    container: treeContainer,
+    items: [...treeContainer.querySelectorAll('.tree-folder')],
+    draggingClass: 'folder-dragging',
+    activeClass: 'tree-drag-active',
+    commit: commitFolderOrder,
+  });
+}
+
+function startDrag(e, { item, container, items, draggingClass, activeClass, lockHeight, commit }) {
+  if (dragState || items.length < 2) return;
 
   e.preventDefault();
-  row.setPointerCapture(e.pointerId);
+  item.setPointerCapture(e.pointerId);
 
-  const rect = row.getBoundingClientRect();
-  const bodyRect = body.getBoundingClientRect();
-  const rowHeight = rect.height;
-  const startIdx = rows.indexOf(row);
-  const grabY = e.clientY - rect.top;
-
-  row.classList.add('dragging');
-  body.classList.add('drag-active');
-  body.style.height = bodyRect.height + 'px';
-
-  rows.forEach((r, i) => {
-    r.style.transition = 'none';
-    if (r !== row) {
-      r.style.transform = '';
-      r.dataset.dragIdx = i;
-    }
+  const containerRect = container.getBoundingClientRect();
+  const containerTop = containerRect.top;
+  const metrics = items.map(el => {
+    const r = el.getBoundingClientRect();
+    return { top: r.top - containerTop, height: r.height };
   });
+  const startIdx = items.indexOf(item);
+  const gap = Math.max(0, metrics[1].top - (metrics[0].top + metrics[0].height));
+  const grabY = e.clientY - (containerTop + metrics[startIdx].top);
 
-  row.style.zIndex = '10';
-  row.style.position = 'relative';
+  item.classList.add(draggingClass);
+  container.classList.add(activeClass);
+  if (lockHeight) container.style.height = containerRect.height + 'px';
 
-  dragState = { row, body, rows, startIdx, currentIdx: startIdx, grabY, rowHeight };
+  items.forEach(el => { el.style.transition = 'none'; el.style.transform = ''; });
+  item.style.position = 'relative';
+  item.style.zIndex = '10';
 
-  row.addEventListener('pointermove', onDragMove);
-  row.addEventListener('pointerup', onDragEnd);
-  row.addEventListener('pointercancel', onDragEnd);
+  dragState = {
+    item, container, items, metrics, startIdx, currentIdx: startIdx,
+    grabY, containerTop, gap, draggingClass, activeClass, lockHeight, commit,
+  };
+
+  item.addEventListener('pointermove', onDragMove);
+  item.addEventListener('pointerup', onDragEnd);
+  item.addEventListener('pointercancel', onDragEnd);
 }
 
 function onDragMove(e) {
   if (!dragState) return;
-  const { row, rows, startIdx, rowHeight, grabY, body } = dragState;
-  const bodyRect = body.getBoundingClientRect();
-  const offsetY = e.clientY - bodyRect.top - grabY - (startIdx * rowHeight);
+  const { item, items, metrics, startIdx, grabY, containerTop, gap } = dragState;
 
-  row.style.transform = `translateY(${offsetY}px)`;
+  const desiredTop = e.clientY - containerTop - grabY;
+  item.style.transform = `translateY(${desiredTop - metrics[startIdx].top}px)`;
 
-  const rawIdx = (e.clientY - bodyRect.top - grabY) / rowHeight;
-  const hoverIdx = Math.max(0, Math.min(rows.length - 1, Math.round(rawIdx)));
+  // The slot a variable-height item belongs in is simply how many of the other
+  // items its centre has travelled past.
+  const centerY = desiredTop + metrics[startIdx].height / 2;
+  let hoverIdx = 0;
+  items.forEach((el, i) => {
+    if (i === startIdx) return;
+    if (centerY > metrics[i].top + metrics[i].height / 2) hoverIdx++;
+  });
 
-  if (hoverIdx !== dragState.currentIdx) {
-    dragState.currentIdx = hoverIdx;
-    rows.forEach((r, i) => {
-      if (r === row) return;
-      r.style.transition = 'transform 0.25s cubic-bezier(0.2, 1, 0.3, 1)';
-      let shift = 0;
-      if (startIdx < hoverIdx && i > startIdx && i <= hoverIdx) shift = -rowHeight;
-      else if (startIdx > hoverIdx && i < startIdx && i >= hoverIdx) shift = rowHeight;
-      r.style.transform = shift ? `translateY(${shift}px)` : '';
-    });
+  if (hoverIdx === dragState.currentIdx) return;
+  dragState.currentIdx = hoverIdx;
+
+  const step = metrics[startIdx].height + gap;
+  items.forEach((el, i) => {
+    if (i === startIdx) return;
+    el.style.transition = 'transform 0.25s cubic-bezier(0.2, 1, 0.3, 1)';
+    let shift = 0;
+    if (startIdx < hoverIdx && i > startIdx && i <= hoverIdx) shift = -step;
+    else if (startIdx > hoverIdx && i < startIdx && i >= hoverIdx) shift = step;
+    el.style.transform = shift ? `translateY(${shift}px)` : '';
+  });
+}
+
+async function onDragEnd() {
+  if (!dragState) return;
+  const state = dragState;
+  dragState = null;
+  const { item, container, items, metrics, startIdx, currentIdx, gap,
+          draggingClass, activeClass, lockHeight, commit } = state;
+
+  item.removeEventListener('pointermove', onDragMove);
+  item.removeEventListener('pointerup', onDragEnd);
+  item.removeEventListener('pointercancel', onDragEnd);
+
+  let settle = 0;
+  for (let i = startIdx + 1; i <= currentIdx; i++) settle += metrics[i].height + gap;
+  for (let i = currentIdx; i < startIdx; i++) settle -= metrics[i].height + gap;
+
+  item.style.transition = 'transform 0.3s cubic-bezier(0.2, 1, 0.3, 1)';
+  item.style.transform = `translateY(${settle}px)`;
+  await new Promise(r => setTimeout(r, 300));
+
+  // Commit the new order to the DOM in the same frame the transforms drop, so
+  // the item never flashes back to the slot it was dragged out of.
+  const moved = startIdx !== currentIdx;
+  if (moved) {
+    const ordered = [...items];
+    ordered.splice(currentIdx, 0, ordered.splice(startIdx, 1)[0]);
+    ordered.forEach(el => container.appendChild(el));
+  }
+
+  items.forEach(el => {
+    el.style.transition = 'none';
+    el.style.transform = '';
+    el.style.position = '';
+    el.style.zIndex = '';
+  });
+  item.classList.remove(draggingClass);
+  container.classList.remove(activeClass);
+  if (lockHeight) container.style.height = '';
+  void container.offsetHeight;
+  items.forEach(el => { el.style.transition = ''; });
+
+  if (moved) await commit(state);
+}
+
+// Only the slots the dragged items already occupy get rewritten, so anything
+// hidden by the current filter keeps its place in the master list.
+function occupiedSlots(list, keyOf, keys) {
+  const dragged = new Set(keys);
+  const slots = [];
+  list.forEach((entry, i) => { if (dragged.has(keyOf(entry))) slots.push(i); });
+  return slots;
+}
+
+async function commitRowOrder({ items, startIdx, currentIdx }) {
+  const ids = items.map(el => el.dataset.id);
+  ids.splice(currentIdx, 0, ids.splice(startIdx, 1)[0]);
+
+  const byId = new Map(subjectQuestions.map(q => [q.id, q]));
+  occupiedSlots(subjectQuestions, q => q.id, ids)
+    .forEach((slot, i) => { subjectQuestions[slot] = byId.get(ids[i]); });
+
+  try {
+    await api(`/api/${currentSubject}/reorder`, 'PUT', { ids: subjectQuestions.map(q => q.id) });
+  } catch (error) {
+    showToast('Could not save the new order.');
+    await loadSubject(currentSubject);
   }
 }
 
-async function onDragEnd(e) {
-  if (!dragState) return;
-  const { row, body, rows, startIdx, currentIdx, rowHeight } = dragState;
+async function commitFolderOrder({ items, startIdx, currentIdx }) {
+  const names = items.map(el => el.dataset.topic);
+  names.splice(currentIdx, 0, names.splice(startIdx, 1)[0]);
 
-  row.removeEventListener('pointermove', onDragMove);
-  row.removeEventListener('pointerup', onDragEnd);
-  row.removeEventListener('pointercancel', onDragEnd);
+  const known = names.filter(t => subjectTopics.includes(t));
+  occupiedSlots(subjectTopics, t => t, names)
+    .forEach((slot, i) => { subjectTopics[slot] = known[i]; });
 
-  const finalOffset = (currentIdx - startIdx) * rowHeight;
-  row.style.transition = 'transform 0.3s cubic-bezier(0.2, 1, 0.3, 1)';
-  row.style.transform = `translateY(${finalOffset}px)`;
-
-  await new Promise(r => setTimeout(r, 300));
-
-  row.classList.remove('dragging');
-  body.classList.remove('drag-active');
-  body.style.height = '';
-  rows.forEach(r => {
-    r.style.transform = '';
-    r.style.transition = '';
-    r.style.zIndex = '';
-    r.style.position = '';
-    delete r.dataset.dragIdx;
-  });
-
-  if (startIdx !== currentIdx) {
-    const ids = rows.map(r => r.dataset.id);
-    const [moved] = ids.splice(startIdx, 1);
-    ids.splice(currentIdx, 0, moved);
-
-    const topic = row.closest('.tree-folder')?.dataset.topic;
-    const topicIds = ids;
-    const allIds = [];
-    subjectQuestions.forEach(q => {
-      if (q.topic === topic) return;
-      allIds.push(q.id);
-    });
-    const finalIds = [];
-    let topicInserted = false;
-    subjectQuestions.forEach(q => {
-      if (q.topic === topic && !topicInserted) {
-        finalIds.push(...topicIds);
-        topicInserted = true;
-      } else if (q.topic !== topic) {
-        finalIds.push(q.id);
-      }
-    });
-    if (!topicInserted) finalIds.push(...topicIds);
-
-    await api(`/api/${currentSubject}/reorder`, 'PUT', { ids: finalIds });
+  try {
+    await api(`/api/${currentSubject}/topics/reorder`, 'PUT', { names: subjectTopics });
+  } catch (error) {
+    showToast('Could not save the new topic order.');
     await loadSubject(currentSubject);
   }
-
-  dragState = null;
 }
 
 /* ── Topic management ──────────────────────────────────────────── */
@@ -1418,8 +1489,49 @@ function editQuestion(id) {
 }
 window.editQuestion = editQuestion;
 
+// Native confirm() is suppressed inside embedded webviews, which silently
+// cancelled the delete. This matches the topic dialog instead.
+function confirmDelete({title, description, confirmLabel}) {
+  return new Promise(resolve => {
+    const opener = document.activeElement;
+    const dialog = document.createElement('dialog');
+    dialog.className = 'topic-dialog';
+    dialog.setAttribute('aria-labelledby', 'confirmDialogTitle');
+    dialog.innerHTML = `
+      <form class="topic-form">
+        <h2 id="confirmDialogTitle">${esc(title)}</h2>
+        <p class="topic-description">${esc(description)}</p>
+        <div class="topic-dialog-actions">
+          <button type="button" class="btn topic-close">Cancel</button>
+          <button type="button" class="btn topic-confirm-delete">${esc(confirmLabel)}</button>
+        </div>
+      </form>`;
+    let answer = false;
+    document.body.appendChild(dialog);
+    dialog.addEventListener('close', () => {
+      dialog.remove();
+      if (opener?.isConnected) opener.focus();
+      resolve(answer);
+    });
+    dialog.querySelector('.topic-confirm-delete').addEventListener('click', () => { answer = true; dialog.close(); });
+    dialog.addEventListener('click', e => {
+      const rect = dialog.getBoundingClientRect();
+      const outside = e.clientX < rect.left || e.clientX > rect.right || e.clientY < rect.top || e.clientY > rect.bottom;
+      if (e.target.closest('.topic-close') || (e.target === dialog && outside)) dialog.close();
+    });
+    dialog.showModal();
+    dialog.querySelector('.topic-close').focus();
+  });
+}
+
 async function deleteQuestion(id) {
-  if (!confirm('Delete this question?')) return;
+  const q = subjectQuestions.find(q => q.id === id);
+  const ok = await confirmDelete({
+    title: q ? `Delete “${q.title}”?` : 'Delete this question?',
+    description: 'Its notes, code, and progress will be permanently deleted.',
+    confirmLabel: 'Delete question',
+  });
+  if (!ok) return;
   await api(`/api/${currentSubject}/questions/${id}`, 'DELETE');
   showToast('Question deleted');
   await loadSubject(currentSubject);

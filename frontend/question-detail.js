@@ -17,7 +17,7 @@ const statusOptions = [
   {key:'revisit',label:'Revisit',color:'#ff9f0a'},
   {key:'todo',label:'To do',color:'#8e8e93'},
 ];
-export function openQuestionDetail({question, questions = [question], topics, difficulties, isNew = false, startEditing = false, onSave, onClosed}) {
+export function openQuestionDetail({question, questions = [question], topics, difficulties, isNew = false, startEditing = false, onSave, onClosed, getSequence}) {
   const backdrop = document.querySelector('#notesPopover');
   const root = document.querySelector('#notesPopoverContent');
   const opener = document.activeElement;
@@ -117,6 +117,17 @@ export function openQuestionDetail({question, questions = [question], topics, di
     root.querySelector('.detail-prev').disabled = editing || busy || index === 0;
     root.querySelector('.detail-next').disabled = editing || busy || index === sequence.length - 1;
   }
+  // A question added from here starts as a sequence of one. Once the list behind
+  // the panel has caught up, adopt it so the arrows can reach its neighbours.
+  function resyncSequence() {
+    const fresh = getSequence?.() || [];
+    if (!fresh.length) { sequence[index] = {...saved}; return; }
+    sequence.length = 0;
+    fresh.forEach(q => sequence.push({...q}));
+    const found = sequence.findIndex(q => q.id === saved.id);
+    if (found >= 0) index = found;
+    else { sequence.push({...saved}); index = sequence.length - 1; }
+  }
   function navigate(direction) {
     const next = index + direction;
     if (editing || busy || next < 0 || next >= sequence.length) return;
@@ -163,8 +174,8 @@ export function openQuestionDetail({question, questions = [question], topics, di
     try {
       const updated={...draft,title:draft.title.trim(),link:draft.link.trim(),video_link:draft.video_link.trim(),code:editor.getValue()};
       const persisted = await onSave(updated);
-      saved={...updated,...persisted}; draft={...saved}; isNew=false; editing=false; renderInfo();
-      sequence[index] = {...saved};
+      saved={...updated,...persisted}; draft={...saved}; isNew=false; editing=false;
+      resyncSequence(); renderInfo();
       root.querySelector('.detail-save-state').textContent='Saved';
     } catch (error) {setError(error.message || 'Could not save. Your changes are still here.'); editor.setEditable(true);}
     finally {

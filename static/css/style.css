@@ -704,6 +704,37 @@ a:hover { text-decoration: underline; }
 }
 .folder-header:hover { background: rgba(255,255,255,0.02); }
 
+.folder-drag {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 18px;
+  margin-right: 0.45rem;
+  flex-shrink: 0;
+  color: var(--text-3);
+  opacity: 0.3;
+  cursor: grab;
+  padding: 4px 2px;
+  border-radius: 4px;
+  transition: opacity 0.15s, color 0.15s;
+  touch-action: none;
+}
+.folder-header:hover .folder-drag { opacity: 0.6; }
+.folder-drag:hover { opacity: 1; color: var(--text-1); }
+.folder-drag:active { cursor: grabbing; }
+
+.tree-folder.folder-dragging {
+  position: relative;
+  z-index: 20;
+  background: rgba(10, 132, 255, 0.06);
+  box-shadow: 0 10px 36px rgba(0,0,0,0.4), 0 0 0 1px rgba(255,255,255,0.08);
+}
+.tree-folder.folder-dragging .folder-drag { opacity: 1; color: var(--blue); }
+.tree-drag-active .tree-folder { transition: transform 0.25s cubic-bezier(0.2, 1, 0.3, 1); }
+.tree-drag-active .tree-folder.folder-dragging { transition: none; }
+
 .folder-left {
   display: flex;
   align-items: center;
@@ -1592,7 +1623,8 @@ a:hover { text-decoration: underline; }
     padding: 0.55rem 0.65rem;
     gap: 0.35rem;
   }
-  .drag-handle { display: none; }
+  .drag-handle,
+  .folder-drag { display: none; }
   .file-diff { width: 66px; font-size: 0.62rem; }
   .btn-icon {
     padding: 0.4rem;
@@ -1842,6 +1874,11 @@ a:hover { text-decoration: underline; }
 #subjectFilters .search-input { width: 100%; }
 #subjectFilters .btn-folder { margin-left: auto; flex-shrink: 0; }
 .site-favicon { display: inline-block; width: 18px; height: 18px; object-fit: contain; flex-shrink: 0; border-radius: 3px; }
+/* Retheming an icon whose pixels we cannot read: invert drops its baked-in white
+   backdrop to pure black and hue-rotate restores the mark's own colour, then
+   screen blending resolves that black to whatever is actually painted behind,
+   so the backdrop tracks the surface it sits on instead of a fixed colour. */
+.site-favicon-opaque { filter: invert(1) hue-rotate(180deg) saturate(1.5); mix-blend-mode: screen; }
 #detail-title { min-height: 1.25em; }
 @media (max-width: 640px) {
   #subjectFilters { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 10px; }
