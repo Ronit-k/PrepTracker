@@ -1497,6 +1497,41 @@ public:
         return getMatch(0, 0, s, p, dp);
     }
 };"
+a783954b,Word Break,https://leetcode.com/problems/word-break/,leetcode,medium,DP,solved,"In this question, we have to check whether we can break the given string into valid words present in the dictionary. We use recursion where start represents the starting index of the substring we are currently trying to match. We keep adding characters to currWord from start onwards, and whenever currWord is present in the dictionary, we recursively check whether the remaining string starting from i+1 can be segmented. If any such recursive call returns true, then we can break the string, so we store 1 in dp[start]. Otherwise, we store 0. We use memoization because the same starting index can be reached through multiple recursive calls, and its answer will always be the same. We use an unordered_set for faster dictionary lookups. The base case is when start == word.size(), which means the entire string has been successfully segmented, so we return 1.
+
+Assuming both currWord += word[i] and the unordered_set lookup take O(1):
+Time Complexity: O(n²)
+Space Complexity: O(n + D), where D is the total number of characters in the dictionary.
+",2026-10-18,2026-10-18,,"class Solution {
+int wordBreakHelper(int start, string& word, unordered_set<string>& words, vector<int>& dp){
+    //base case - we have exhausted the string
+    if(start == word.size()) return 1;
+
+    //using memoization
+    if(dp[start] != -1) return dp[start];
+
+    int take = 0;
+    string currWord = """";
+    //forming currWord till its present in dictionary, then we have two possibilities - to take that word or not take
+    //not take is simply continuing the loop
+    for(int i = start; i < word.size(); i++){
+        currWord += word[i];
+        if(words.find(currWord) != words.end()){
+            take = take || wordBreakHelper(i+1, word, words, dp);
+        }
+    }
+    return dp[start] = take;
+}
+
+public:
+    bool wordBreak(string s, vector<string>& wordDict) {
+        unordered_set<string> words(wordDict.begin(), wordDict.end());
+        int n = s.size();
+        vector<int> dp(n, -1);
+
+        return wordBreakHelper(0, s, words, dp);
+    }
+};"
 9ab85d15,Count Palindromic Subsequences,https://www.geeksforgeeks.org/problems/count-palindromic-subsequences/1,gfg,gaand_faad,DP,solved,"Range DP: Count Palindromic Subsequences
 
 We apply the concept of range DP here by breaking the string into smaller subproblems with smaller ranges. To find the number of palindromes in s[i...j], we break it into smaller ranges based on the endpoints s[i] and s[j].
@@ -5088,3 +5123,95 @@ int main(){
     }
     return 0;
 }"
+3b5ff501,Implement Trie,https://leetcode.com/problems/implement-trie-prefix-tree/description/,leetcode,medium,Tries,solved,"[STRIVER MEDIUM]
+A Trie is a tree-like data structure used to store strings character by character. Each node contains an array of 26 pointers (links[26]) for the lowercase English letters and a boolean flag to indicate whether a complete word ends at that node. The root represents the starting point, and each edge represents a character.
+In this implementation, containsKey(letter) checks whether a link for that character exists, goNext(letter) moves to the next node, and put(letter, node) creates a link to a new node. To insert a word, we traverse its characters and create nodes wherever links are missing, then mark the last node using setEnd(). To search for a word, we traverse the Trie character by character; if any link is missing, the word doesn't exist, and otherwise we return isEnd() to check whether a complete word ends at that node. For startsWith(), we similarly traverse the prefix, but we only check whether all its characters exist, without requiring the last node to mark the end of a word.
+Time complexity: Insert, search, and startsWith take O(L) each, where L is the length of the word or prefix.
+Space complexity: O(26N) = O(N), where N is the total number of nodes created, because each node stores 26 pointers.
+",2026-10-18,2026-10-18,https://www.youtube.com/watch?v=dBGUmUQhjaM&list=PLgUwDviBIf0pcIDCZnxhv0LkHf5KzG9zp,"struct Node {
+    Node* links[26];
+    bool flag = false;
+
+    bool containsKey(char letter){
+        if (!links[letter - 'a']) return false;
+        return true;
+    }
+
+    Node* goNext(char letter){
+        return links[letter - 'a'];
+    }
+
+    void put(char letter, Node* node){
+        links[letter - 'a'] = node;
+        return;
+    }
+
+    void setEnd(){
+        flag = true;
+        return;
+    }
+
+    bool isEnd(){
+        return flag;
+    }
+
+};
+
+class Trie {
+private:
+    Node* root;
+public:
+    Trie() {
+        root = new Node();
+    }
+    
+    void insert(string word) {
+        Node* node = root;
+        for(auto letter : word){
+            if (node->containsKey(letter)){
+                node = node->goNext(letter);
+            }
+            else{
+                node->put(letter, new Node());
+                node = node->goNext(letter);
+            }
+        }
+        node->setEnd();
+        return;
+    }
+    
+    bool search(string word) {
+        Node* node = root;
+        for(auto letter : word){
+            if(node->containsKey(letter)){
+                node = node->goNext(letter);
+            }
+            else{
+                return false;
+            }
+        }
+        return node->isEnd();
+    }
+    
+    bool startsWith(string prefix) {
+        Node* node = root;
+        for(auto letter : prefix){
+            if(node->containsKey(letter)){
+                node = node->goNext(letter);
+            }
+            else{
+                return false;
+            }
+        }
+        return true;
+        
+    }
+};
+
+/**
+ * Your Trie object will be instantiated and called as such:
+ * Trie* obj = new Trie();
+ * obj->insert(word);
+ * bool param_2 = obj->search(word);
+ * bool param_3 = obj->startsWith(prefix);
+ */"
