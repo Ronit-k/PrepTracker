@@ -931,6 +931,27 @@ beed3d5c,Articulation point in graph,https://www.geeksforgeeks.org/problems/arti
         return ans.size()? ans:vector<int>{-1};
     }
 };"
+662448e4,0-1 Knapsack,https://www.geeksforgeeks.org/problems/0-1-knapsack-problem0945/1?utm_source=chatgpt.com,gfg,easy,DP,solved,just try all possibilities of take and notTake,2026-10-19,2026-10-20,,"class Solution {
+  private:
+    int getMaxVal(int i, int capacityLeft, vector<int> &val, vector<int> &wt, vector<vector<int>>& dp){
+        //base case - if we have exhausted the array
+        if(i == val.size()) return 0;
+    
+        //using memoization
+        if(dp[i][capacityLeft] != -1) return dp[i][capacityLeft];
+        
+        int take = 0;
+        if(capacityLeft >= wt[i]) take = val[i] + getMaxVal(i+1, capacityLeft - wt[i], val, wt, dp);
+        int notTake = getMaxVal(i+1, capacityLeft, val, wt, dp);
+
+        return dp[i][capacityLeft] = max(take, notTake);
+    }
+  public:
+    int knapsack(int W, vector<int> &val, vector<int> &wt) {
+        vector<vector<int>> dp(val.size(), vector<int>(W+1, -1));
+        return getMaxVal(0, W, val, wt, dp);
+    }
+};"
 3f0a3e0c,Unique paths II,https://leetcode.com/problems/unique-paths-ii/,leetcode,medium,DP,solved,"[STRIVER HARD] The Unique Paths II problem can be solved using DP with memoization. Basically write the recursion exploring all the possibilities and then memoize it.
 Define dp[i][j] as the number of valid paths from cell (i,j) to the destination. If the cell is outside the grid or is an obstacle, it contributes 0 paths. For the destination cell, the number of paths is 1. Otherwise, the number of paths from (i,j) is the sum of paths going right and down: dp[i][j] = dp[i][j+1] + dp[i+1][j]. Memoization ensures each cell is solved only once, giving O(n·m) time and O(n·m) space",2026-09-27,2026-09-27,https://www.youtube.com/watch?v=TmhpgXScLyY,"class Solution {
 private:
@@ -1886,71 +1907,6 @@ public:
         
         // we pass indices of the valid cuts (1 to m-2)
         return getMinCost(1, m - 2, arr, dp); 
-    }
-};"
-cbd440bf,Evaluate Boolean Expression to True,https://www.geeksforgeeks.org/problems/boolean-parenthesization5610/1,gfg,hard,DP,solved,"[STRIVER HARD] In Boolean Parenthesization, we use interval DP where getWays(start, end, isTrue) stores the number of ways to parenthesize the expression from start to end such that it evaluates to True/False. We try every operator as a partition (i += 2) and recursively calculate left_true, left_false, right_true, and right_false, then combine them according to the operator &, |, or ^. The base case is when only one operand is left, where we directly check T/F. Memoization avoids recalculating the same interval. Time complexity = O(n³), Space = O(n²).",2026-10-01,2026-10-01,https://www.youtube.com/watch?v=MM7fXopgyjw,"class Solution {
-  private:
-    int getWays(int start, int end, bool isTrue, string& s, vector<vector<vector<int>>>& dp){
-        //Base case
-        if (start > end) return 0; //invalid
-        if (start == end) { // only one member
-            if(isTrue && s[start] == 'T') return 1;
-            else if(isTrue && s[start] == 'F') return 0;
-            else if(!isTrue && s[start] == 'F') return 1;
-            else if(!isTrue && s[start] == 'T') return 0;
-        }
-        
-        //using memoization
-        if (dp[start][end][isTrue] != -1) return dp[start][end][isTrue];
-        
-        int ways = 0;
-        //using partitioning the expression into a left and right half
-        for(int i = start+1; i<end; i+=2){// we devide on an operator  s[i] represents an operator
-            int left_true = getWays(start, i-1, 1, s, dp);
-            int left_false = getWays(start, i-1, 0, s, dp);
-            int right_true = getWays(i+1, end, 1, s, dp);
-            int right_false = getWays(i+1, end, 0, s, dp);
-            
-            if (isTrue){//if our aim is to make the expresion true
-                if(s[i] == '&'){
-                    ways += left_true*right_true; //& is T only when T&T
-                }
-                else if(s[i] == '|'){// \ is T only when T|T or F|T or T|F
-                    ways += left_true*right_true +
-                            left_false*right_true +
-                            left_true*right_false;
-                }
-                else if(s[i] == '^'){// ^ is T only when T^F or F^T
-                    ways += left_true*right_false + 
-                            left_false*right_true;
-                }
-            }
-            
-            else{
-                if(s[i] == '&'){
-                    ways += left_false*right_true + //& is F only when F&T or T&F or F&F
-                            left_true*right_false +
-                            left_false*right_false;
-                }
-                else if(s[i] == '|'){// \ is F only when F|F
-                    ways += left_false*right_false;
-                }
-                else if(s[i] == '^'){// ^ is T only when T^T or F^F
-                    ways += left_true*right_true + 
-                            left_false*right_false;
-                }
-            }
-        }
-        return dp[start][end][isTrue] = ways;
-    }
-  public:
-    int countWays(string &s) {
-        int n = s.size();
-        
-        //declaring a 3d dp for this
-        vector<vector<vector<int>>> dp(n, vector<vector<int>>(n, vector<int>(2, -1)));
-        
-        return getWays(0, n-1, 1, s, dp);
     }
 };"
 f72f31f9,Valid Parenthesis String,https://leetcode.com/problems/valid-parenthesis-string/description/,leetcode,hard,Greedy,solved,"[STRIVER HARD] this is a very nice question the main thing to come up here is that assign scores to '(' ')' and '*' as 1, -1 and {-1,0,1}, then if you use recursion+memo dp to explore all possibilities it'll take O(n^2) TC, so we apply a greedy approach here, we maintain 2 variables to capture the min possible score and the mac possible score while iterating, and if at point in time our maxScore goes -ve that meand there is no way to make the string until there as valid so we return false, and we keep the min score 0 at minimum as there is no point in going -ve",2026-10-02,2026-10-02,https://www.youtube.com/watch?v=cHT6sG_hUZI,"class Solution {
@@ -5939,5 +5895,70 @@ public:
             }
         }
         return ans;
+    }
+};"
+cbd440bf,Evaluate Boolean Expression to True,https://www.geeksforgeeks.org/problems/boolean-parenthesization5610/1,gfg,hard,DP,solved,"[STRIVER HARD] In Boolean Parenthesization, we use interval DP where getWays(start, end, isTrue) stores the number of ways to parenthesize the expression from start to end such that it evaluates to True/False. We try every operator as a partition (i += 2) and recursively calculate left_true, left_false, right_true, and right_false, then combine them according to the operator &, |, or ^. The base case is when only one operand is left, where we directly check T/F. Memoization avoids recalculating the same interval. Time complexity = O(n³), Space = O(n²).",2026-10-01,2026-10-01,https://www.youtube.com/watch?v=MM7fXopgyjw,"class Solution {
+  private:
+    int getWays(int start, int end, bool isTrue, string& s, vector<vector<vector<int>>>& dp){
+        //Base case
+        if (start > end) return 0; //invalid
+        if (start == end) { // only one member
+            if(isTrue && s[start] == 'T') return 1;
+            else if(isTrue && s[start] == 'F') return 0;
+            else if(!isTrue && s[start] == 'F') return 1;
+            else if(!isTrue && s[start] == 'T') return 0;
+        }
+        
+        //using memoization
+        if (dp[start][end][isTrue] != -1) return dp[start][end][isTrue];
+        
+        int ways = 0;
+        //using partitioning the expression into a left and right half
+        for(int i = start+1; i<end; i+=2){// we devide on an operator  s[i] represents an operator
+            int left_true = getWays(start, i-1, 1, s, dp);
+            int left_false = getWays(start, i-1, 0, s, dp);
+            int right_true = getWays(i+1, end, 1, s, dp);
+            int right_false = getWays(i+1, end, 0, s, dp);
+            
+            if (isTrue){//if our aim is to make the expresion true
+                if(s[i] == '&'){
+                    ways += left_true*right_true; //& is T only when T&T
+                }
+                else if(s[i] == '|'){// \ is T only when T|T or F|T or T|F
+                    ways += left_true*right_true +
+                            left_false*right_true +
+                            left_true*right_false;
+                }
+                else if(s[i] == '^'){// ^ is T only when T^F or F^T
+                    ways += left_true*right_false + 
+                            left_false*right_true;
+                }
+            }
+            
+            else{
+                if(s[i] == '&'){
+                    ways += left_false*right_true + //& is F only when F&T or T&F or F&F
+                            left_true*right_false +
+                            left_false*right_false;
+                }
+                else if(s[i] == '|'){// \ is F only when F|F
+                    ways += left_false*right_false;
+                }
+                else if(s[i] == '^'){// ^ is T only when T^T or F^F
+                    ways += left_true*right_true + 
+                            left_false*right_false;
+                }
+            }
+        }
+        return dp[start][end][isTrue] = ways;
+    }
+  public:
+    int countWays(string &s) {
+        int n = s.size();
+        
+        //declaring a 3d dp for this
+        vector<vector<vector<int>>> dp(n, vector<vector<int>>(n, vector<int>(2, -1)));
+        
+        return getWays(0, n-1, 1, s, dp);
     }
 };"
