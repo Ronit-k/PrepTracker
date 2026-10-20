@@ -4155,30 +4155,28 @@ public:
 We use the Prefix XOR + Hash Map approach to count subarrays whose XOR is equal to k. The map stores how many times a particular prefix XOR has occurred so far. We initialize prefixFreq[0] = 1 to handle subarrays starting from index 0. For every element, we update the current prefixXor using XOR with arr[i]. We then calculate target = prefixXor ^ k, because if current prefixXor ^ previous prefixXor = k, then the XOR of the subarray between those two prefix positions is k. We add the frequency of target to cntSubarrays, then insert the current prefixXor into the map. We check before inserting the current prefix XOR so that only non-empty subarrays are counted.
 
 TC: O(n) SC: O(n)
-",2026-10-12,2026-10-12,https://www.youtube.com/watch?v=eZr-6p0B7ME,"
-class Solution {
-public:
-    long subarrayXor(vector<int>& arr, int k) {
+",2026-10-12,2026-10-12,https://www.youtube.com/watch?v=eZr-6p0B7ME,"class Solution {
+  public:
+    long long subarrayXor(vector<int>& arr, int k) {
         int n = arr.size();
-        long cntSubarrays = 0;
-        unordered_map<int, int> prefixFreq; //stores prefixXor -> its frequency
+        long long cntSubarrays = 0;
+        unordered_map<int, int> prefixXorFreq; //stores prefixXor -> its frequency
 
         int prefixXor = 0;
-        prefixFreq[0] = 1;
+        prefixXorFreq[prefixXor] = 1;
 
         for(int i = 0; i < n; ++i){
             prefixXor ^= arr[i];
 
             int target = prefixXor ^ k;
-            cntSubarrays += prefixFreq[target];
+            cntSubarrays += prefixXorFreq[target];
 
-            prefixFreq[prefixXor]++;
+            prefixXorFreq[prefixXor]++;
         }
 
         return cntSubarrays;
     }
-};
-"
+};"
 04c2a1d1,2 Sum,https://leetcode.com/problems/two-sum/description/,leetcode,easy,Arrays,solved,"[STRIVER EASY]
 while traversing the array store which all numbers appeared in a map for O(1) lookup and at any value see if target-value appeared somewhere previously or not via the map
 
@@ -5960,5 +5958,98 @@ cbd440bf,Evaluate Boolean Expression to True,https://www.geeksforgeeks.org/probl
         vector<vector<vector<int>>> dp(n, vector<vector<int>>(n, vector<int>(2, -1)));
         
         return getWays(0, n-1, 1, s, dp);
+    }
+};"
+620083ba,Minimum Moves,https://www.fastprep.io/problems/harness-minimum-moves?utm_source=chatgpt.com,fastprep.io,medium,Graph,solved,"[Harness OA]
+the overall approach is simple bfs, since each jump costs 1 move, bfs will give us the minimum number of moves required to reach the destination.
+
+we start from (0,0) and push it into the queue along with the number of steps taken so far. then for each cell we explore all 4 directions and try jumping from 1 to k cells in each direction.
+
+now there are 2 important things to handle:
+- if we go out of bounds, we break because all further jumps in that direction will also be out of bounds.
+- if we encounter an obstacle, we break because we cannot jump over it.
+
+we maintain a visited matrix so that we don't process the same cell multiple times. whenever we find a valid unvisited cell, we mark it visited and push it into the queue with steps + 1.
+
+if we reach the destination, we return the steps. if the queue becomes empty without reaching the destination, it means there is no valid path, so we return -1.
+
+T.C. O(n*m*k)
+S.C O(n*m)
+",2026-10-20,2026-10-20,,"#include <bits/stdc++.h>
+using namespace std;
+
+class Solution {
+public:
+  int getMinimumMoves(vector<vector<int>> maze, int k) {
+    int n = maze.size();
+    int m = maze[0].size();
+
+    //base case when the destination is not reachable
+    if(maze[0][0] || maze[n-1][m-1]) return -1;
+
+    //we are at 0,0 we wanna reach n-1, m-1
+    //appy simple bfs on valid paths
+    queue<vector<int>> q; //stores (r, c, stepsSoFar)
+    vector<vector<bool>> vis(n, vector<bool>(m, false));    
+
+    q.push({0, 0, 0});
+    vis[0][0] = true;
+
+    vector<pair<int,int>> directirons = {{1,0}, {0,1}, {-1,0}, {0,-1}};
+    auto isValid = [&vis, &maze, &n, &m](int r, int c){
+        if(0 <= r && r < n && 0 <= c && c < m && !vis[r][c]) return true;
+        return false;
+    };
+
+    while(!q.empty()){
+        int r = q.front()[0];
+        int c = q.front()[1];
+        int steps = q.front()[2];
+        q.pop();
+
+        if(r == n-1 && c == m-1) return steps;
+
+        //push all the valid neighbours
+        for(auto [dr, dc] : directirons){
+            for(int i = 1; i <= k; ++i){
+                int new_r = r + i*dr;
+                int new_c = c + i*dc;
+                if(isValid(new_r, new_c)){
+                    if(maze[new_r][new_c]) break;
+                    q.push({new_r, new_c, steps + 1});
+                    vis[new_r][new_c] = true;
+                }
+            }
+        }
+    }
+    return -1;
+  }
+};"
+a1f0c689,Count the Number of Beautiful Subarrays,https://leetcode.com/problems/count-the-number-of-beautiful-subarrays/,leetcode,medium,Hashing,solved,exactly same as previous question  - the main main main thing was to identify - A subarray is beautiful if its xor is equal to zero.,2026-10-20,2026-10-20,,"class Solution {
+private:
+
+    long long subarrayXor(vector<int>& arr, int k) {
+        int n = arr.size();
+        long long cntSubarrays = 0;
+        unordered_map<int, int> prefixXorFreq; //stores prefixXor -> its frequency
+
+        int prefixXor = 0;
+        prefixXorFreq[prefixXor] = 1;
+
+        for(int i = 0; i < n; ++i){
+            prefixXor ^= arr[i];
+
+            int target = prefixXor ^ k;
+            cntSubarrays += prefixXorFreq[target];
+
+            prefixXorFreq[prefixXor]++;
+        }
+
+        return cntSubarrays;
+    }
+
+public:
+    long long beautifulSubarrays(vector<int>& nums) {
+        return subarrayXor(nums, 0);
     }
 };"
