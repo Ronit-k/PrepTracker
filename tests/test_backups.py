@@ -215,6 +215,27 @@ def test_export_to_commit_integration(client, repo):
     assert git(repo, 'show', 'origin/main:data/dsa.csv').replace('\r\n', '\n') == CSV.strip().replace('\r\n', '\n')
 
 
+def test_sql_joins_existing_backup_without_workflow_changes(client, repo):
+    client.get('/api/subjects')  # WSGI navigation initializes new subjects.
+    client.post('/api/sql/topics', json={'name': 'Window functions'})
+    code = "SELECT name,\n    RANK() OVER (ORDER BY salary DESC) AS rank\nFROM employees;"
+    client.post('/api/sql/questions', json={
+        'title': 'Salary ranking', 'topic': 'Window functions', 'code': code,
+        'notes': 'Preserve ties.', 'difficulty': 'hard', 'status': 'solved',
+    })
+    response = client.get('/api/backup', headers={'Authorization': f'Bearer {TOKEN}'})
+    assert response.status_code == 200
+    files = validate_snapshot(response.get_json())
+    assert set(files) == {'dsa.csv', 'dsa_topics.json', 'sql.csv', 'sql_topics.json'}
+    assert files['dsa.csv'] == CSV
+    apply_snapshot(repo, response.get_json())
+    assert commit_snapshot(repo)
+    push_backup(repo)
+    assert 'Salary ranking' in git(repo, 'show', 'origin/main:data/sql.csv')
+    assert 'Window functions' in git(repo, 'show', 'origin/main:data/sql_topics.json')
+    assert commit_snapshot(repo) is False
+
+
 def test_malformed_csv_rejected_before_any_writes(repo):
     files = {'dsa.csv': 'id,title,topic,difficulty,status\n1,"unterminated,Graphs,easy,solved'}
     payload = {'version': 1, 'timezone': 'Asia/Kolkata', 'files': files, 'sha256': snapshot_digest(files)}

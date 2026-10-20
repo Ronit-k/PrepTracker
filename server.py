@@ -8,7 +8,7 @@ import re
 from pathlib import Path
 from datetime import datetime, timedelta
 from collections import defaultdict
-from config import RANKS, XP_MAP, DIFFICULTIES, PORT
+from config import RANKS, XP_MAP, DIFFICULTIES, SUBJECTS, PORT
 
 from storage import atomic_file, file_lock, RUNTIME_DIR
 from time_utils import today_ist
@@ -26,6 +26,9 @@ CSV_FIELDS = [
 
 @app.before_request
 def lock_data_request():
+    subject = (request.view_args or {}).get('subject')
+    if subject is not None and not re.fullmatch(r'[A-Za-z0-9_-]+', subject):
+        return jsonify({'error': 'Invalid subject.'}), 400
     if request.endpoint == 'export_backup':
         error = authorize_backup()
         if error:
@@ -50,13 +53,13 @@ def csv_path(subject):
 def ensure_csv(subject):
     p = csv_path(subject)
     if not os.path.exists(p):
-        with open(p, 'w', newline='') as f:
+        with atomic_file(p) as f:
             csv.DictWriter(f, fieldnames=CSV_FIELDS).writeheader()
 
 
 def read_all(subject):
     ensure_csv(subject)
-    with open(csv_path(subject), 'r', newline='') as f:
+    with open(csv_path(subject), 'r', newline='', encoding='utf-8') as f:
         return list(csv.DictReader(f))
 
 
@@ -228,7 +231,9 @@ def reorder_questions(subject):
     ids = (request.json or {}).get('ids', [])
     rows = read_all(subject)
     by_id = {r['id']: r for r in rows}
-    ordered = [by_id[i] for i in ids if i in by_id]
+    if not isinstance(ids, list) or any(not isinstance(i, str) for i in ids):
+        return jsonify({'error': 'Question order must be a list of IDs.'}), 400
+    ordered = [by_id[i] for i in dict.fromkeys(ids) if i in by_id]
     remaining = [r for r in rows if r['id'] not in {i for i in ids}]
     write_all(subject, ordered + remaining)
     return jsonify({'ok': True})
@@ -262,8 +267,10 @@ def get_topics(subject):
 @app.route('/api/<subject>/topics/reorder', methods=['PUT'])
 def reorder_topics(subject):
     names = (request.json or {}).get('names', [])
+    if not isinstance(names, list) or any(not isinstance(t, str) for t in names):
+        return jsonify({'error': 'Topic order must be a list of names.'}), 400
     known = list(dict.fromkeys(read_topics(subject) + [r['topic'] for r in read_all(subject) if r.get('topic')]))
-    ordered = [t for t in names if t in known]
+    ordered = [t for t in dict.fromkeys(names) if t in known]
     write_topics(subject, ordered + [t for t in known if t not in set(ordered)])
     return jsonify({'ok': True})
 
@@ -335,24 +342,35 @@ def get_stats(subject):
 @app.route('/api/subjects')
 def list_subjects():
     subs = []
-    for f in sorted(os.listdir(DATA_DIR)):
-        if f.endswith('.csv'):
-            name = f[:-4]
-            rows = read_all(name)
-            solved = sum(1 for r in rows if r.get('status') in ('solved', 'revisit'))
-            subs.append({'id': name, 'label': name.upper(), 'total': len(rows), 'solved': solved})
+    for subject in available_subjects():
+        rows = read_all(subject['id'])
+        solved = sum(1 for r in rows if r.get('status') in ('solved', 'revisit'))
+        subs.append({**subject, 'total': len(rows), 'solved': solved})
     return jsonify(subs)
+
+
+def available_subjects():
+    """Configured tabs exist even before their first question, including on WSGI.
+
+    Keep previously created subjects visible. Missing CSVs are initialized on
+    demand under the request's data lock; existing files are never reseeded.
+    """
+    subjects = {s['id']: dict(s) for s in SUBJECTS}
+    for path in sorted(Path(DATA_DIR).glob('*.csv')):
+        name = path.stem
+        if re.fullmatch(r'[A-Za-z0-9_-]+', name) and name not in subjects:
+            subjects[name] = {'id': name, 'label': name.upper(),
+                              'language': 'cpp', 'language_label': 'C++'}
+    return subjects.values()
 
 
 @app.route('/api/dashboard')
 def dashboard():
     all_questions = []
-    for f in sorted(os.listdir(DATA_DIR)):
-        if f.endswith('.csv'):
-            name = f[:-4]
-            for row in read_all(name):
-                row['_subject'] = name
-                all_questions.append(row)
+    for subject in available_subjects():
+        for row in read_all(subject['id']):
+            row['_subject'] = subject['id']
+            all_questions.append(row)
     return jsonify(calc_stats(all_questions))
 
 

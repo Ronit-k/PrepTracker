@@ -11,9 +11,10 @@ plan.
 - Full-year activity heatmap with IST dates, weekday labels, tooltips, and a mobile year picker.
 - Collapsible topics with renaming, deletion, and question reordering.
 - Multi-select difficulty filter: no selection means all levels; selecting all clears the filter.
-- Notes, syntax-highlighted C++ solutions, problem links, and reference material.
+- DSA and SQL tabs with the same topics, question cards, transitions, and filters.
+- Notes, syntax-highlighted C++/SQL solutions, problem links, and reference material.
 - Configurable difficulties and ranks in `config.py`.
-- Separate subject CSVs and topic JSON files for future subjects.
+- Separate subject CSVs and topic JSON files, configured through `SUBJECTS` in `config.py`.
 - Scheduled GitHub backups with IST commit messages and no empty commits.
 
 ## Local setup
@@ -29,6 +30,74 @@ python server.py
 
 Open [localhost:6969](http://localhost:6969). Local data defaults to `data/`.
 No Git operations or background workers run when importing or starting Flask.
+
+## Adding SQL to your existing hosted tracker
+
+SQL uses the exact same interface as DSA: topic creation, rename/delete,
+drag reordering, difficulty filters, notes, links, inline editing, and keyboard
+navigation. SQL solutions are highlighted as SQL; DSA remains C++. SQL text is
+stored as a solution, not executed against a database.
+
+Each tab keeps its own search, filters, and expanded topics during the session.
+Dashboard XP, difficulty totals, streaks, and calendar activity combine both
+subjects.
+
+### Where SQL data lives
+
+| Location | Questions | Topic names and order |
+| --- | --- | --- |
+| PythonAnywhere live data | `/home/r0nit/preptracker-data/sql.csv` | `/home/r0nit/preptracker-data/sql_topics.json` |
+| GitHub backup / default local storage | `data/sql.csv` | `data/sql_topics.json` |
+
+DSA keeps its existing `dsa.csv` and `dsa_topics.json`. The SQL CSV uses the same
+columns, including `notes` and `code`, so multiline queries are saved intact.
+The app creates a missing SQL CSV when it loads the navbar, including under WSGI.
+The topic file is created when you create or change topics. Existing files are
+never overwritten with starter data.
+
+**Keep the existing `PREPTRACKER_DATA_DIR` setting.** Live data stays outside
+the checkout, so pulling code or an older GitHub backup cannot replace your
+latest questions. No data migration or manual CSV copying is needed.
+
+### Update PythonAnywhere once
+
+After pulling this update on your development machine and pushing code changes
+to `main`, open a PythonAnywhere **Bash console** and run:
+
+```bash
+cd /home/r0nit/PrepTracker
+git pull --ff-only
+```
+
+If Git reports local changes or a conflict, stop and inspect them; do not reset
+or overwrite your live data. Then:
+
+1. Open **Web → r0nit.pythonanywhere.com → Reload**.
+2. Refresh the website. **SQL** appears beside **DSA**.
+3. Open SQL, create a topic, and use its **+** to add a question.
+4. In GitHub, open **Actions → Back up PythonAnywhere data → Run workflow**.
+5. Confirm the successful run added `data/sql.csv` and `data/sql_topics.json`.
+   Run again without editing anything; it should report no changes.
+
+The desktop editor is already bundled. You do **not** need Node, npm, a database,
+a new web app, or new Python dependencies on PythonAnywhere for this update.
+
+### What happens automatically
+
+Your existing backup workflow discovers **all** subject CSVs and topic JSON
+files. SQL is included at the same configured IST times, with the same shared
+token and site URL. **No new GitHub secrets, workflow, schedule, SSH key, or paid
+PythonAnywhere task is needed.** Saves on the site remain immediate; commits
+are created only when the snapshot changes.
+
+Data backup and website deployment are separate. Code pushes still require
+`git pull --ff-only` and **Reload** on PythonAnywhere; the backup workflow does
+not deploy code. After this one deployment, adding/editing SQL questions needs
+no reload. The existing schedule's timing caveats apply to SQL too.
+
+For a future subject, add its ID, label, and editor language to `SUBJECTS` in
+`config.py`. IDs are file-safe names such as `os` or `dbms`; the current editor
+supports `cpp` and `sql`. Existing unlisted subject CSVs stay visible.
 
 ## How the free backup works
 
@@ -263,7 +332,7 @@ filtering, topics without matching questions are hidden.
 ## Question details
 
 On desktop, the notes icon opens a wide, two-pane card: the topic appears once
-in the header, with title, difficulty, notes, and links on the left; a C++ editor on the right. The editor includes
+in the header, with title, difficulty, notes, and links on the left; a solution editor on the right (C++ for DSA, SQL for SQL). The editor includes
 syntax highlighting, line numbers, indentation guides, and fold arrows for code
 blocks. Copy always copies the full solution, including folded code.
 
@@ -312,7 +381,7 @@ update them when changing bundled dependencies.
 ```text
 PrepTracker/
 ├── server.py                       # Flask API, IST stats, authenticated export
-├── config.py                       # Difficulties, ranks, IST backup times
+├── config.py                       # Subjects, difficulties, ranks, IST backup times
 ├── backup.py                       # Snapshot format and validation
 ├── storage.py                      # Process locks and atomic file writes
 ├── time_utils.py                   # Shared IST helpers

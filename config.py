@@ -5,6 +5,13 @@ GIT_SYNC_TIMES_IST = ["00:00", "06:00", "12:00", "18:00"]
 
 PORT = 6969
 
+# Navbar order and solution language. Subjects share the same UI and storage schema.
+# Each ID maps to <id>.csv and <id>_topics.json in PREPTRACKER_DATA_DIR.
+SUBJECTS = [
+    {'id': 'dsa', 'label': 'DSA', 'language': 'cpp', 'language_label': 'C++'},
+    {'id': 'sql', 'label': 'SQL', 'language': 'sql', 'language_label': 'SQL'},
+]
+
 RANKS = [
     (0, 'Starter', '#636366'),
     (100, 'Explorer', '#30d158'),

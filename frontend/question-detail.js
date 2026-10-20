@@ -17,7 +17,7 @@ const statusOptions = [
   {key:'revisit',label:'Revisit',color:'#ff9f0a'},
   {key:'todo',label:'To do',color:'#8e8e93'},
 ];
-export function openQuestionDetail({question, questions = [question], topics, difficulties, isNew = false, startEditing = false, onSave, onClosed, getSequence}) {
+export function openQuestionDetail({question, questions = [question], topics, difficulties, language = 'cpp', languageLabel = 'C++', isNew = false, startEditing = false, onSave, onClosed, getSequence}) {
   const backdrop = document.querySelector('#notesPopover');
   const root = document.querySelector('#notesPopoverContent');
   const opener = document.activeElement;
@@ -45,14 +45,14 @@ export function openQuestionDetail({question, questions = [question], topics, di
     </div></header>
     <div class="detail-discard" hidden><span>Discard your unsaved changes?</span><button type="button" class="detail-button detail-keep">Keep editing</button><button type="button" class="detail-button detail-discard-confirm">Discard</button></div>
     <div class="detail-split"><section class="detail-info" aria-label="Question and notes"></section>
-      <section class="detail-code" aria-label="Code panel"><div class="detail-code-toolbar"><div><span class="detail-language-dot"></span><span>C++</span><span class="detail-code-mode">SAVED SOLUTION</span></div>
-        <button type="button" class="detail-copy" aria-label="Copy C++ code">${icon('copy')}<span>Copy</span></button></div>
-        <div class="detail-editor"></div><div class="detail-code-footer"><span class="detail-line-count"></span><span>UTF-8 · C++</span></div>
+      <section class="detail-code" aria-label="Code panel"><div class="detail-code-toolbar"><div><span class="detail-language-dot"></span><span>${escape(languageLabel)}</span><span class="detail-code-mode">SAVED SOLUTION</span></div>
+        <button type="button" class="detail-copy" aria-label="Copy ${escape(languageLabel)} code">${icon('copy')}<span>Copy</span></button></div>
+        <div class="detail-editor"></div><div class="detail-code-footer"><span class="detail-line-count"></span><span>UTF-8 · ${escape(languageLabel)}</span></div>
       </section></div><div class="detail-error" role="alert" hidden></div>`;
   const editor = createCodeEditor(root.querySelector('.detail-editor'), saved.code, value => {
     if (editing) draft.code = value;
     updateLines(value);
-  });
+  }, language, languageLabel);
   function updateLines(value) {
     const count = (value || '').split('\n').length;
     root.querySelector('.detail-line-count').textContent = `${count} ${count === 1 ? 'line' : 'lines'}`;

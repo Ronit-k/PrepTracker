@@ -2,6 +2,7 @@ import {EditorState, Compartment} from '@codemirror/state';
 import {EditorView, keymap, lineNumbers, highlightActiveLineGutter, Decoration, ViewPlugin, placeholder} from '@codemirror/view';
 import {defaultKeymap, history, historyKeymap, indentWithTab} from '@codemirror/commands';
 import {cpp} from '@codemirror/lang-cpp';
+import {sql} from '@codemirror/lang-sql';
 import {foldGutter, codeFolding, foldKeymap, bracketMatching, indentUnit, syntaxHighlighting, HighlightStyle} from '@codemirror/language';
 import {tags} from '@lezer/highlight';
 
@@ -51,16 +52,17 @@ const guides = ViewPlugin.fromClass(class {
   }
 }, {decorations: value => value.decorations});
 
-export function createCodeEditor(parent, code, onChange) {
+export function createCodeEditor(parent, code, onChange, language = 'cpp', languageLabel = 'C++') {
   const mode = new Compartment();
   const editable = enabled => [EditorState.readOnly.of(!enabled), EditorView.editable.of(enabled)];
   const extensions = [
-        cpp(), lineNumbers(), foldGutter(), codeFolding(), bracketMatching(), guides,
-        placeholder('Your C++ solution goes here…'),
+        language === 'sql' ? sql() : cpp(),
+        lineNumbers(), foldGutter(), codeFolding(), bracketMatching(), guides,
+        placeholder(`Your ${languageLabel} solution goes here…`),
         history(), highlightActiveLineGutter(), indentUnit.of('    '), EditorState.tabSize.of(4),
         keymap.of([...defaultKeymap, ...historyKeymap, ...foldKeymap, indentWithTab]),
         syntaxHighlighting(colors), mode.of(editable(false)),
-        EditorView.contentAttributes.of({'aria-label': 'C++ solution', 'tabindex': '0'}),
+        EditorView.contentAttributes.of({'aria-label': `${languageLabel} solution`, 'tabindex': '0'}),
         EditorView.updateListener.of(update => { if (update.docChanged) onChange(view.state.doc.toString()); }),
         EditorView.theme({
           '&': {height: '100%', backgroundColor: 'transparent', color: '#d4d7de'},

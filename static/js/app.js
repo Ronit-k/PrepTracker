@@ -5,6 +5,7 @@
 let RANKS = [];
 let XP_MAP = {};
 let DIFFS = [];
+let SUBJECTS = {};
 let siteIcons;
 // Calendar dates use IST even when the browser or hosting server is elsewhere.
 function indiaDateKey(instant = new Date()) {
@@ -26,6 +27,12 @@ let currentSubject = null;
 let subjectQuestions = [];
 let subjectTopics = [];
 let editingId = null;
+const subjectViews = new Map();
+let subjectLoadVersion = 0;
+
+function subjectConfig(subject = currentSubject) {
+  return SUBJECTS[subject] || {label: subject?.toUpperCase() || '', language: 'cpp', language_label: 'C++'};
+}
 
 /* ── Elements ──────────────────────────────────────────────────── */
 const $ = (s) => document.querySelector(s);
@@ -204,6 +211,7 @@ function buildDiffSegment() {
 /* ── Navigation ────────────────────────────────────────────────── */
 async function loadNavTabs() {
   const subs = await api('/api/subjects');
+  SUBJECTS = Object.fromEntries(subs.map(s => [s.id, s]));
   const existing = navTabs.querySelectorAll('.nav-tab[data-subject]');
   existing.forEach(el => el.remove());
 
@@ -214,24 +222,44 @@ async function loadNavTabs() {
     btn.dataset.page = 'subject';
     btn.innerHTML = `
       <svg width="14" height="14" viewBox="0 0 16 16" fill="none"><path d="M2 4l6-2 6 2v8l-6 2-6-2z" stroke="currentColor" stroke-width="1.3" stroke-linejoin="round"/><path d="M8 6v8M2 4l6 2 6-2" stroke="currentColor" stroke-width="1.3" stroke-linejoin="round"/></svg>
-      ${s.label}
+      ${esc(s.label)}
       <span class="tab-count">${s.solved}/${s.total}</span>
     `;
     navTabs.appendChild(btn);
   });
 
-  navTabs.addEventListener('click', e => {
+  navTabs.onclick = e => {
     const tab = e.target.closest('.nav-tab');
-    if (!tab) return;
+    if (!tab || dragState) return;
     navTabs.querySelectorAll('.nav-tab').forEach(t => t.classList.remove('active'));
     tab.classList.add('active');
     if (tab.dataset.page === 'subject') {
-      currentSubject = tab.dataset.subject;
+      selectSubject(tab.dataset.subject);
       showPage('subject');
     } else {
       showPage('dashboard');
     }
+  };
+}
+
+function selectSubject(subject) {
+  if (currentSubject === subject) return;
+  if (currentSubject) subjectViews.set(currentSubject, {
+    search: searchInput.value,
+    levels: [...filterDiff.querySelectorAll('.cs-option.selected')].map(o => o.dataset.value),
+    openFolders,
   });
+  const state = subjectViews.get(subject);
+  currentSubject = subject;
+  openFolders = state?.openFolders || new Set();
+  searchInput.value = state?.search || '';
+  filterDiff.querySelectorAll('.cs-option').forEach(o =>
+    o.classList.toggle('selected', state?.levels.includes(o.dataset.value) || false));
+  filterDiff.classList.remove('open');
+  filterDiff.querySelector('.cs-trigger').setAttribute('aria-expanded', 'false');
+  updateFilterLabel();
+  subjectQuestions = [];
+  subjectTopics = [];
 }
 
 function showPage(page) {
@@ -725,15 +753,33 @@ function setupHmTooltip(container) {
 
 /* ── Subject page ──────────────────────────────────────────────── */
 async function loadSubject(subject) {
-  subjectTitle.textContent = subject.toUpperCase();
-  const [questions, topics] = await Promise.all([
-    api(`/api/${subject}/questions`),
-    api(`/api/${subject}/topics`),
-  ]);
-  subjectQuestions = questions;
-  subjectTopics = topics;
-  populateTopicList(topics);
-  renderTree();
+  const version = ++subjectLoadVersion;
+  subjectTitle.textContent = subjectConfig(subject).label;
+  treeContainer.setAttribute('aria-busy', 'true');
+  $('#btnFolder').disabled = true;
+  if (!subjectQuestions.length) treeContainer.innerHTML = '<div class="tree-empty" role="status">Loading topics…</div>';
+  try {
+    const [questions, topics] = await Promise.all([
+      api(`/api/${subject}/questions`),
+      api(`/api/${subject}/topics`),
+    ]);
+    // A slower previous tab must never overwrite the newly selected subject.
+    if (version !== subjectLoadVersion || subject !== currentSubject || currentPage !== 'subject') return;
+    subjectQuestions = questions;
+    subjectTopics = topics;
+    populateTopicList(topics);
+    renderTree();
+  } catch (error) {
+    if (version === subjectLoadVersion && subject === currentSubject) {
+      treeContainer.innerHTML = '<div class="tree-empty" role="alert">Could not load topics. Select the tab to try again.</div>';
+      showToast(error.message);
+    }
+  } finally {
+    if (version === subjectLoadVersion) {
+      treeContainer.setAttribute('aria-busy', 'false');
+      $('#btnFolder').disabled = false;
+    }
+  }
 }
 
 function populateTopicList(topics) {
@@ -989,8 +1035,10 @@ async function openDesktopDetail(question, {isNew = false, startEditing = false}
   detailLoading = true;
   try {
     const {openQuestionDetail} = await import('/static/vendor/question-detail.js');
+    if (currentSubject !== subject || currentPage !== 'subject') return;
     desktopDetail = openQuestionDetail({question, questions: isNew ? [question] : detailQuestions(),
       topics: subjectTopics, difficulties: DIFFS, isNew, startEditing,
+      language: subjectConfig(subject).language, languageLabel: subjectConfig(subject).language_label,
       getSequence: () => detailQuestions(),
       onSave: async updated => {
         const {id, date_added, ...fields} = updated;
@@ -1028,6 +1076,7 @@ function showMobileNotes(id) {
   content.removeAttribute('aria-labelledby');
   const hasNotes = q.notes && q.notes.trim();
   const hasCode = q.code && q.code.trim();
+  const language = subjectConfig();
 
   if (!hasNotes && !hasCode) {
     content.innerHTML = `<div class="notes-empty">No notes for this question</div>`;
@@ -1037,13 +1086,13 @@ function showMobileNotes(id) {
     if (hasCode) {
       html += `<div class="code-section">
         <div class="code-header">
-          <span class="code-lang">C++</span>
+          <span class="code-lang">${esc(language.language_label)}</span>
           <button class="code-copy-btn" onclick="copyCode(this)" type="button">
             <svg width="14" height="14" viewBox="0 0 16 16" fill="none"><rect x="5" y="5" width="9" height="9" rx="1.5" stroke="currentColor" stroke-width="1.2"/><path d="M11 5V3.5A1.5 1.5 0 009.5 2h-6A1.5 1.5 0 002 3.5v6A1.5 1.5 0 003.5 11H5" stroke="currentColor" stroke-width="1.2"/></svg>
             Copy
           </button>
         </div>
-        <div class="code-block-wrap"><pre class="code-block"><code class="language-cpp">${esc(q.code)}</code></pre></div>
+        <div class="code-block-wrap"><pre class="code-block"><code class="language-${esc(language.language)}">${esc(q.code)}</code></pre></div>
       </div>`;
     }
     content.innerHTML = html;
@@ -1194,7 +1243,8 @@ function onDragMove(e) {
 async function onDragEnd() {
   if (!dragState) return;
   const state = dragState;
-  dragState = null;
+  if (state.settling) return;
+  state.settling = true;
   const { item, container, items, metrics, startIdx, currentIdx, gap,
           draggingClass, activeClass, lockHeight, commit } = state;
 
@@ -1231,7 +1281,9 @@ async function onDragEnd() {
   void container.offsetHeight;
   items.forEach(el => { el.style.transition = ''; });
 
-  if (moved) await commit(state);
+  try {
+    if (moved) await commit(state);
+  } finally { dragState = null; }
 }
 
 // Only the slots the dragged items already occupy get rewritten, so anything
@@ -1404,6 +1456,11 @@ function openModal(q, presetTopic) {
     return;
   }
   editingId = q ? q.id : null;
+  const language = subjectConfig();
+  $('label[for="fCode"]').textContent = `Code (${language.language_label})`;
+  $('#fCode').placeholder = `Paste your ${language.language_label} solution here...`;
+  $('#fTitle').placeholder = currentSubject === 'sql' ? 'Second Highest Salary' : 'Two Sum';
+  $('#fTopic').placeholder = currentSubject === 'sql' ? 'e.g. Joins' : 'e.g. Array';
   $('#modalTitle').textContent = q ? 'Edit Question' : 'Add Question';
   $('#fTitle').value = q ? q.title : '';
   $('#fLink').value = q ? q.link : '';
