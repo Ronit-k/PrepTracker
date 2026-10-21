@@ -1,0 +1,13 @@
+id,title,link,platform,difficulty,topic,status,notes,date_solved,date_added,video_link,code
+e75f6d29,Recyclable and Low Fat Products,https://leetcode.com/problems/recyclable-and-low-fat-products/description/?envType=study-plan-v2&envId=top-sql-50,leetcode,easy,Select,solved,Simple just read the question and apply constraints,2026-10-20,2026-10-21,,"SELECT 
+    product_id
+FROM 
+    Products
+WHERE 
+    low_fats = 'Y' AND recyclable = 'Y';"
+0d652450,Find Customer Referee,https://leetcode.com/problems/find-customer-referee/?envType=study-plan-v2&envId=top-sql-50,leetcode,easy,Select,solved, Simple just read the question and apply constraints,2026-10-20,2026-10-21,,"SELECT
+    name
+FROM 
+    Customer
+WHERE
+    referee_id IS NULL OR referee_id != 2;"
