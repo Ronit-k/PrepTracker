@@ -30,3 +30,74 @@ ORDER BY
 e427785a,Invalid Tweets,https://leetcode.com/problems/invalid-tweets/?envType=study-plan-v2&envId=top-sql-50,leetcode,easy,Select,solved,Simple just read the question and apply constraints,2026-10-20,2026-10-21,,"SELECT tweet_id
 FROM Tweets
 WHERE LENGTH(content) > 15;"
+aa4d9913,Replace Employee ID With The Unique Identifier,https://leetcode.com/problems/replace-employee-id-with-the-unique-identifier/description/?envType=study-plan-v2&envId=top-sql-50,leetcode,easy,Basic Joins,solved,"Since we want unique ID of each user and if a user does not have a unique ID then just show null, and all the users are there in ""Employees"" table so we perform a simple LEFT JOIN",2026-10-21,2026-10-21,,"SELECT 
+    unique_id, name
+FROM 
+    Employees LEFT JOIN EmployeeUNI
+    ON Employees.id = EmployeeUNI.id;"
+356c3e68,Product Sales Analysis I,https://leetcode.com/problems/product-sales-analysis-i/description/?envType=study-plan-v2&envId=top-sql-50,leetcode,easy,Basic Joins,solved,"we were asked to report the product_name, year, and price for each sale_id in the Sales table.
+so just LEFT JOIN sales table with Product table
+
+we can also use normal JOIN ig since all the product_id of Sales table are there in Product table",2026-10-21,2026-10-21,,"SELECT
+    product_name, year, price
+FROM
+    Sales LEFT JOIN Product
+    ON Sales.product_id = Product.product_id;"
+0b10312a,Customer Who Visited but Did Not Make Any Transactions,https://leetcode.com/problems/customer-who-visited-but-did-not-make-any-transactions/?envType=study-plan-v2&envId=top-sql-50,leetcode,easy,Basic Joins,solved,"I was asked to return the customer_id that visited and walked away without any transactions - and how many times they did this
+So we LEFT JOIN the Visits and Transactions table and see where the amount is NULL and simply group by customer_id and count such customer_ids",2026-10-21,2026-10-21,,"SELECT
+    customer_id, COUNT(customer_id) AS count_no_trans
+FROM
+    Visits LEFT JOIN Transactions
+    ON Visits.visit_id = Transactions.visit_id
+    WHERE amount IS NULL
+GROUP BY customer_id;"
+c4c00146,Rising Temperature,https://leetcode.com/problems/rising-temperature/description/?envType=study-plan-v2&envId=top-sql-50,leetcode,easy,Basic Joins,solved,"there can be multiple ways to approach this
+on way is to cross join the weather table and then filtering out the rows where the date diff = 1 and temp is more
+
+another way is to inner join the weather table on the condition that the date diff is 1 and then filter out the rows with higher tempratures
+",2026-10-21,2026-10-21,,"-- Using Cross Join
+SELECT
+    w1.id
+FROM
+    Weather AS w1 CROSS JOIN Weather AS w2
+    WHERE 
+        DATEDIFF(w1.recordDate, w2.recordDate) = 1
+        AND w1.temperature > w2.temperature;
+
+-- Using Inner Join 
+SELECT
+    w1.id
+FROM
+    Weather AS w1 INNER JOIN Weather AS w2
+    ON DATEDIFF(w1.recordDate, w2.recordDate) = 1
+    WHERE w1.temperature > w2.temperature"
+4a8c201b,Average Time of Process per Machine,https://leetcode.com/problems/average-time-of-process-per-machine/description/?envType=study-plan-v2&envId=top-sql-50,leetcode,easy,Basic Joins,solved,"performed a INNER JOIN so that left table just consists the start time and right one the end time, then average of their difference and rounded it to 3 decimal places",2026-10-21,2026-10-21,,"SELECT
+    a1.machine_id, ROUND(AVG(a2.timestamp - a1.timestamp), 3) AS processing_time
+FROM
+    Activity a1 INNER JOIN Activity a2
+    ON 
+        a1.machine_id = a2.machine_id AND
+        a1.process_id = a2.process_id AND
+        a1.activity_type = 'start' AND
+        a2.activity_type = 'end'
+GROUP BY machine_id;"
+c6cec112,Employee Bonus,https://leetcode.com/problems/employee-bonus/description/?envType=study-plan-v2&envId=top-sql-50,leetcode,easy,Basic Joins,solved,Simple application of constraint in the question,2026-10-21,2026-10-21,,"SELECT
+    name, bonus
+FROM
+    Employee LEFT JOIN Bonus
+    ON Employee.empID = Bonus.empId
+    WHERE bonus < 1000 OR bonus IS NULL;"
+9149caf5,Students and Examinations,https://leetcode.com/problems/students-and-examinations/?envType=study-plan-v2&envId=top-sql-50,leetcode,medium,Basic Joins,solved,"we first CROSS JOIN Students and Subjects table so that we get a table where every student is associated with every subject
+then we LEFT JOIN it with examination on the condition that the student id and subject name should match - this creates duplicate rows if a student have given same exam multiple times and a null value in Examinations.subject_name if that student+subject combination does not exist in Examination table - hence we can simply GROUP BY this student id and subject name and count this Examinations.subject_name column
+
+",2026-10-21,2026-10-21,,"SELECT 
+    Students.student_id, Students.student_name, Subjects.subject_name, COUNT(Examinations.subject_name) AS attended_exams
+FROM
+    Students CROSS JOIN Subjects
+    LEFT JOIN Examinations
+    ON
+        Students.student_id = Examinations.student_id AND
+        Subjects.subject_name = Examinations.subject_name
+GROUP BY Students.student_id, Subjects.subject_name
+ORDER BY Students.student_id, Subjects.subject_name;
+"
