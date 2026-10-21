@@ -5,9 +5,28 @@ FROM
     Products
 WHERE 
     low_fats = 'Y' AND recyclable = 'Y';"
-0d652450,Find Customer Referee,https://leetcode.com/problems/find-customer-referee/?envType=study-plan-v2&envId=top-sql-50,leetcode,easy,Select,solved, Simple just read the question and apply constraints,2026-10-20,2026-10-21,,"SELECT
+0d652450,Find Customer Referee,https://leetcode.com/problems/find-customer-referee/?envType=study-plan-v2&envId=top-sql-50,leetcode,easy,Select,solved,Simple just read the question and apply constraints,2026-10-20,2026-10-21,,"SELECT
     name
 FROM 
     Customer
 WHERE
     referee_id IS NULL OR referee_id != 2;"
+8d2fae29,Big Countries,https://leetcode.com/problems/big-countries/?envType=study-plan-v2&envId=top-sql-50,leetcode,easy,Select,solved,Simple just read the question and apply constraints,2026-10-20,2026-10-21,,"SELECT
+    name, population, area
+FROM
+    World
+WHERE
+    area >= 3000000 OR population >= 25000000;"
+1831ebdd,Article Views I,https://leetcode.com/problems/article-views-i/description/?envType=study-plan-v2&envId=top-sql-50,leetcode,easy,Select,solved,Simple just read the question and apply constraints,2026-10-20,2026-10-21,,"SELECT 
+    author_id id
+FROM
+    Views
+WHERE
+    author_id = viewer_id
+GROUP BY
+    author_id
+ORDER BY
+    author_id ASC;"
+e427785a,Invalid Tweets,https://leetcode.com/problems/invalid-tweets/?envType=study-plan-v2&envId=top-sql-50,leetcode,easy,Select,solved,Simple just read the question and apply constraints,2026-10-20,2026-10-21,,"SELECT tweet_id
+FROM Tweets
+WHERE LENGTH(content) > 15;"
