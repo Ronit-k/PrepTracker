@@ -6053,3 +6053,110 @@ public:
         return subarrayXor(nums, 0);
     }
 };"
+3973376e,Longest Substring Without Repeating Characters,https://leetcode.com/problems/longest-substring-without-repeating-characters/,leetcode,medium,Sliding Window / 2 Pointer,solved,"We use the sliding window approach with two pointers i and j to maintain a substring with no repeating characters. As j moves forward, we include the current character in the window and update its frequency. If its frequency becomes greater than 1, we shrink the window from the left by moving i until the substring becomes valid again. After each step, we update the maximum length using j-i+1. Since each character is visited at most twice, the time complexity is O(n) and the auxiliary space is O(1).",2026-10-24,2026-10-25,,"class Solution {
+public:
+    int lengthOfLongestSubstring(string s) {
+        vector<int> freq(256, 0); //stores the  frequency of the chars in the substring
+        int len = 0;
+
+        int i = 0;
+        int j = 0;
+        for(; j<s.size(); ++j){
+            //include this character in the subsrting
+            freq[s[j]]++;
+            //if this inclusion had made the substring invalid - shrink from the left till its valid again
+            while(freq[s[j]] > 1){
+                freq[s[i]]--;
+                i++;
+            }
+            // capture the length of valid substring till now
+            len = max(len, j-i+1);
+        }
+        return len;
+    }
+};"
+6288661c,Minimum Size Subarray Sum,https://leetcode.com/problems/minimum-size-subarray-sum/,leetcode,medium,Sliding Window / 2 Pointer,solved,"Since all the numbers are positive, we can use the sliding window approach. We expand the window by moving j and adding elements to the sum. Whenever the sum becomes greater than or equal to the target, we update the minimum length and shrink the window from the left by moving i until the sum becomes invalid. Since we want the minimum length, we keep shrinking as long as the window is valid. If no valid subarray is found, we return 0.",2026-10-24,2026-10-25,,"class Solution {
+public:
+    int minSubArrayLen(int target, vector<int>& nums) {
+        //since the numbers are all positive - so we will maintain a two pointer approach
+        int len = INT_MAX;
+        int sum = 0;
+
+        int i = 0;
+        int j = 0;
+        for(; j<nums.size(); ++j){
+            //include this element in the current subarray
+            sum += nums[j];
+        
+            //if adding this element make the sum >= target, delete elements from the left till it becomes invalid
+            while(sum >= target){
+                //this is a valid len so capturte it
+                len = min(len, j-i+1);
+
+                //remove ith element
+                sum -= nums[i];
+                i++;
+            }
+        }
+        return len == INT_MAX ? 0 : len;
+    }
+};"
+0849b806,Top K Frequent Elements,https://leetcode.com/problems/top-k-frequent-elements/description/,leetcode,medium,Heaps,solved,"In the bucket sort solution, I follow the same first step of calculating the frequencies using a hashmap. Then I create buckets where the index represents the frequency of an element and store each element in its corresponding bucket. Finally, I traverse the buckets from highest frequency to lowest and collect elements until I have k elements. This avoids maintaining a heap and gives O(n) time complexity, with O(n) auxiliary space.
+
+In minHeap solution, I first calculate the frequency of each element using a hashmap. Then I maintain a minHeap of size at most k, storing . Whenever its size exceeds k, I pop the element with the lowest frequency. This way, the heap finally contains the k most frequent elements. Time complexity is O(n + m log k), where n is the size of nums and m is the number of distinct elements.
+
+",2026-10-24,2026-10-25,,"//bucket sort solution
+class Solution {
+public:
+    vector<int> topKFrequent(vector<int>& nums, int k) {
+        unordered_map<int, int> freq;
+        //calculate the frequencies of each element
+        for(auto& num : nums){
+            freq[num]++;
+        }
+
+        //create buckets where index represents the frequency
+        vector<vector<int>> bucket(nums.size()+1);
+        for(auto& [n, f] : freq){
+            bucket[f].push_back(n);
+        }
+
+        //get top k most frequent by traversing buckets in decreasing order of frequency
+        vector<int> ans;
+        for(int f = nums.size(); f>=1; --f){
+            for(auto& n : bucket[f]){
+                ans.push_back(n);
+                if(ans.size() == k) return ans;
+            }
+        }
+        return ans;
+    }
+};
+
+
+
+//minHeap solution
+class Solution {
+public:
+    vector<int> topKFrequent(vector<int>& nums, int k) {
+        unordered_map<int, int> freq;
+        priority_queue<pair<int, int>, vector<pair<int, int>>, greater<pair<int, int>>> minHeap;
+        //calculate the frequencies of each element
+        for(auto& num : nums){
+            freq[num]++;
+        }
+        //get top k most frequent
+        for(auto& [n, f] : freq){
+            minHeap.push({f, n});
+            //pop the minHeap if its size exceeds k, so me are popping the element that occured the least till now
+            if(minHeap.size() > k) minHeap.pop();
+        }
+        //transfer the elements from minHeap to vector
+        vector<int> ans;
+        while (!minHeap.empty()){
+            ans.push_back(minHeap.top().second);
+            minHeap.pop();
+        }
+        return ans;
+    }
+};"
