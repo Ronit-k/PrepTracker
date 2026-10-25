@@ -1887,6 +1887,31 @@ public:
         return getMinCost(1, m - 2, arr, dp); 
     }
 };"
+7f889d4a,Non-overlaping Intervals,https://leetcode.com/problems/non-overlapping-intervals/,leetcode,medium,Greedy,solved,"We sort the intervals by their ending times in ascending order using a lambda comparator. Then we greedily keep the interval that ends earliest, as it leaves the maximum possible space for future intervals. We track the ending time of the last kept interval using prevEnd. If the current interval starts before prevEnd, it overlaps with the last kept interval, so we remove it and increment tobeRemoved. Otherwise, we keep it and update prevEnd to its ending time. This minimizes the number of intervals to remove.
+
+Time complexity: O(n log n).
+
+Space complexity: O(1)",2026-10-25,2026-10-25,,"class Solution {
+private:
+    bool isOverlaping(vector<int> interval1, vector<int> interval2){
+        //non overlaping case
+        if(interval1[1] <= interval2[0] || interval2[1] <= interval1[0]) return false;
+        return true;
+    }
+public:
+    int eraseOverlapIntervals(vector<vector<int>>& intervals) {
+        sort(intervals.begin(), intervals.end(), [](vector<int>& i1, vector<int>& i2){return i1[1] < i2[1];});
+        int n = intervals.size();
+        int tobeRemoved = 0;
+        vector<int> prevInterval = intervals[0];
+
+        for(int i = 1; i<n; i++){
+            if(isOverlaping(prevInterval, intervals[i])) tobeRemoved++;
+            else prevInterval = intervals[i];
+        }
+        return tobeRemoved;
+    }
+};"
 f72f31f9,Valid Parenthesis String,https://leetcode.com/problems/valid-parenthesis-string/description/,leetcode,hard,Greedy,solved,"[STRIVER HARD] this is a very nice question the main thing to come up here is that assign scores to '(' ')' and '*' as 1, -1 and {-1,0,1}, then if you use recursion+memo dp to explore all possibilities it'll take O(n^2) TC, so we apply a greedy approach here, we maintain 2 variables to capture the min possible score and the mac possible score while iterating, and if at point in time our maxScore goes -ve that meand there is no way to make the string until there as valid so we return false, and we keep the min score 0 at minimum as there is no point in going -ve",2026-10-02,2026-10-02,https://www.youtube.com/watch?v=cHT6sG_hUZI,"class Solution {
 public:
     bool checkValidString(string s) {
@@ -1986,33 +2011,6 @@ public:
         }
 
         return minCandies;
-    }
-};"
-dffe0e18,Jump Game - II,https://leetcode.com/problems/jump-game-ii/description/,leetcode,hard,Greedy,solved,"[STRIVER HARD]
-Within one jump, we scan all positions that are reachable, and among them find the position that gives us the farthest next coverage. Only when we reach the end of the current range do we actually commit to that jump.",2026-10-02,2026-10-02,https://www.youtube.com/watch?v=7SBVnw7GSTk,"class Solution {
-public:
-    int jump(vector<int>& nums) {
-        int n = nums.size();
-
-        //base case
-        if(n == 1) return 0;
-
-        int maxCoverage = 0;
-        int currentEnd = 0;
-        int minJumps = 0;
-        //our greedy strategy is as follows
-        //standing at i I can jump to till currentEnd, now from i+1 to currnetEnd i'll se which index gives me max coverage and when I have exhausted the currentEnd i'll make a jump to that max coverage
-        for(int i = 0; i<n; i++){
-            int coverage = i + nums[i];
-            maxCoverage = max(maxCoverage, coverage);
-
-            if(i == currentEnd){
-                minJumps++;
-                currentEnd = maxCoverage;
-                if(currentEnd >= n-1) return minJumps;
-            }
-        }
-        return minJumps;
     }
 };"
 c0ad2a98,Maximum Path Sum in Binary Tree,https://leetcode.com/problems/binary-tree-maximum-path-sum/,leetcode,medium,Binary Trees,solved,"[STRIVER HARD], A bit tough to write the recursion
@@ -3042,6 +3040,39 @@ class Solution {
         return head->bottom;
     }
 };"
+e7f82818,Find Peak Element,https://leetcode.com/problems/find-peak-element/description/,leetcode,medium,Binary Search,solved,"We use binary search to find a peak element in O(log n) time. First, we handle the edge cases where the array has one element or either endpoint is a peak. Then we search in the remaining range. If nums[mid] is greater than both its neighbours, we have found a peak. If the elements are increasing on both sides of mid, we move right because a peak must exist on the increasing side. Otherwise, we move left, since we are either on a decreasing slope or have found a peak. This works because adjacent elements are distinct, so a peak is guaranteed to exist.
+
+Time complexity: O(log n)
+
+Space complexity: O(1)",2026-10-25,2026-10-25,,"class Solution {
+public:
+    int findPeakElement(vector<int>& nums) {
+        int n = nums.size();
+        if (n == 1) return 0;
+        if (nums[0] > nums[1]) return 0;
+        if (nums[n-1] > nums[n-2]) return n-1;
+
+        int low = 1;
+        int high = n-2;
+        
+
+        while(low<=high){
+            int mid = (low + high)/2;
+            //if we have found the peak
+            if(nums[mid-1] < nums[mid] && nums[mid] >  nums[mid+1]) return mid;
+
+            //if we are on an increasing slope, move right
+            if (nums[mid-1] < nums[mid] && nums[mid] < nums[mid+1]){
+                low = mid+1;
+            }
+            // if we are on a decreasing slope
+            else{
+                high = mid-1;
+            }
+        }
+        return -1;
+    }
+};"
 d3a854ab,Koko Eating Bananas,https://leetcode.com/problems/koko-eating-bananas/,leetcode,medium,Binary Search,solved,"[STRIVER HARD] apply a bin search on no. of hours low will be 1 and high will be the max element in the pile, and no. of hours to finish this pile is (pile-1)/k + 1",2026-10-07,2026-10-07,https://www.youtube.com/watch?v=qyfekrNni90,"class Solution {
 private:
     long long getHrs(vector<int>& piles, int k) {
@@ -3455,48 +3486,6 @@ class Solution {
         return pq.top().first;
     }
 };"
-62d2b903,Median in a Row-Wise Sorted Matrix,https://www.geeksforgeeks.org/problems/median-in-a-row-wise-sorted-matrix1527/1,gfg,hard,Binary Search,solved,"[STRIVER HARD]
-Since every row is sorted, we binary search on the value
-For a given mid, getEleLessthanOrEql() counts how many elements are <= mid using upper_bound on each row. 
-
-We need the smallest value having more than m*n/2 elements <= it, so if count <= m*n/2, mid is too small and we move low right; otherwise mid can be the median, so move high left. At the end low gives the median. 
-
-Time: O(m log n · log(maxElement-minElement)), Space: O(1).
-",2026-10-08,2026-10-08,https://www.youtube.com/watch?v=Q9wXgdxJq48,"class Solution {
-  private:
-    int getEleLessthanOrEql(vector<vector<int>> &mat, int num){
-        int cnt = 0;
-        for(int i = 0; i<mat.size(); ++i){
-            cnt += upper_bound(mat[i].begin(), mat[i].end(), num) - mat[i].begin();
-        }
-        return cnt;
-    }
-  public:
-    int median(vector<vector<int>> &mat) {
-        // code here
-        int m = mat.size();
-        int n = mat[0].size();
-        
-        int low = INT_MAX;
-        for(int i = 0; i<m; ++i) low = min(low, mat[i][0]);
-        int high = INT_MIN;
-        for(int i = 0; i<m; ++i) high = max(high, mat[i][n-1]);
-        
-        //we are basically searching for the 1st elements that has (no. of ele <= that elemnet) > mn/2 
-        while(low <= high){
-            int mid = low + (high - low)/2;
-            
-            if(getEleLessthanOrEql(mat,  mid) <= m*n/2){
-                low = mid + 1;
-            }
-            else{
-                high = mid - 1;
-            }
-        }
-        return low;
-    }
-};
-"
 70963ef6,Longest Substring With At Most K Distinct Characters,https://www.geeksforgeeks.org/problems/longest-k-unique-characters-substring0853/1,gfg,medium,Sliding Window / 2 Pointer,solved,"[STRIVER HARD]
 We use a sliding window [i, j] and maintain the last occurrence index of each character. Whenever we encounter a new distinct character, we increment cntDistinct. If the number of distinct characters exceeds k, we remove the character whose last occurrence is the smallest, since that character cannot appear in the remaining window; hence, we move i to one position after its last occurrence and decrement cntDistinct. At each step, we update the maximum window length. If the string never contains exactly k distinct characters, return -1.
 ",2026-10-09,2026-10-09,https://www.youtube.com/watch?v=teM9ZsVRQyc,"class Solution {
@@ -4394,50 +4383,48 @@ public:
         return cntPrime;
     }
 };"
-3576027c,Minimum Operations to Make Numbers Non-positive,https://www.tutorialspoint.com/practice/minimum-operations-to-make-numbers-non-positive.htm#,tutorialspoint.com,gaand_faad,Binary Search,solved,"[NATWEST IIT BHU OA]
-So the pattern in general for any Binary Search question is apply binary search on answer and see how can you eliminate either left or right half, this generally has to do something using the mid value. Usually if any other parameter constraint is given we try to estimate that parameter using the mid value and then compare and eliminate one of the halves - here we estimate the required operations using operations only since the questions allows us to do so - the main task here was to think of this ""canFinish"" boolean function.
-rest of the code and procedure you can see by reading the code",2026-10-13,2026-10-13,https://www.youtube.com/watch?v=D56Nhsm7Ekk,"class Solution {
-private:
-    bool canFinish(int ops, vector<int>& nums, int x, int y){
-        //step 1 perform ops operations i.e subtract ops*y from every element
-        //step 2 if any element is left +ve calculate how many extra times it needs to be 
-        //selected i.e how many time we would have subtracted x from it or (x-y) now, 
-        //since y we have already subtracted from all the eleemnts 
-        //step 3 get the total extra selections required across all elements
-        //if total extra selections <= ops then we can finish in ops operations
+62d2b903,Median in a Row-Wise Sorted Matrix,https://www.geeksforgeeks.org/problems/median-in-a-row-wise-sorted-matrix1527/1,gfg,hard,Binary Search,solved,"[STRIVER HARD]
+Since every row is sorted, we binary search on the value
+For a given mid, getEleLessthanOrEql() counts how many elements are <= mid using upper_bound on each row. 
 
-        long long requiredOps = 0;
-        for(auto num : nums){
-            int newNum = num - ops * y;
-            if(newNum > 0){
-                requiredOps += (newNum + (x-y) - 1) / (x-y); //basically ceil(newNum/(x-y))
-            }
-            if(requiredOps > ops) return false;
+We need the smallest value having more than m*n/2 elements <= it, so if count <= m*n/2, mid is too small and we move low right; otherwise mid can be the median, so move high left. At the end low gives the median. 
+
+Time: O(m log n · log(maxElement-minElement)), Space: O(1).
+",2026-10-08,2026-10-08,https://www.youtube.com/watch?v=Q9wXgdxJq48,"class Solution {
+  private:
+    int getEleLessthanOrEql(vector<vector<int>> &mat, int num){
+        int cnt = 0;
+        for(int i = 0; i<mat.size(); ++i){
+            cnt += upper_bound(mat[i].begin(), mat[i].end(), num) - mat[i].begin();
         }
-        return true;
+        return cnt;
     }
-public:
-    int getMinOps(vector<int>& nums, int x, int y){
-        //we will apply binary search on minimum operations
-        //if we can finish the array in mid operations then try finding a smaller answer
-        //otherwise we need to increase the number of operations
-
-        if(x == y) return (*max_element(nums.begin(), nums.end()) + y - 1) / y;
-
-        int low = 0;
-        int high = *max_element(nums.begin(), nums.end());
+  public:
+    int median(vector<vector<int>> &mat) {
+        // code here
+        int m = mat.size();
+        int n = mat[0].size();
+        
+        int low = INT_MAX;
+        for(int i = 0; i<m; ++i) low = min(low, mat[i][0]);
+        int high = INT_MIN;
+        for(int i = 0; i<m; ++i) high = max(high, mat[i][n-1]);
+        
+        //we are basically searching for the 1st elements that has (no. of ele <= that elemnet) > mn/2 
         while(low <= high){
-            int mid = low + (high - low) / 2;
-            if(canFinish(mid, nums, x, y)){
-                high = mid - 1;
+            int mid = low + (high - low)/2;
+            
+            if(getEleLessthanOrEql(mat,  mid) <= m*n/2){
+                low = mid + 1;
             }
             else{
-                low = mid + 1;
+                high = mid - 1;
             }
         }
         return low;
     }
-};"
+};
+"
 a9ca9f71,Range Sum Query,https://leetcode.com/problems/range-sum-query-mutable/description/,leetcode,medium,Segment Trees,solved,"see the video from start to 01:36:00
 SegmentTree concept is simple only just tedious to write the code and implement
 
@@ -6296,6 +6283,77 @@ public:
         return len;
     }
 };"
+dffe0e18,Jump Game - II,https://leetcode.com/problems/jump-game-ii/description/,leetcode,hard,Greedy,solved,"[STRIVER HARD]
+Within one jump, we scan all positions that are reachable, and among them find the position that gives us the farthest next coverage. Only when we reach the end of the current range do we actually commit to that jump.",2026-10-02,2026-10-02,https://www.youtube.com/watch?v=7SBVnw7GSTk,"class Solution {
+public:
+    int jump(vector<int>& nums) {
+        int n = nums.size();
+
+        //base case
+        if(n == 1) return 0;
+
+        int maxCoverage = 0;
+        int currentEnd = 0;
+        int minJumps = 0;
+        //our greedy strategy is as follows
+        //standing at i I can jump to till currentEnd, now from i+1 to currnetEnd i'll se which index gives me max coverage and when I have exhausted the currentEnd i'll make a jump to that max coverage
+        for(int i = 0; i<n; i++){
+            int coverage = i + nums[i];
+            maxCoverage = max(maxCoverage, coverage);
+
+            if(i == currentEnd){
+                minJumps++;
+                currentEnd = maxCoverage;
+                if(currentEnd >= n-1) return minJumps;
+            }
+        }
+        return minJumps;
+    }
+};"
+3576027c,Minimum Operations to Make Numbers Non-positive,https://www.tutorialspoint.com/practice/minimum-operations-to-make-numbers-non-positive.htm#,tutorialspoint.com,gaand_faad,Binary Search,solved,"[NATWEST IIT BHU OA]
+So the pattern in general for any Binary Search question is apply binary search on answer and see how can you eliminate either left or right half, this generally has to do something using the mid value. Usually if any other parameter constraint is given we try to estimate that parameter using the mid value and then compare and eliminate one of the halves - here we estimate the required operations using operations only since the questions allows us to do so - the main task here was to think of this ""canFinish"" boolean function.
+rest of the code and procedure you can see by reading the code",2026-10-13,2026-10-13,https://www.youtube.com/watch?v=D56Nhsm7Ekk,"class Solution {
+private:
+    bool canFinish(int ops, vector<int>& nums, int x, int y){
+        //step 1 perform ops operations i.e subtract ops*y from every element
+        //step 2 if any element is left +ve calculate how many extra times it needs to be 
+        //selected i.e how many time we would have subtracted x from it or (x-y) now, 
+        //since y we have already subtracted from all the eleemnts 
+        //step 3 get the total extra selections required across all elements
+        //if total extra selections <= ops then we can finish in ops operations
+
+        long long requiredOps = 0;
+        for(auto num : nums){
+            int newNum = num - ops * y;
+            if(newNum > 0){
+                requiredOps += (newNum + (x-y) - 1) / (x-y); //basically ceil(newNum/(x-y))
+            }
+            if(requiredOps > ops) return false;
+        }
+        return true;
+    }
+public:
+    int getMinOps(vector<int>& nums, int x, int y){
+        //we will apply binary search on minimum operations
+        //if we can finish the array in mid operations then try finding a smaller answer
+        //otherwise we need to increase the number of operations
+
+        if(x == y) return (*max_element(nums.begin(), nums.end()) + y - 1) / y;
+
+        int low = 0;
+        int high = *max_element(nums.begin(), nums.end());
+        while(low <= high){
+            int mid = low + (high - low) / 2;
+            if(canFinish(mid, nums, x, y)){
+                high = mid - 1;
+            }
+            else{
+                low = mid + 1;
+            }
+        }
+        return low;
+    }
+};"
 9db0a785,Potions (Hard Version),https://codeforces.com/problemset/status?my=on,codeforces.com,hard,Greedy,solved,"[QiCAP OA] a very very similar question cam in QiCAP OA
 
 The idea is to greedily take every potion and maintain the running sum of potions taken. Whenever the sum becomes negative, we remove the most negative potion taken so far using a min heap, since removing it increases the sum by the largest possible amount. We also decrease cnt accordingly. This way, we keep the running sum non-negative while maximizing the number of potions we can take.
@@ -6338,3 +6396,37 @@ int main(){
     Solution s;
     cout << s.getMaxPotions(nums) << endl;
 ;}"
+db861732,Group Anagrams,https://leetcode.com/problems/group-anagrams/,leetcode,medium,Hashing,solved,main thing was to hash the strings in a way so that strings with same frequency array results into same hash,2026-10-25,2026-10-25,,"class Solution {
+private:
+    string get3digitString(int& a){
+        //it is gaurenteed that a <= 100
+        string s = to_string(a);
+        return string(3 - s.size(), '0') + s;;
+    }
+
+    string hash(string& s){
+        vector<int> freq(26, 0);
+        for(char c : s) freq[c - 'a']++;
+        
+        string hsh = """";
+        for(int f : freq){
+            hsh += get3digitString(f);
+        }
+        return hsh;
+    }
+public:
+    vector<vector<string>> groupAnagrams(vector<string>& strs) {
+        unordered_map<string, vector<string>> mp; //stores stringhash->all strigs with same hash
+        for(auto& str : strs){
+            string hsh = hash(str);
+            mp[hsh].push_back(str);
+        }
+
+        vector<vector<string>> ans;
+        for(auto& [key, val] : mp){
+            ans.push_back(val);
+        }
+
+        return ans;
+    }
+};"
