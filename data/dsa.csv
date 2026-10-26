@@ -6557,3 +6557,97 @@ public:
 // Your Codec object will be instantiated and called as such:
 // Codec ser, deser;
 // TreeNode* ans = deser.deserialize(ser.serialize(root));"
+69bd2261,N-Queens,https://leetcode.com/problems/n-queens/,leetcode,medium,Recursion,solved,"[STRIVER HARD]
+We use backtracking to place n queens on an n × n chessboard such that no two queens attack each other. We place exactly one queen in each row and try every column in that row. To check whether a position is safe in O(1), we maintain three arrays: used_cols for columns, used_udiag for diagonals identified by r + i, and used_ddiag for diagonals identified by r - i + n - 1. If a position is safe, we place the queen, mark the corresponding column and diagonals as occupied, and recursively process the next row. After returning from recursion, we undo these changes to explore other possibilities. When r == n, all queens have been placed successfully, so we add the current board to the answer.
+
+Time complexity: Exponential, approximately O(n! × n), accounting for generating each board.
+
+Space complexity: O(n²) for the board, plus O(n) for recursion and the tracking arrays, excluding the output.
+",2026-10-26,2026-10-26,,"class Solution {
+private:
+    void placeQueens(int &n, int r, vector<string>& cur, vector<vector<string>>& ans, 
+                     vector<bool>& used_udiag, vector<bool>& used_cols, vector<bool>& used_ddiag){
+        //if we have succesfully exhausted the board and placed n queens
+        if (r == n){
+            ans.push_back(cur);
+            return;
+        }
+
+        //in a row atleast one queen will be there
+        for(int i = 0; i<n; i++){
+             // if this square is coverd by some other queen
+            if (used_udiag[r+i] ||
+                used_cols[i] ||
+                used_ddiag[r-i+n-1]) continue;
+
+            cur[r][i] = 'Q';
+            used_udiag[r+i] = true; used_cols[i] = true; used_ddiag[r-i+n-1] = true;
+
+            placeQueens(n, r+1, cur, ans, used_udiag, used_cols, used_ddiag);
+
+            //backtracking
+            used_udiag[r+i] = false; used_cols[i] = false; used_ddiag[r-i+n-1] = false;
+            cur[r][i] = '.';
+        }
+        return;
+    }
+public:
+    vector<vector<string>> solveNQueens(int n) {
+        vector<vector<string>> ans;
+        vector<string> cur(n, string(n, '.'));
+
+        vector<bool> used_cols(n, false);
+        vector<bool> used_udiag(2*n-1, false);
+        vector<bool> used_ddiag(2*n-1, false);
+        
+        placeQueens(n, 0, cur, ans, used_udiag, used_cols, used_ddiag);
+        return ans;
+    }
+};"
+eeb6dd76,Word Search,https://leetcode.com/problems/word-search/,leetcode,medium,Recursion,solved,"[STRIVER HARD]
+done by recursively applying dfs to find given word in the word board",2026-10-26,2026-10-26,,"class Solution {
+private:
+    int m, n;
+    string word;
+
+    bool dfs(int i, int j, int idx, vector<vector<char>>& board) {
+        if (idx == word.size()) return true;
+
+        if (i < 0 || i >= m || j < 0 || j >= n ||
+            board[i][j] != word[idx])
+            return false;
+
+        char temp = board[i][j];
+        board[i][j] = '#';
+
+        bool found =
+            dfs(i+1, j, idx+1, board) ||
+            dfs(i-1, j, idx+1, board) ||
+            dfs(i, j+1, idx+1, board) ||
+            dfs(i, j-1, idx+1, board);
+
+        board[i][j] = temp;
+
+        return found;
+    }
+
+public:
+    bool exist(vector<vector<char>>& board, string word) {
+        m = board.size();
+        n = board[0].size();
+        this->word = word;
+
+        for (int i = 0; i < m; i++) {
+            for (int j = 0; j < n; j++) {
+
+                if (board[i][j] == word[0]) {
+                    if (dfs(i, j, 0, board))
+                        return true;
+                }
+
+            }
+        }
+
+        return false;
+    }
+};"
