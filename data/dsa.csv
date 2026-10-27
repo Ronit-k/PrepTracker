@@ -69,83 +69,6 @@ public:
     return cnt == numCourses;
 }
 };"
-fe19e00c,Word ladder II,https://leetcode.com/problems/word-ladder-ii/description/,leetcode,hard,Graph,solved,"[STRIVER HARD] See the code or video for better understanding - one approach is to save the word seq. as well into the queue (but that gives TLE) - optimised approach handles this by recording what all words occur at each level then if we reached the endWord we stop the bfs, then back track from the last word to see which all words in the prev level is valid and reconstruct the sequence",2026-09-23,2026-09-24,https://www.youtube.com/watch?v=AD4SFl7tu7I,"class Solution {
-private:
-    bool canBeNextWord(string word, string nextWord){
-        int diff = 0;
-        for(int i = 0; i<word.size(); ++i){
-            diff += min(1,abs(word[i] - nextWord[i])); // if same letter then nothing happens else 1 gets added
-            if (diff>1) return false;
-        }
-        return diff;
-    }
-    void dfs(int level, vector<unordered_set<string>>& wordsAtLevel, vector<string> seq, vector<vector<string>>& ans){
-        // we have reached level 0 by tracing out valid words so this is a valid seq
-        if (level == 0){
-            seq.push_back(*wordsAtLevel[0].begin()); // pushing beginWord
-            reverse(seq.begin(), seq.end());
-            ans.push_back(seq);
-            return;
-        }
-
-        for(auto word : wordsAtLevel[level]){
-            if(canBeNextWord(seq.back(), word)){
-                seq.push_back(word);
-                dfs(level-1, wordsAtLevel, seq, ans);
-                seq.pop_back();
-            }
-        }
-        return;
-    }
-
-public:
-    vector<vector<string>> findLadders(string beginWord, string endWord, vector<string>& wordList) {
-        vector<vector<string>> ans;
-
-        //storing in the set for ~O(1) lookup
-        unordered_set<string> words(wordList.begin(), wordList.end());
-        if (words.find(endWord) == words.end()) return ans;
-
-        vector<unordered_set<string>> wordsAtLevel(500); // stores level-> set{words};
-        queue<pair<string, int>> q; // queue for BFS traversal stores {word, level}
-        q.push({beginWord, 0});
-        if(words.find(beginWord)!= words.end()) words.erase(beginWord);
-
-        int prevLevel = 0;
-
-        while(!q.empty()){
-            auto [word, level] = q.front();
-            q.pop();
-            wordsAtLevel[level].insert(word);
-
-            if(level > prevLevel){// we have completely explored all the words at previous level and now clear them from the set
-                ++prevLevel;
-            }
-
-            if (word == endWord) break;
-
-            //search for all possible words for next level form the words at this level
-            for(int i = 0; i<word.size(); ++i){
-                for(char c = 'a'; c<='z'; ++c){
-                    string newWord = word;
-                    newWord[i] = c;
-                    if(words.find(newWord) != words.end()){ // formed a valid word to be inserted
-                        q.push({newWord, level+1});
-                        words.erase(newWord);
-                    }
-                }
-            }
-        }
-
-        // form the final sequences and insert them into the ans
-        if (wordsAtLevel[prevLevel].find(endWord) == wordsAtLevel[prevLevel].end()) return ans; // not enough words in the set to go to the last word
-        vector<string> seq;
-        seq.push_back(endWord);
-        dfs(prevLevel-1, wordsAtLevel, seq, ans);
-
-        return ans;
-    }
-};"
 b4ca4ec6,Course Schedule II,https://leetcode.com/problems/course-schedule-ii/description/,leetcode,medium,Graph,solved,[STRIVER HARD] Just form the adj matrix and return topo sort this time if no cycle present,2026-09-23,2026-09-24,https://www.youtube.com/watch?v=WAOfKpxYHR8,"class Solution {
 public:
     vector<int> findOrder(int numCourses, vector<vector<int>>& prerequisites) {
@@ -251,6 +174,83 @@ public:
             }
         }
         return 0;
+    }
+};"
+fe19e00c,Word ladder II,https://leetcode.com/problems/word-ladder-ii/description/,leetcode,hard,Graph,solved,"[STRIVER HARD] See the code or video for better understanding - one approach is to save the word seq. as well into the queue (but that gives TLE) - optimised approach handles this by recording what all words occur at each level then if we reached the endWord we stop the bfs, then back track from the last word to see which all words in the prev level is valid and reconstruct the sequence",2026-09-23,2026-09-24,https://www.youtube.com/watch?v=AD4SFl7tu7I,"class Solution {
+private:
+    bool canBeNextWord(string word, string nextWord){
+        int diff = 0;
+        for(int i = 0; i<word.size(); ++i){
+            diff += min(1,abs(word[i] - nextWord[i])); // if same letter then nothing happens else 1 gets added
+            if (diff>1) return false;
+        }
+        return diff;
+    }
+    void dfs(int level, vector<unordered_set<string>>& wordsAtLevel, vector<string> seq, vector<vector<string>>& ans){
+        // we have reached level 0 by tracing out valid words so this is a valid seq
+        if (level == 0){
+            seq.push_back(*wordsAtLevel[0].begin()); // pushing beginWord
+            reverse(seq.begin(), seq.end());
+            ans.push_back(seq);
+            return;
+        }
+
+        for(auto word : wordsAtLevel[level]){
+            if(canBeNextWord(seq.back(), word)){
+                seq.push_back(word);
+                dfs(level-1, wordsAtLevel, seq, ans);
+                seq.pop_back();
+            }
+        }
+        return;
+    }
+
+public:
+    vector<vector<string>> findLadders(string beginWord, string endWord, vector<string>& wordList) {
+        vector<vector<string>> ans;
+
+        //storing in the set for ~O(1) lookup
+        unordered_set<string> words(wordList.begin(), wordList.end());
+        if (words.find(endWord) == words.end()) return ans;
+
+        vector<unordered_set<string>> wordsAtLevel(500); // stores level-> set{words};
+        queue<pair<string, int>> q; // queue for BFS traversal stores {word, level}
+        q.push({beginWord, 0});
+        if(words.find(beginWord)!= words.end()) words.erase(beginWord);
+
+        int prevLevel = 0;
+
+        while(!q.empty()){
+            auto [word, level] = q.front();
+            q.pop();
+            wordsAtLevel[level].insert(word);
+
+            if(level > prevLevel){// we have completely explored all the words at previous level and now clear them from the set
+                ++prevLevel;
+            }
+
+            if (word == endWord) break;
+
+            //search for all possible words for next level form the words at this level
+            for(int i = 0; i<word.size(); ++i){
+                for(char c = 'a'; c<='z'; ++c){
+                    string newWord = word;
+                    newWord[i] = c;
+                    if(words.find(newWord) != words.end()){ // formed a valid word to be inserted
+                        q.push({newWord, level+1});
+                        words.erase(newWord);
+                    }
+                }
+            }
+        }
+
+        // form the final sequences and insert them into the ans
+        if (wordsAtLevel[prevLevel].find(endWord) == wordsAtLevel[prevLevel].end()) return ans; // not enough words in the set to go to the last word
+        vector<string> seq;
+        seq.push_back(endWord);
+        dfs(prevLevel-1, wordsAtLevel, seq, ans);
+
+        return ans;
     }
 };"
 becf32be,Cheapest flight with K stops,https://leetcode.com/problems/cheapest-flights-within-k-stops/description/,leetcode,hard,Graph,solved,"[STRIVER HARD] For Cheapest Flights Within K Stops, use a BFS-like queue where each state is (node, cost, flights_used). Normal Dijkstra with a single dist[node] is not directly suitable because reaching the same node with a cheaper cost but more flights can be less useful than a more expensive path with fewer flights. The FIFO queue processes states level-by-level in terms of number of flights, so we can maintain a single price[node] to decide whether a newly found cheaper state should be enqueued. When relaxing edges, always use the cur_price stored in the queue, not price[node], because price[node] may have been updated after that particular state was inserted. If there are at most k stops, we can use at most k+1 flights; therefore, when a state has stops == k+1, we must not expand it further. Because the queue is FIFO and states are processed in increasing number of flights, once such a state is reached, all states with fewer flights have already been processed, and all valid paths with exactly k+1 flights have already been generated and their costs considered.",2026-09-23,2026-09-24,https://www.youtube.com/watch?v=9XybHVqTHcQ,"class Solution {
@@ -484,7 +484,7 @@ public:
         return max_city_with_cnt_min;
     }
 };"
-487b083b,Swim in Rising Water,https://leetcode.com/problems/swim-in-rising-water/description/,leetcode,hard,Graph,solved,"[STRIVER HARD] solev it using djikstra - greedily explore that path first which has the min max_pat_height, The important change is that the priority-queue value must represent the maximum height encountered on the entire path so far, not just the current cell's height. Therefore, when moving to a neighbour, we store max(pathHeight, grid[new_r][new_c]) in the priority queue,
+487b083b,Swim in Rising Water,https://leetcode.com/problems/swim-in-rising-water/description/,leetcode,hard,Graph,solved,"[STRIVER HARD] solve it using djikstra - greedily explore that path first which has the min max_path_height, The important change is that the priority-queue value must represent the maximum height encountered on the entire path so far, not just the current cell's height. Therefore, when moving to a neighbour, we store max(pathHeight, grid[new_r][new_c]) in the priority queue,
 priority queue finally stores - {path_max_height, node}",2026-09-24,2026-09-24,https://www.youtube.com/watch?v=amvrKlMLuGY,"class Solution {
 public:
     int swimInWater(vector<vector<int>>& grid) {
@@ -2412,7 +2412,7 @@ so if we find that current number is greater than the back or last inserted elem
 and after pushing back we see the front element of the queue and take is the max of the current window, and also we maintain the size of the dequeue to k by popping from the front before performing any action in the loop",2026-10-04,2026-10-04,https://www.youtube.com/watch?v=NwBvene4Imo,"class Solution {
 public:
     vector<int> maxSlidingWindow(vector<int>& nums, int k) {
-        deque<int> dq; // stores indices
+        deque<int> dq; // stores indices, elementes maintained in dec order
         vector<int> ans;
         int n = nums.size();
 
@@ -6649,5 +6649,129 @@ public:
         }
 
         return false;
+    }
+};"
+52561878,Word Search II,https://leetcode.com/problems/word-search-ii/description/,leetcode,hard,Tries,solved,"We first insert all the given words into a Trie so that we can efficiently check whether a prefix exists. Then, we start DFS from every cell of the board. At each step, we check whether the current character exists as a child of the current Trie node. If it doesn't, we stop exploring that path because no word has that prefix. Otherwise, we move to the corresponding Trie node, append the character to currWord, and check whether a complete word has been found. We then explore all four adjacent cells, marking the current cell as visited to ensure it isn't reused in the same word. After exploring the neighbours, we unmark the cell during backtracking so it can be used in other paths. An unordered set stores the found words to avoid duplicates.
+
+Time complexity: Building the Trie takes O(W × L), where W is the number of words and L is their maximum length. The DFS worst case is exponential in the board dimensions because many paths may be explored, but Trie prefix checking prunes paths that cannot form any word.
+
+Space complexity: O(W × L) for the Trie, O(m × n) for the visited matrix, plus the recursion stack, where m and n are the board dimensions.",2026-10-26,2026-10-27,,"#include <bits/stdc++.h>
+using namespace std;
+
+struct Node {
+    Node* links[26];
+    bool flag = false;
+
+    bool containsKey(char& letter){
+        if (!links[letter - 'a']) return false;
+        return true;
+    }
+
+    Node* goNext(char& letter){
+        return links[letter - 'a'];
+    }
+
+    void put(char& letter, Node* node){
+        links[letter - 'a'] = node;
+        return;
+    }
+
+    void setEnd(){
+        flag = true;
+        return;
+    }
+
+    bool isEnd(){
+        return flag;
+    }
+
+};
+
+class Trie {
+  private:
+    Node* root;
+  public:
+    Trie() {
+        root = new Node();
+    }
+    
+    void insert(string& word) {
+        Node* node = root;
+        for(auto& letter : word){
+            if (node->containsKey(letter)){
+                node = node->goNext(letter);
+            }
+            else{
+                node->put(letter, new Node());
+                node = node->goNext(letter);
+            }
+        }
+        node->setEnd();
+        return;
+    }
+
+    Node* getRoot(){
+        return root;
+    }
+    
+};
+
+class Solution {
+private:    
+    void dfs(int i, int j, vector<vector<char>>& board, vector<vector<bool>>& vis, Node* trieNode, Trie& trie, string currWord, unordered_set<string>& ans){
+        int m = board.size();
+        int n = board[0].size();
+
+        //if the current character does not exist in the trie, stop exploring this path
+        if(!trieNode->containsKey(board[i][j])) return;
+
+        //mark the current cell as visited
+        vis[i][j] = true;
+
+        //move to the next trie node and include the current character
+        trieNode = trieNode->goNext(board[i][j]);
+        currWord += board[i][j];
+
+        //if we have found a complete word, add it to the answer
+        if(trieNode->isEnd()) ans.insert(currWord);
+
+        //lambda function to check validity
+        auto isValid = [&](int r, int c){
+            if(r < 0 || r >= m || c < 0 || c >= n || vis[r][c]) return false;
+            return true;
+        };
+
+        //explore all four neighbours
+        if(isValid(i-1,j)) dfs(i-1, j, board, vis, trieNode, trie, currWord, ans); //up
+        if(isValid(i+1,j)) dfs(i+1, j, board, vis, trieNode, trie, currWord, ans); //down
+        if(isValid(i,j-1)) dfs(i, j-1, board, vis, trieNode, trie, currWord, ans); //left
+        if(isValid(i,j+1)) dfs(i, j+1, board, vis, trieNode, trie, currWord, ans); //right
+
+        //backtracking
+        vis[i][j] = false;
+        return;
+    }
+public:
+    vector<string> findWords(vector<vector<char>>& board, vector<string>& words) {
+        int m = board.size();
+        int n = board[0].size();
+
+        //put all the words in the trie
+        Trie trie;
+        for(auto& word : words){
+            trie.insert(word);
+        }
+
+        unordered_set<string> ans;
+        //applying df on the board and moving iff neighbour is in trie
+        vector<vector<bool>> vis(m, vector<bool>(n, false));
+        for(int i = 0; i<m; i++){
+            for(int j = 0; j<n; j++){
+                dfs(i, j, board, vis, trie.getRoot(), trie, """", ans);
+            }
+        }
+
+        vector<string> finalAns(ans.begin(), ans.end());
+        return finalAns;
     }
 };"
