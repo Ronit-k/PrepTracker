@@ -470,6 +470,57 @@ Space Complexity: O(V + E)",2026-10-27,2026-10-27,https://www.youtube.com/watch?
         return weightMST;
     }
 };"
+418ac65a,Kruskal's Algorithm - Minimum Spanning Tree,https://www.geeksforgeeks.org/problems/minimum-spanning-tree-kruskals-algorithm/1,gfg,medium,Graph,solved,"algo is simple
+1) sort the edges according to their weights
+2) pick those edges which connect unconnected components
+and we use DSU for this",2026-10-27,2026-10-27,https://www.youtube.com/watch?v=DMnDM_sxVig,"class DSU {
+	private:
+		vector<int> parent, rank;
+	public:
+		//constructor
+		DSU(int n) {
+			rank.resize(n, 0);
+			parent.resize(n);
+			for(int i = 0; i<n; i++) parent[i] = i;
+		}
+		int ultimateParent(int node){
+			if (node == parent[node]) return node;
+			return parent[node] = ultimateParent(parent[node]);
+		}
+		bool unionByRank(int u, int v){
+			int ultimateParentU = ultimateParent(u);
+			int ultimateParentV = ultimateParent(v);
+			if (ultimateParentU == ultimateParentV) return 0; //already in same grp
+
+			//rank of u should always be less
+			if(rank[ultimateParentU] > rank[ultimateParentV]) return unionByRank(v, u);
+
+			//since rank of u is small it'll get attached to v
+			parent[ultimateParentU] = ultimateParentV;
+			//increase the rank of V grp if equally big chunk gets attached
+			if (rank[ultimateParentU] == rank[ultimateParentV]) rank[ultimateParentV]++;
+			return 1;
+		}
+};
+
+class Solution {
+  public:
+    int kruskalsMST(int V, vector<vector<int>> edges) {
+        int weightMst = 0;
+        // 1) sort the edges according to their weights
+        sort(edges.begin(), edges.end(), [&](vector<int> a, vector<int> b){return a[2] < b[2];});
+
+        DSU dsu(V);
+        // 2) pick those edges which connect unconnected components
+        for(auto& edge : edges){
+            int u = edge[0];
+            int v = edge[1];
+            int w = edge[2];
+            if(dsu.unionByRank(u, v)) weightMst += w;
+        }
+        return weightMst;
+    }
+};"
 f9c084c6,Kosaraju algorithm O(N+E),https://www.geeksforgeeks.org/problems/strongly-connected-components-kosarajus-algo/1,gfg,medium,Graph,solved,"[STRIVER HARD] this algo is finding the SCC, now the idea is if you do a dfs on sink you'll stay there and can isolate the sink vertices easily - but using topo sort finding the source vertex is easy (sorting in inc. order of finishing time), so we apply the toposort in the reversed graph to get the the source of reversed graph => sink of the actual graph then apply dfs in the order of toposort in actual graph",2026-09-26,2026-09-27,https://www.youtube.com/watch?v=V8qIqJxCioo&list=PLgUwDviBIf0rGEWe64KWas0Nryn7SCRWw&index=28,"class Solution {
   private:
   void dfs(vector<vector<int>>& graph, int node, vector<bool>& vis, stack<int>* topo = nullptr){
@@ -793,65 +844,6 @@ vector<int> numOfIslandsII(int n, int m, vector<vector<int>> &q){
 	}
 	return ans;
 }"
-f4d04e75,Most Stones Removed with Same Row or Column,https://leetcode.com/problems/most-stones-removed-with-same-row-or-column/description/,leetcode,hard,Graph,solved,"[STRIVER HARD] the main idea is to take rows and columns as nodes and grp them based on the stones position, if stone's on x,y -> group row x and col y, then you can remove all the stones in a grp leaving just one - like this if you'll sum all the removed stones you'll get total stones - total grps as ans",2026-09-26,2026-09-27,https://www.youtube.com/watch?v=OwMNX8SPavM,"class DSU {
-	private:
-		vector<int> parent, rank;
-	public:
-		//constructor
-		DSU(int n) {
-			rank.resize(n, 0);
-			parent.resize(n);
-			for(int i = 0; i<n; i++) parent[i] = i;
-		}
-		int ultimateParent(int node){
-			if (node == parent[node]) return node;
-			return parent[node] = ultimateParent(parent[node]);
-		}
-		bool unionByRank(int u, int v){
-			int ultimateParentU = ultimateParent(u);
-			int ultimateParentV = ultimateParent(v);
-			if (ultimateParentU == ultimateParentV) return 0; //already in same grp
-
-			//rank of u should always be less
-			if(rank[ultimateParentU] > rank[ultimateParentV]) return unionByRank(v, u);
-			
-			//since rank of u is small it'll get attached to v
-			parent[ultimateParentU] = ultimateParentV;
-			//increase the rank of V grp if equally big chunk gets attached
-			if (rank[ultimateParentU] == rank[ultimateParentV]) rank[ultimateParentV]++;
-			return 1;
-		}
-        int getTotalGroups(){
-            //only those ultimate parents with rank>0 is a grp
-            int cnt = 0;
-            for(int i = 0; i<parent.size(); ++i) if(parent[i] == i && rank[i]>0) cnt++;
-            return cnt;
-        }
-};
-class Solution {
-public:
-    int removeStones(vector<vector<int>>& stones) {
-        //the idea is to make nodes of rows and columns and then how they'll be grouped will be decided by the position of stones
-        //first we need to find the dimensions of rows and columns
-        int m = 0, n=0; //rows x cols
-        for(auto& stone : stones){
-            m = max(m, stone[0]);
-            n = max(n, stone[1]);
-        }
-
-        DSU dsu(n+m+2); // rows 0-m -> 0-m || cols 0-n -> m+1 - m+n+1
-
-        for(auto& stone : stones){
-            int rowNode = stone[0];
-            int colNode = stone[1];
-            //they both are now in same grp
-            dsu.unionByRank(rowNode, colNode+m+1);
-        }
-
-        //count the no. of grps 
-        return stones.size() - dsu.getTotalGroups();
-    }
-};"
 662448e4,0-1 Knapsack,https://www.geeksforgeeks.org/problems/0-1-knapsack-problem0945/1?utm_source=chatgpt.com,gfg,easy,DP,solved,just try all possibilities of take and notTake,2026-10-19,2026-10-20,,"class Solution {
   private:
     int getMaxVal(int i, int capacityLeft, vector<int> &val, vector<int> &wt, vector<vector<int>>& dp){
@@ -5541,50 +5533,63 @@ public:
         return getMaxSum(0, arr, k, dp);
     }
 };"
-4c80f856,Bridges in graph,https://leetcode.com/problems/critical-connections-in-a-network/,leetcode,gaand_faad,Graph,solved,[STIVER HARD] difficult to explain the intuition just read the code and see the video on 2x,2026-09-26,2026-09-27,https://youtu.be/qrAub5z8FeA,"class Solution {
-private:
-    int time = 0;
-    void getCC(int node, int parent, vector<vector<int>>& graph, vector<bool>& vis, 
-               vector<int>& insertion_time, vector<int>& lowest_time, vector<vector<int>>& CC){
+f4d04e75,Most Stones Removed with Same Row or Column,https://leetcode.com/problems/most-stones-removed-with-same-row-or-column/description/,leetcode,hard,Graph,solved,"[STRIVER HARD] the main idea is to take rows and columns as nodes and grp them based on the stones position, if stone's on x,y -> group row x and col y, then you can remove all the stones in a grp leaving just one - like this if you'll sum all the removed stones you'll get total stones - total grps as ans",2026-09-26,2026-09-27,https://www.youtube.com/watch?v=OwMNX8SPavM,"class DSU {
+	private:
+		vector<int> parent, rank;
+	public:
+		//constructor
+		DSU(int n) {
+			rank.resize(n, 0);
+			parent.resize(n);
+			for(int i = 0; i<n; i++) parent[i] = i;
+		}
+		int ultimateParent(int node){
+			if (node == parent[node]) return node;
+			return parent[node] = ultimateParent(parent[node]);
+		}
+		bool unionByRank(int u, int v){
+			int ultimateParentU = ultimateParent(u);
+			int ultimateParentV = ultimateParent(v);
+			if (ultimateParentU == ultimateParentV) return 0; //already in same grp
 
-        vis[node] = 1;
-        insertion_time[node] = time;
-        lowest_time[node] = time++;
-
-        for(auto neighbour : graph[node]){
-            // if parent - no need to do anything
-            if (neighbour == parent) continue;
-            //else explore the neighbour if not visited and while returning tak its time if lower
-            if (!vis[neighbour]){
-                getCC(neighbour, node, graph, vis, insertion_time, lowest_time, CC);
-                // after exploring if we would have found any back edge aka cycle then the lowest of the neighboud would have been updated to a lower value than the node, if no cycle was found => it is a bridge
-                lowest_time[node] = min(lowest_time[node], lowest_time[neighbour]);
-                if (!(insertion_time[node] >= lowest_time[neighbour])){ //MAIN CONDITION
-                    CC.push_back({node, neighbour});
-                }
-            }
-            // if it is vis and not the parent then it is a cycle i.e. lowest_time needs to be updated
-            else{
-                lowest_time[node] = min(lowest_time[node], insertion_time[neighbour]);
-            }
+			//rank of u should always be less
+			if(rank[ultimateParentU] > rank[ultimateParentV]) return unionByRank(v, u);
+			
+			//since rank of u is small it'll get attached to v
+			parent[ultimateParentU] = ultimateParentV;
+			//increase the rank of V grp if equally big chunk gets attached
+			if (rank[ultimateParentU] == rank[ultimateParentV]) rank[ultimateParentV]++;
+			return 1;
+		}
+        int getTotalGroups(){
+            //only those ultimate parents with rank>0 is a grp
+            int cnt = 0;
+            for(int i = 0; i<parent.size(); ++i) if(parent[i] == i && rank[i]>0) cnt++;
+            return cnt;
         }
-        return;
-    }
+};
+class Solution {
 public:
-    vector<vector<int>> criticalConnections(int n, vector<vector<int>>& connections) {
-        vector<vector<int>> CC;
-        vector<vector<int>> graph(n);
-        vector<bool> vis(n, false);
-        //make adj of graph
-        for(auto edge : connections){
-            graph[edge[0]].push_back(edge[1]);
-            graph[edge[1]].push_back(edge[0]);
+    int removeStones(vector<vector<int>>& stones) {
+        //the idea is to make nodes of rows and columns and then how they'll be grouped will be decided by the position of stones
+        //first we need to find the dimensions of rows and columns
+        int m = 0, n=0; //rows x cols
+        for(auto& stone : stones){
+            m = max(m, stone[0]);
+            n = max(n, stone[1]);
         }
 
-        vector<int> insetion_time(n, -1);
-        vector<int> lowest_time(n, -1);
-        getCC(0, -1, graph, vis, insetion_time, lowest_time, CC);
-        return CC;
+        DSU dsu(n+m+2); // rows 0-m -> 0-m || cols 0-n -> m+1 - m+n+1
+
+        for(auto& stone : stones){
+            int rowNode = stone[0];
+            int colNode = stone[1];
+            //they both are now in same grp
+            dsu.unionByRank(rowNode, colNode+m+1);
+        }
+
+        //count the no. of grps 
+        return stones.size() - dsu.getTotalGroups();
     }
 };"
 a1f0c689,Count the Number of Beautiful Subarrays,https://leetcode.com/problems/count-the-number-of-beautiful-subarrays/,leetcode,medium,Hashing,solved,exactly same as previous question  - the main main main thing was to identify - A subarray is beautiful if its xor is equal to zero.,2026-10-20,2026-10-20,,"class Solution {
@@ -6255,6 +6260,52 @@ public:
         return len == INT_MAX ? 0 : len;
     }
 };"
+4c80f856,Bridges in graph,https://leetcode.com/problems/critical-connections-in-a-network/,leetcode,gaand_faad,Graph,solved,[STIVER HARD] difficult to explain the intuition just read the code and see the video on 2x,2026-09-26,2026-09-27,https://youtu.be/qrAub5z8FeA,"class Solution {
+private:
+    int time = 0;
+    void getCC(int node, int parent, vector<vector<int>>& graph, vector<bool>& vis, 
+               vector<int>& insertion_time, vector<int>& lowest_time, vector<vector<int>>& CC){
+
+        vis[node] = 1;
+        insertion_time[node] = time;
+        lowest_time[node] = time++;
+
+        for(auto neighbour : graph[node]){
+            // if parent - no need to do anything
+            if (neighbour == parent) continue;
+            //else explore the neighbour if not visited and while returning tak its time if lower
+            if (!vis[neighbour]){
+                getCC(neighbour, node, graph, vis, insertion_time, lowest_time, CC);
+                // after exploring if we would have found any back edge aka cycle then the lowest of the neighboud would have been updated to a lower value than the node, if no cycle was found => it is a bridge
+                lowest_time[node] = min(lowest_time[node], lowest_time[neighbour]);
+                if (!(insertion_time[node] >= lowest_time[neighbour])){ //MAIN CONDITION
+                    CC.push_back({node, neighbour});
+                }
+            }
+            // if it is vis and not the parent then it is a cycle i.e. lowest_time needs to be updated
+            else{
+                lowest_time[node] = min(lowest_time[node], insertion_time[neighbour]);
+            }
+        }
+        return;
+    }
+public:
+    vector<vector<int>> criticalConnections(int n, vector<vector<int>>& connections) {
+        vector<vector<int>> CC;
+        vector<vector<int>> graph(n);
+        vector<bool> vis(n, false);
+        //make adj of graph
+        for(auto edge : connections){
+            graph[edge[0]].push_back(edge[1]);
+            graph[edge[1]].push_back(edge[0]);
+        }
+
+        vector<int> insetion_time(n, -1);
+        vector<int> lowest_time(n, -1);
+        getCC(0, -1, graph, vis, insetion_time, lowest_time, CC);
+        return CC;
+    }
+};"
 beed3d5c,Articulation point in graph,https://www.geeksforgeeks.org/problems/articulation-point2616/1,gfg,gaand_faad,Graph,solved,[STIVER HARD] difficult to explain the intuition just read the code and see the video on 2x (similar to bridges in graph),2026-09-26,2026-09-27,https://youtu.be/j1QDfU21iZk,"class Solution {
   private:
   int timer = 0;
@@ -6307,71 +6358,6 @@ beed3d5c,Articulation point in graph,https://www.geeksforgeeks.org/problems/arti
         for(int i = 0; i<V; ++i) if(mark_art_point[i]) ans.push_back(i);
         return ans.size()? ans:vector<int>{-1};
     }
-};"
-620083ba,Minimum Moves,https://www.fastprep.io/problems/harness-minimum-moves?utm_source=chatgpt.com,fastprep.io,medium,Graph,solved,"[Harness OA]
-the overall approach is simple bfs, since each jump costs 1 move, bfs will give us the minimum number of moves required to reach the destination.
-
-we start from (0,0) and push it into the queue along with the number of steps taken so far. then for each cell we explore all 4 directions and try jumping from 1 to k cells in each direction.
-
-now there are 2 important things to handle:
-- if we go out of bounds, we break because all further jumps in that direction will also be out of bounds.
-- if we encounter an obstacle, we break because we cannot jump over it.
-
-we maintain a visited matrix so that we don't process the same cell multiple times. whenever we find a valid unvisited cell, we mark it visited and push it into the queue with steps + 1.
-
-if we reach the destination, we return the steps. if the queue becomes empty without reaching the destination, it means there is no valid path, so we return -1.
-
-T.C. O(n*m*k)
-S.C O(n*m)
-",2026-10-20,2026-10-20,,"#include <bits/stdc++.h>
-using namespace std;
-
-class Solution {
-public:
-  int getMinimumMoves(vector<vector<int>> maze, int k) {
-    int n = maze.size();
-    int m = maze[0].size();
-
-    //base case when the destination is not reachable
-    if(maze[0][0] || maze[n-1][m-1]) return -1;
-
-    //we are at 0,0 we wanna reach n-1, m-1
-    //appy simple bfs on valid paths
-    queue<vector<int>> q; //stores (r, c, stepsSoFar)
-    vector<vector<bool>> vis(n, vector<bool>(m, false));    
-
-    q.push({0, 0, 0});
-    vis[0][0] = true;
-
-    vector<pair<int,int>> directirons = {{1,0}, {0,1}, {-1,0}, {0,-1}};
-    auto isValid = [&vis, &maze, &n, &m](int r, int c){
-        if(0 <= r && r < n && 0 <= c && c < m && !vis[r][c]) return true;
-        return false;
-    };
-
-    while(!q.empty()){
-        int r = q.front()[0];
-        int c = q.front()[1];
-        int steps = q.front()[2];
-        q.pop();
-
-        if(r == n-1 && c == m-1) return steps;
-
-        //push all the valid neighbours
-        for(auto [dr, dc] : directirons){
-            for(int i = 1; i <= k; ++i){
-                int new_r = r + i*dr;
-                int new_c = c + i*dc;
-                if(isValid(new_r, new_c)){
-                    if(maze[new_r][new_c]) break;
-                    q.push({new_r, new_c, steps + 1});
-                    vis[new_r][new_c] = true;
-                }
-            }
-        }
-    }
-    return -1;
-  }
 };"
 cbd440bf,Evaluate Boolean Expression to True,https://www.geeksforgeeks.org/problems/boolean-parenthesization5610/1,gfg,hard,DP,solved,"[STRIVER HARD] In Boolean Parenthesization, we use interval DP where getWays(start, end, isTrue) stores the number of ways to parenthesize the expression from start to end such that it evaluates to True/False. We try every operator as a partition (i += 2) and recursively calculate left_true, left_false, right_true, and right_false, then combine them according to the operator &, |, or ^. The base case is when only one operand is left, where we directly check T/F. Memoization avoids recalculating the same interval. Time complexity = O(n³), Space = O(n²).",2026-10-01,2026-10-01,https://www.youtube.com/watch?v=MM7fXopgyjw,"class Solution {
   private:
@@ -6880,3 +6866,132 @@ public:
         return area;
     }
 };"
+675285a5,Minimum Fuel Cost to Report to the Capital,https://leetcode.com/problems/minimum-fuel-cost-to-report-to-the-capital/,leetcode,hard,Binary Trees,solved,"not that hard, but took a while to click
+The idea is to use DFS on the tree rooted at node 0 (the capital) and calculate the number of representatives in each subtree. Initially, each node contributes one representative for itself. After processing a child subtree, we get its total number of representatives (subPeople). Since every representative in that subtree must cross the edge connecting it to its parent, we calculate the number of cars required as (subPeople + seats - 1) / seats, which is the ceiling of subPeople / seats. Each car consumes one unit of fuel to cross that edge, so we add this number to the total fuel. We then add subPeople to the current node's count and return the total representatives in its subtree. The capital itself doesn't need to send anyone further, so no fuel is added for the root.
+
+Time Complexity: O(V + E)
+
+Space Complexity: O(V + E)",2026-10-27,2026-10-27,,"class Solution {
+private:
+    long long fuel = 0;
+
+    int dfs(int node, vector<vector<int>>& adj, vector<bool>& vis, int& seats){
+        //return number of people in the subtree
+        vis[node] = true;
+        int people = 1;
+
+        for(auto& nbr : adj[node]){
+            if(vis[nbr]) continue;
+
+            int subPeople = dfs(nbr, adj, vis, seats);
+            people += subPeople;
+
+            fuel += (subPeople + seats - 1) / seats; //ceil of subPeople/seats
+        }
+
+        return people;
+    }
+
+public:
+    long long minimumFuelCost(vector<vector<int>>& roads, int seats) {
+        int n = roads.size() + 1; //number of nodes
+
+        //forming the adj list for this undirected ACYCLIC graph
+        vector<vector<int>> adj(n);
+        for(auto& road : roads){
+            adj[road[0]].push_back(road[1]);
+            adj[road[1]].push_back(road[0]);
+        }
+
+        fuel = 0;
+        vector<bool> vis(n, false);
+        dfs(0, adj, vis, seats);
+
+        return fuel;
+    }
+};"
+620083ba,Minimum Moves,https://www.fastprep.io/problems/harness-minimum-moves?utm_source=chatgpt.com,fastprep.io,medium,Graph,solved,"[Harness OA]
+the overall approach is simple bfs, since each jump costs 1 move, bfs will give us the minimum number of moves required to reach the destination.
+
+we start from (0,0) and push it into the queue along with the number of steps taken so far. then for each cell we explore all 4 directions and try jumping from 1 to k cells in each direction.
+
+now there are 2 important things to handle:
+- if we go out of bounds, we break because all further jumps in that direction will also be out of bounds.
+- if we encounter an obstacle, we break because we cannot jump over it.
+
+we maintain a visited matrix so that we don't process the same cell multiple times. whenever we find a valid unvisited cell, we mark it visited and push it into the queue with steps + 1.
+
+if we reach the destination, we return the steps. if the queue becomes empty without reaching the destination, it means there is no valid path, so we return -1.
+
+T.C. O(n*m*k)
+S.C O(n*m)
+",2026-10-20,2026-10-20,,"#include <bits/stdc++.h>
+using namespace std;
+
+class Solution {
+public:
+  int getMinimumMoves(vector<vector<int>> maze, int k) {
+    int n = maze.size();
+    int m = maze[0].size();
+
+    //base case when the destination is not reachable
+    if(maze[0][0] || maze[n-1][m-1]) return -1;
+
+    //we are at 0,0 we wanna reach n-1, m-1
+    //appy simple bfs on valid paths
+    queue<vector<int>> q; //stores (r, c, stepsSoFar)
+    vector<vector<bool>> vis(n, vector<bool>(m, false));    
+
+    q.push({0, 0, 0});
+    vis[0][0] = true;
+
+    vector<pair<int,int>> directirons = {{1,0}, {0,1}, {-1,0}, {0,-1}};
+    auto isValid = [&vis, &maze, &n, &m](int r, int c){
+        if(0 <= r && r < n && 0 <= c && c < m && !vis[r][c]) return true;
+        return false;
+    };
+
+    while(!q.empty()){
+        int r = q.front()[0];
+        int c = q.front()[1];
+        int steps = q.front()[2];
+        q.pop();
+
+        if(r == n-1 && c == m-1) return steps;
+
+        //push all the valid neighbours
+        for(auto [dr, dc] : directirons){
+            for(int i = 1; i <= k; ++i){
+                int new_r = r + i*dr;
+                int new_c = c + i*dc;
+                if(isValid(new_r, new_c)){
+                    if(maze[new_r][new_c]) break;
+                    q.push({new_r, new_c, steps + 1});
+                    vis[new_r][new_c] = true;
+                }
+            }
+        }
+    }
+    return -1;
+  }
+};"
+d3ff0b5a,Find Critical and Pseudo-Critical Edges in Minimum Spanning Tree,,,hard,Graph,solved,"                Edge
+                 |
+                 v
+       Remove the edge
+                 |
+                 v
+      MST becomes heavier?
+          /            \
+        YES             NO
+         |               |
+         v               v
+     CRITICAL       Force the edge
+                         |
+                         v
+                MST stays same?
+                   /       \
+                 YES        NO
+                  |          |
+                  v          v
+             PSEUDO       Neither",2026-10-27,2026-10-27,,
