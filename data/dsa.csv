@@ -429,6 +429,102 @@ public:
     }
 };
 "
+c0952dd0,Prim's Algorithm - Minimum Spanning Tree,https://www.geeksforgeeks.org/problems/minimum-spanning-tree/1,gfg,medium,Graph,solved,"The algorithm repeatedly selects the minimum-weight edge connecting the current tree to an unvisited node, adds its weight to weightMST, and pushes the unvisited neighbours into the heap.
+
+Time Complexity: O(E log E)
+Space Complexity: O(V + E)",2026-10-27,2026-10-27,https://www.youtube.com/watch?v=mJcZjjKzeqk&t=617s,"class Solution {
+  public:
+    int spanningTree(int V, vector<vector<int>>& edges) {
+        //form the adj matrix for this undirected graph
+        vector<vector<pair<int,int>>> adj(V);
+        for(auto& edge : edges){
+            adj[edge[0]].push_back({edge[1], edge[2]});
+            adj[edge[1]].push_back({edge[0], edge[2]});
+        }
+
+        // Applying Prim's Algo for MST
+        priority_queue<vector<int>, vector<vector<int>>, greater<vector<int>>> minHeap; //stores {wt, node, parent}, 
+        // to calculate just the weight, storing parent is not needed - icase we need th eedges in MST then it can be found out using the parent
+        minHeap.push({0, 0, -1});
+        int weightMST = 0;
+
+        vector<bool> vis(V, false);
+
+        while(!minHeap.empty()){
+            int node = minHeap.top()[1];
+            int nodeWeight = minHeap.top()[0];
+            minHeap.pop();
+
+            if(vis[node]) continue;
+
+            weightMST += nodeWeight; //push the min weight
+            vis[node] = true;
+
+            //push all the unvisited neighbours
+            for(auto& [nbr, wt] : adj[node]){
+                if(!vis[nbr]){
+                    minHeap.push({wt, nbr, node});
+                }
+            }
+        }
+        return weightMST;
+    }
+};"
+f9c084c6,Kosaraju algorithm O(N+E),https://www.geeksforgeeks.org/problems/strongly-connected-components-kosarajus-algo/1,gfg,medium,Graph,solved,"[STRIVER HARD] this algo is finding the SCC, now the idea is if you do a dfs on sink you'll stay there and can isolate the sink vertices easily - but using topo sort finding the source vertex is easy (sorting in inc. order of finishing time), so we apply the toposort in the reversed graph to get the the source of reversed graph => sink of the actual graph then apply dfs in the order of toposort in actual graph",2026-09-26,2026-09-27,https://www.youtube.com/watch?v=V8qIqJxCioo&list=PLgUwDviBIf0rGEWe64KWas0Nryn7SCRWw&index=28,"class Solution {
+  private:
+  void dfs(vector<vector<int>>& graph, int node, vector<bool>& vis, stack<int>* topo = nullptr){
+      //mark this node as visited
+      vis[node] = true;
+      //visit its neighbour in a dfs fashion
+      for(auto& nbr : graph[node]){
+          if (!vis[nbr]) dfs(graph, nbr, vis, topo);
+      }
+      //push the node into the stacl while returning to get the toposort
+      if (topo) topo->push(node);
+      return;
+  }
+  
+  stack<int> getTopoSort(vector<vector<int>>& graph){
+      int n = graph.size();
+      vector<bool> vis(n, false);
+      stack<int> topo;
+      
+      for(int node = 0; node<n; node++){
+          if(!vis[node]) dfs(graph, node, vis, &topo);
+      }
+      return topo;
+  }
+  
+  
+  public:
+    int countSCC(int V, vector<vector<int>> &edges) {
+        //building the graph and reversed graph
+        vector<vector<int>> graph(V);
+        vector<vector<int>> reversedGraph(V);
+        
+        for(auto& edge : edges){
+            graph[edge[0]].push_back(edge[1]);
+            reversedGraph[edge[1]].push_back(edge[0]);
+        }
+        
+        // doing topoSort in reversed graph to get the sinks in graph
+        stack<int> topo = getTopoSort(reversedGraph);
+        
+        //doing dfs in graph in order of toposort to get count the SCCs
+        vector<bool> vis(V, false);
+        int scc = 0;
+        
+        while(!topo.empty()){
+            int node = topo.top();
+            if (!vis[node]){
+                dfs(graph, node, vis);
+                scc++;
+            }
+            topo.pop();
+        }
+        return scc;
+    }
+};"
 1c0803a6,Floyd Warshall Algorithm,https://www.geeksforgeeks.org/problems/implementing-floyd-warshall2042/1,gfg,medium,Graph,solved,"[STRIVER HARD] used to find the shortest paths between all pairs of vertices in a weighted directed or undirected graph (multi source shortest path algo), also detects -ve cycles ( adjList[i][i]<0 => -ve cycle) Adjency matrix is used.",2026-09-24,2026-09-24,https://www.youtube.com/watch?v=YbY8cVwWAvw&list=PLgUwDviBIf0oE3gA41TKO2H5bHpPd7fzn&index=43,"class Solution {
   public:
     void floydWarshall(vector<vector<int>> &dist) {
@@ -754,107 +850,6 @@ public:
 
         //count the no. of grps 
         return stones.size() - dsu.getTotalGroups();
-    }
-};"
-f9c084c6,Kosaraju algorithm O(N+E),https://www.geeksforgeeks.org/problems/strongly-connected-components-kosarajus-algo/1,gfg,medium,Graph,solved,"[STRIVER HARD] this algo is finding the SCC, now the idea is if you do a dfs on sink you'll stay there and can isolate the sink vertices easily - but using topo sort finding the source vertex is easy (sorting in inc. order of finishing time), so we apply the toposort in the reversed graph to get the the source of reversed graph => sink of the actual graph then apply dfs in the order of toposort in actual graph",2026-09-26,2026-09-27,https://www.youtube.com/watch?v=V8qIqJxCioo&list=PLgUwDviBIf0rGEWe64KWas0Nryn7SCRWw&index=28,"class Solution {
-  private:
-  void dfs(vector<vector<int>>& graph, int node, vector<bool>& vis, stack<int>* topo = nullptr){
-      //mark this node as visited
-      vis[node] = true;
-      //visit its neighbour in a dfs fashion
-      for(auto& nbr : graph[node]){
-          if (!vis[nbr]) dfs(graph, nbr, vis, topo);
-      }
-      //push the node into the stacl while returning to get the toposort
-      if (topo) topo->push(node);
-      return;
-  }
-  
-  stack<int> getTopoSort(vector<vector<int>>& graph){
-      int n = graph.size();
-      vector<bool> vis(n, false);
-      stack<int> topo;
-      
-      for(int node = 0; node<n; node++){
-          if(!vis[node]) dfs(graph, node, vis, &topo);
-      }
-      return topo;
-  }
-  
-  
-  public:
-    int countSCC(int V, vector<vector<int>> &edges) {
-        //building the graph and reversed graph
-        vector<vector<int>> graph(V);
-        vector<vector<int>> reversedGraph(V);
-        
-        for(auto& edge : edges){
-            graph[edge[0]].push_back(edge[1]);
-            reversedGraph[edge[1]].push_back(edge[0]);
-        }
-        
-        // doing topoSort in reversed graph to get the sinks in graph
-        stack<int> topo = getTopoSort(reversedGraph);
-        
-        //doing dfs in graph in order of toposort to get count the SCCs
-        vector<bool> vis(V, false);
-        int scc = 0;
-        
-        while(!topo.empty()){
-            int node = topo.top();
-            if (!vis[node]){
-                dfs(graph, node, vis);
-                scc++;
-            }
-            topo.pop();
-        }
-        return scc;
-    }
-};"
-4c80f856,Bridges in graph,https://leetcode.com/problems/critical-connections-in-a-network/,leetcode,gaand_faad,Graph,solved,[STIVER HARD] difficult to explain the intuition just read the code and see the video on 2x,2026-09-26,2026-09-27,https://youtu.be/qrAub5z8FeA,"class Solution {
-private:
-    int time = 0;
-    void getCC(int node, int parent, vector<vector<int>>& graph, vector<bool>& vis, 
-               vector<int>& insertion_time, vector<int>& lowest_time, vector<vector<int>>& CC){
-
-        vis[node] = 1;
-        insertion_time[node] = time;
-        lowest_time[node] = time++;
-
-        for(auto neighbour : graph[node]){
-            // if parent - no need to do anything
-            if (neighbour == parent) continue;
-            //else explore the neighbour if not visited and while returning tak its time if lower
-            if (!vis[neighbour]){
-                getCC(neighbour, node, graph, vis, insertion_time, lowest_time, CC);
-                // after exploring if we would have found any back edge aka cycle then the lowest of the neighboud would have been updated to a lower value than the node, if no cycle was found => it is a bridge
-                lowest_time[node] = min(lowest_time[node], lowest_time[neighbour]);
-                if (!(insertion_time[node] >= lowest_time[neighbour])){ //MAIN CONDITION
-                    CC.push_back({node, neighbour});
-                }
-            }
-            // if it is vis and not the parent then it is a cycle i.e. lowest_time needs to be updated
-            else{
-                lowest_time[node] = min(lowest_time[node], insertion_time[neighbour]);
-            }
-        }
-        return;
-    }
-public:
-    vector<vector<int>> criticalConnections(int n, vector<vector<int>>& connections) {
-        vector<vector<int>> CC;
-        vector<vector<int>> graph(n);
-        vector<bool> vis(n, false);
-        //make adj of graph
-        for(auto edge : connections){
-            graph[edge[0]].push_back(edge[1]);
-            graph[edge[1]].push_back(edge[0]);
-        }
-
-        vector<int> insetion_time(n, -1);
-        vector<int> lowest_time(n, -1);
-        getCC(0, -1, graph, vis, insetion_time, lowest_time, CC);
-        return CC;
     }
 };"
 662448e4,0-1 Knapsack,https://www.geeksforgeeks.org/problems/0-1-knapsack-problem0945/1?utm_source=chatgpt.com,gfg,easy,DP,solved,just try all possibilities of take and notTake,2026-10-19,2026-10-20,,"class Solution {
@@ -3379,6 +3374,36 @@ We use a sliding window [i, j] and maintain the last occurrence index of each ch
         return maxLen;
     }
 };"
+5fec86be,Fruit Into Baskets,https://leetcode.com/problems/fruit-into-baskets/description/,leetcode,medium,Sliding Window / 2 Pointer,solved,"similar to previous question, basically maximum subarray with atmost 2 distinct element",2026-10-27,2026-10-27,,"class Solution {
+public:
+    int totalFruit(vector<int>& fruits) {
+        int n = fruits.size();
+        //basically maximum subarray with atmost 2 distinct element
+        int cntDistinct = 0;
+        int maxLen = 0;
+        unordered_map<int, int> lastOccurance; //lets store 1based
+
+        int i = 0;
+        int j = 0;
+
+        //we consider the  window from i to j
+        for(; j<n; j++){
+            if(lastOccurance[fruits[j]] == 0){//we are encountering this element for the 1st time
+                cntDistinct++;
+            }
+            while(cntDistinct > 2){ //trim i till the window becomes contains only 2 distinct elements
+                if(lastOccurance[fruits[i]] == i+1){
+                    cntDistinct--;
+                    lastOccurance[fruits[i]] = 0;
+                }
+                i++;
+            }
+            maxLen = max(maxLen, j-i+1);
+            lastOccurance[fruits[j]] = j+1;
+        }
+        return maxLen;
+    }
+};"
 7fb3fd45,Longest Repeating Character Replacement,https://leetcode.com/problems/longest-repeating-character-replacement/description/,leetcode,hard,Sliding Window / 2 Pointer,solved,"[STRIVER HARD]
 1. Logical and intuitive approach 
 We use a sliding window [i, j] and maintain the frequency of each character. maxFreq stores the maximum frequency of any character in the current window. The minimum number of replacements required to make all characters the same is (j-i+1) - maxFreq, since we keep the most frequent character and replace all the others. If this exceeds k, we shrink the window from the left using 'while loop' until the window becomes valid again. After that, we update maxLen with the current window length. This approach maintains a valid window at every step.
@@ -3646,34 +3671,6 @@ public:
         return cntSubarrays;
     }
 };"
-f30f61a1,Count number of Nice Subarrays,https://leetcode.com/problems/count-number-of-nice-subarrays/description/,leetcode,hard,Sliding Window / 2 Pointer,solved,"[STRIVER HARD]
-Here ""Nice"" subarray is a subarray with at most k odd numbers, so in the previous question where we calculated number of subarrays in a binary array using two pointers, this can be done in a similar fashion, by treating odd numbers as 1 and even as 0 - rest all of the code is same. so this idea can be extended to any problem where we have to find no. of subarrays and there are only two type of elements in the array",2026-10-11,2026-10-12,https://www.youtube.com/watch?v=j_QOv9OT9Og,"class Solution {
-private:
-    int getSubarrayWithSumLessThanOrEqual(int goal, vector<int>& nums){
-        //edge case
-        if(goal < 0) return 0;
-        int n = nums.size();
-        int sum = 0;
-        int cntSubarray = 0;
-
-        int i = 0;
-        int j = 0;
-        for(; j<n; ++j){
-            sum += nums[j]&1;
-            while(sum > goal){
-                sum -= nums[i]&1;
-                i++;
-            }
-            cntSubarray += j - i + 1; //add all the sub arrays ending at j having sum <= goal
-        }
-        return cntSubarray;   
-    }
-public:
-    int numberOfSubarrays(vector<int>& nums, int k) {
-        return getSubarrayWithSumLessThanOrEqual(k, nums) - getSubarrayWithSumLessThanOrEqual(k - 1, nums);
-
-    }
-};"
 315ff777,Count Subarray with given  sum,https://leetcode.com/problems/subarray-sum-equals-k/description/,leetcode,medium,Hashing,solved,"[STRIVER MEDIUM]
 We use the Prefix Sum + Hash Map approach to count the number of subarrays whose sum is equal to k. The map stores prefixSum -> frequency, i.e. how many times a particular prefix sum has occurred so far. We initialize prefixFreq[0] = 1 to handle subarrays starting from index 0. For every element, we update the current prefixSum and check how many previous prefix sums are equal to prefixSum - k. This is because current prefixSum - previous prefixSum = k, meaning the subarray between those two positions has sum k. We add the frequency of prefixSum - k to cntSubarrays, then insert the current prefixSum into the map. We must check before inserting the current prefix sum so that we only count non-empty subarrays.
 
@@ -3702,38 +3699,32 @@ public:
         return cntSubarrays;
     }
 };"
-31b959a4,Count Subarrays with k different integers,https://leetcode.com/problems/subarrays-with-k-different-integers/description/,leetcode,hard,Sliding Window / 2 Pointer,solved,"[STRIVER HARD]
-very similar to previous question, ig all counting problems in sliding window is solved like this
-
-We create a helper function that counts subarrays containing distinct elements <= k. We expand the window by moving j and incrementing the frequency of nums[j]. If its frequency was previously zero, it means we have encountered a new distinct element, so we increment cntDistinct. If cntDistinct becomes greater than k, we shrink the window from the left by decrementing the frequency of nums[i]. Whenever a frequency becomes zero, that distinct element is no longer present in the window, so we decrement cntDistinct. Once the window contains at most k distinct elements, all subarrays ending at j and starting anywhere from i to j are valid, so we add j - i + 1 to the count. Finally, we subtract the number of subarrays with at most k - 1 distinct elements from those with at most k distinct elements to get the number with exactly k distinct elements.
-
-TC: O(n) SC: O(n)
-",2026-10-12,2026-10-12,https://www.youtube.com/watch?v=7wYGbV_LsX4,"class Solution {
+f30f61a1,Count number of Nice Subarrays,https://leetcode.com/problems/count-number-of-nice-subarrays/description/,leetcode,hard,Sliding Window / 2 Pointer,solved,"[STRIVER HARD]
+Here ""Nice"" subarray is a subarray with at most k odd numbers, so in the previous question where we calculated number of subarrays in a binary array using two pointers, this can be done in a similar fashion, by treating odd numbers as 1 and even as 0 - rest all of the code is same. so this idea can be extended to any problem where we have to find no. of subarrays and there are only two type of elements in the array",2026-10-11,2026-10-12,https://www.youtube.com/watch?v=j_QOv9OT9Og,"class Solution {
 private:
-    int getSubarrayWithDistinctLessThanOrEqual(int k, vector<int>& nums){
-        if (k<=0) return 0;
+    int getSubarrayWithSumLessThanOrEqual(int goal, vector<int>& nums){
+        //edge case
+        if(goal < 0) return 0;
         int n = nums.size();
-        unordered_map<int, int> freq;
-        int cntDistinct = 0;
+        int sum = 0;
         int cntSubarray = 0;
 
         int i = 0;
         int j = 0;
         for(; j<n; ++j){
-            if(freq.find(nums[j]) == freq.end() || freq[nums[j]] == 0) cntDistinct++; //this is a new element in this window
-            freq[nums[j]]++;
-            while(cntDistinct > k){
-                freq[nums[i]]--;
-                if(freq[nums[i]] == 0) cntDistinct--;
+            sum += nums[j]&1;
+            while(sum > goal){
+                sum -= nums[i]&1;
                 i++;
             }
-            cntSubarray += j - i + 1; // add all the arrays ending at j as they have k or less than k distinct elements
+            cntSubarray += j - i + 1; //add all the sub arrays ending at j having sum <= goal
         }
-        return cntSubarray;
+        return cntSubarray;   
     }
 public:
-    int subarraysWithKDistinct(vector<int>& nums, int k) {
-        return getSubarrayWithDistinctLessThanOrEqual(k, nums) - getSubarrayWithDistinctLessThanOrEqual(k-1, nums);
+    int numberOfSubarrays(vector<int>& nums, int k) {
+        return getSubarrayWithSumLessThanOrEqual(k, nums) - getSubarrayWithSumLessThanOrEqual(k - 1, nums);
+
     }
 };"
 800c8712,Single Number III,https://leetcode.com/problems/single-number-iii/description/,leetcode,medium,Bit Manipulation,solved,"[STRIVER HARD]
@@ -5550,57 +5541,50 @@ public:
         return getMaxSum(0, arr, k, dp);
     }
 };"
-beed3d5c,Articulation point in graph,https://www.geeksforgeeks.org/problems/articulation-point2616/1,gfg,gaand_faad,Graph,solved,[STIVER HARD] difficult to explain the intuition just read the code and see the video on 2x (similar to bridges in graph),2026-09-26,2026-09-27,https://youtu.be/j1QDfU21iZk,"class Solution {
-  private:
-  int timer = 0;
-    void art_dfs(int node, int parent, vector<vector<int>>& graph, vector<int>& tin, 
-                 vector<int>& low, vector<bool>& mark_art_point){
-                     
-        tin[node] = low[node] = ++timer;
-        int child = 0;
-        //check all the neighbours
-        for(auto& nbr : graph[node]){
-            if (nbr == parent) continue; // we don't care if its a parent - just skip
-            if (tin[nbr] == 1e9){ //it's not visited
-                //visit it 
-                art_dfs(nbr, node, graph, tin, low, mark_art_point);
-                //take it low if it is lower
-                low[node] = min(low[node], low[nbr]);
-                if(!(tin[node] > low[nbr]) && parent != -1) mark_art_point[node] = true; //MAIN CONDITION
-                child++;
+4c80f856,Bridges in graph,https://leetcode.com/problems/critical-connections-in-a-network/,leetcode,gaand_faad,Graph,solved,[STIVER HARD] difficult to explain the intuition just read the code and see the video on 2x,2026-09-26,2026-09-27,https://youtu.be/qrAub5z8FeA,"class Solution {
+private:
+    int time = 0;
+    void getCC(int node, int parent, vector<vector<int>>& graph, vector<bool>& vis, 
+               vector<int>& insertion_time, vector<int>& lowest_time, vector<vector<int>>& CC){
+
+        vis[node] = 1;
+        insertion_time[node] = time;
+        lowest_time[node] = time++;
+
+        for(auto neighbour : graph[node]){
+            // if parent - no need to do anything
+            if (neighbour == parent) continue;
+            //else explore the neighbour if not visited and while returning tak its time if lower
+            if (!vis[neighbour]){
+                getCC(neighbour, node, graph, vis, insertion_time, lowest_time, CC);
+                // after exploring if we would have found any back edge aka cycle then the lowest of the neighboud would have been updated to a lower value than the node, if no cycle was found => it is a bridge
+                lowest_time[node] = min(lowest_time[node], lowest_time[neighbour]);
+                if (!(insertion_time[node] >= lowest_time[neighbour])){ //MAIN CONDITION
+                    CC.push_back({node, neighbour});
+                }
             }
-            else{ //it's visited
-                //take its insertion time then
-                low[node] = min(low[node], tin[nbr]);
+            // if it is vis and not the parent then it is a cycle i.e. lowest_time needs to be updated
+            else{
+                lowest_time[node] = min(lowest_time[node], insertion_time[neighbour]);
             }
         }
-        
-        if (child > 1 && parent == -1) mark_art_point[node] = true;
         return;
     }
-    
-  public:
-    vector<int> articulationPoints(int V, vector<vector<int>>& edges) {
-        //forminng the adj matrix for this UNDIRECTED GRAPH
-        vector<vector<int>> graph(V);
-        for(auto& edge : edges ){
+public:
+    vector<vector<int>> criticalConnections(int n, vector<vector<int>>& connections) {
+        vector<vector<int>> CC;
+        vector<vector<int>> graph(n);
+        vector<bool> vis(n, false);
+        //make adj of graph
+        for(auto edge : connections){
             graph[edge[0]].push_back(edge[1]);
             graph[edge[1]].push_back(edge[0]);
         }
-        
-        //initialising helping vectors
-        vector<int> tin(V, 1e9);
-        vector<int> low(V, 1e9);
-        vector<bool> mark_art_point(V, false);
-        
-        for(int i = 0; i<V; ++i){
-            if(tin[i] != 1e9) continue; //already visited
-            art_dfs(i, -1, graph, tin, low, mark_art_point);
-        }
-        
-        vector<int> ans;
-        for(int i = 0; i<V; ++i) if(mark_art_point[i]) ans.push_back(i);
-        return ans.size()? ans:vector<int>{-1};
+
+        vector<int> insetion_time(n, -1);
+        vector<int> lowest_time(n, -1);
+        getCC(0, -1, graph, vis, insetion_time, lowest_time, CC);
+        return CC;
     }
 };"
 a1f0c689,Count the Number of Beautiful Subarrays,https://leetcode.com/problems/count-the-number-of-beautiful-subarrays/,leetcode,medium,Hashing,solved,exactly same as previous question  - the main main main thing was to identify - A subarray is beautiful if its xor is equal to zero.,2026-10-20,2026-10-20,,"class Solution {
@@ -5631,6 +5615,40 @@ public:
         return subarrayXor(nums, 0);
     }
 };"
+31b959a4,Count Subarrays with k different integers,https://leetcode.com/problems/subarrays-with-k-different-integers/description/,leetcode,hard,Sliding Window / 2 Pointer,solved,"[STRIVER HARD]
+very similar to previous question, ig all counting problems in sliding window is solved like this
+
+We create a helper function that counts subarrays containing distinct elements <= k. We expand the window by moving j and incrementing the frequency of nums[j]. If its frequency was previously zero, it means we have encountered a new distinct element, so we increment cntDistinct. If cntDistinct becomes greater than k, we shrink the window from the left by decrementing the frequency of nums[i]. Whenever a frequency becomes zero, that distinct element is no longer present in the window, so we decrement cntDistinct. Once the window contains at most k distinct elements, all subarrays ending at j and starting anywhere from i to j are valid, so we add j - i + 1 to the count. Finally, we subtract the number of subarrays with at most k - 1 distinct elements from those with at most k distinct elements to get the number with exactly k distinct elements.
+
+TC: O(n) SC: O(n)
+",2026-10-12,2026-10-12,https://www.youtube.com/watch?v=7wYGbV_LsX4,"class Solution {
+private:
+    int getSubarrayWithDistinctLessThanOrEqual(int k, vector<int>& nums){
+        if (k<=0) return 0;
+        int n = nums.size();
+        unordered_map<int, int> freq;
+        int cntDistinct = 0;
+        int cntSubarray = 0;
+
+        int i = 0;
+        int j = 0;
+        for(; j<n; ++j){
+            if(freq.find(nums[j]) == freq.end() || freq[nums[j]] == 0) cntDistinct++; //this is a new element in this window
+            freq[nums[j]]++;
+            while(cntDistinct > k){
+                freq[nums[i]]--;
+                if(freq[nums[i]] == 0) cntDistinct--;
+                i++;
+            }
+            cntSubarray += j - i + 1; // add all the arrays ending at j as they have k or less than k distinct elements
+        }
+        return cntSubarray;
+    }
+public:
+    int subarraysWithKDistinct(vector<int>& nums, int k) {
+        return getSubarrayWithDistinctLessThanOrEqual(k, nums) - getSubarrayWithDistinctLessThanOrEqual(k-1, nums);
+    }
+};"
 3973376e,Longest Substring Without Repeating Characters,https://leetcode.com/problems/longest-substring-without-repeating-characters/,leetcode,medium,Sliding Window / 2 Pointer,solved,"We use the sliding window approach with two pointers i and j to maintain a substring with no repeating characters. As j moves forward, we include the current character in the window and update its frequency. If its frequency becomes greater than 1, we shrink the window from the left by moving i until the substring becomes valid again. After each step, we update the maximum length using j-i+1. Since each character is visited at most twice, the time complexity is O(n) and the auxiliary space is O(1).",2026-10-24,2026-10-25,,"class Solution {
 public:
     int lengthOfLongestSubstring(string s) {
@@ -5651,32 +5669,6 @@ public:
             len = max(len, j-i+1);
         }
         return len;
-    }
-};"
-6288661c,Minimum Size Subarray Sum,https://leetcode.com/problems/minimum-size-subarray-sum/,leetcode,medium,Sliding Window / 2 Pointer,solved,"Since all the numbers are positive, we can use the sliding window approach. We expand the window by moving j and adding elements to the sum. Whenever the sum becomes greater than or equal to the target, we update the minimum length and shrink the window from the left by moving i until the sum becomes invalid. Since we want the minimum length, we keep shrinking as long as the window is valid. If no valid subarray is found, we return 0.",2026-10-24,2026-10-25,,"class Solution {
-public:
-    int minSubArrayLen(int target, vector<int>& nums) {
-        //since the numbers are all positive - so we will maintain a two pointer approach
-        int len = INT_MAX;
-        int sum = 0;
-
-        int i = 0;
-        int j = 0;
-        for(; j<nums.size(); ++j){
-            //include this element in the current subarray
-            sum += nums[j];
-        
-            //if adding this element make the sum >= target, delete elements from the left till it becomes invalid
-            while(sum >= target){
-                //this is a valid len so capturte it
-                len = min(len, j-i+1);
-
-                //remove ith element
-                sum -= nums[i];
-                i++;
-            }
-        }
-        return len == INT_MAX ? 0 : len;
     }
 };"
 0849b806,Top K Frequent Elements,https://leetcode.com/problems/top-k-frequent-elements/description/,leetcode,medium,Heaps,solved,"In the bucket sort solution, I follow the same first step of calculating the frequencies using a hashmap. Then I create buckets where the index represents the frequency of an element and store each element in its corresponding bucket. Finally, I traverse the buckets from highest frequency to lowest and collect elements until I have k elements. This avoids maintaining a heap and gives O(n) time complexity, with O(n) auxiliary space.
@@ -6237,29 +6229,83 @@ public:
         return ans;
     }
 };"
-3d33fcf8,Container With Most Water,https://leetcode.com/problems/container-with-most-water/,leetcode,medium,Sliding Window / 2 Pointer,solved,"We start with two pointers at the extreme ends of the array to get the maximum possible width. The area formed by two lines is min(height[l], height[r]) * (r-l), since the water level is limited by the shorter line.
-
-To maximize the area, we always move the pointer at the shorter line inward. This works because moving either pointer reduces the width. If we move the taller line instead, the height of the container cannot increase beyond the shorter line, so the area can only decrease. By moving the shorter line, we have a chance of finding a taller line that compensates for the reduced width and gives a larger area.
-
-We calculate the area at every step and update the maximum. This way, no potentially optimal pair is missed.
-
-Time complexity: O(n)
-
-Space complexity: O(1)",2026-10-25,2026-10-26,,"class Solution {
+6288661c,Minimum Size Subarray Sum,https://leetcode.com/problems/minimum-size-subarray-sum/,leetcode,medium,Sliding Window / 2 Pointer,solved,"Since all the numbers are positive, we can use the sliding window approach. We expand the window by moving j and adding elements to the sum. Whenever the sum becomes greater than or equal to the target, we update the minimum length and shrink the window from the left by moving i until the sum becomes invalid. Since we want the minimum length, we keep shrinking as long as the window is valid. If no valid subarray is found, we return 0.",2026-10-24,2026-10-25,,"class Solution {
 public:
-    int maxArea(vector<int>& height) {
-        int n = height.size();
-        int l = 0;
-        int r = n - 1;
-        int area = 0;
+    int minSubArrayLen(int target, vector<int>& nums) {
+        //since the numbers are all positive - so we will maintain a two pointer approach
+        int len = INT_MAX;
+        int sum = 0;
 
-        while(l<r){
-            int a = min(height[l],height[r]) * (r-l);
-            area = max(area, a);
-            if(height[l] < height[r]) l++;
-            else r--;
+        int i = 0;
+        int j = 0;
+        for(; j<nums.size(); ++j){
+            //include this element in the current subarray
+            sum += nums[j];
+        
+            //if adding this element make the sum >= target, delete elements from the left till it becomes invalid
+            while(sum >= target){
+                //this is a valid len so capturte it
+                len = min(len, j-i+1);
+
+                //remove ith element
+                sum -= nums[i];
+                i++;
+            }
         }
-        return area;
+        return len == INT_MAX ? 0 : len;
+    }
+};"
+beed3d5c,Articulation point in graph,https://www.geeksforgeeks.org/problems/articulation-point2616/1,gfg,gaand_faad,Graph,solved,[STIVER HARD] difficult to explain the intuition just read the code and see the video on 2x (similar to bridges in graph),2026-09-26,2026-09-27,https://youtu.be/j1QDfU21iZk,"class Solution {
+  private:
+  int timer = 0;
+    void art_dfs(int node, int parent, vector<vector<int>>& graph, vector<int>& tin, 
+                 vector<int>& low, vector<bool>& mark_art_point){
+                     
+        tin[node] = low[node] = ++timer;
+        int child = 0;
+        //check all the neighbours
+        for(auto& nbr : graph[node]){
+            if (nbr == parent) continue; // we don't care if its a parent - just skip
+            if (tin[nbr] == 1e9){ //it's not visited
+                //visit it 
+                art_dfs(nbr, node, graph, tin, low, mark_art_point);
+                //take it low if it is lower
+                low[node] = min(low[node], low[nbr]);
+                if(!(tin[node] > low[nbr]) && parent != -1) mark_art_point[node] = true; //MAIN CONDITION
+                child++;
+            }
+            else{ //it's visited
+                //take its insertion time then
+                low[node] = min(low[node], tin[nbr]);
+            }
+        }
+        
+        if (child > 1 && parent == -1) mark_art_point[node] = true;
+        return;
+    }
+    
+  public:
+    vector<int> articulationPoints(int V, vector<vector<int>>& edges) {
+        //forminng the adj matrix for this UNDIRECTED GRAPH
+        vector<vector<int>> graph(V);
+        for(auto& edge : edges ){
+            graph[edge[0]].push_back(edge[1]);
+            graph[edge[1]].push_back(edge[0]);
+        }
+        
+        //initialising helping vectors
+        vector<int> tin(V, 1e9);
+        vector<int> low(V, 1e9);
+        vector<bool> mark_art_point(V, false);
+        
+        for(int i = 0; i<V; ++i){
+            if(tin[i] != 1e9) continue; //already visited
+            art_dfs(i, -1, graph, tin, low, mark_art_point);
+        }
+        
+        vector<int> ans;
+        for(int i = 0; i<V; ++i) if(mark_art_point[i]) ans.push_back(i);
+        return ans.size()? ans:vector<int>{-1};
     }
 };"
 620083ba,Minimum Moves,https://www.fastprep.io/problems/harness-minimum-moves?utm_source=chatgpt.com,fastprep.io,medium,Graph,solved,"[Harness OA]
@@ -6326,85 +6372,6 @@ public:
     }
     return -1;
   }
-};"
-fe18bb80,Making a Large Island,https://leetcode.com/problems/making-a-large-island/,leetcode,hard,Graph,solved,"[STRIVER HARD] The Largest Island problem is solved using DSU (Disjoint Set Union). First, all adjacent 1s are merged into connected components using union by size and path compression. Then, for every 0, we simulate flipping it to 1 and calculate the resulting island size by adding the sizes of its unique neighbouring components using a set of parent IDs. We take the maximum such size. If the grid contains no 0, the answer is n².",2026-09-25,2026-09-26,https://www.youtube.com/watch?v=lgiz0Oup6gM,"class DSU {
-	private:
-		vector<int> parent, size;
-	public:
-		//constructor
-		DSU(int n) {
-			size.resize(n, 1); //size represents the no. of members in that grp - initially only one - just itself
-			parent.resize(n);
-			for(int i = 0; i<n; i++) parent[i] = i;
-		}
-		int ultimateParent(int node){
-			if (node == parent[node]) return node;
-			return parent[node] = ultimateParent(parent[node]);
-		}
-		bool unionBySize(int u, int v){
-			int ultimateParentU = ultimateParent(u);
-			int ultimateParentV = ultimateParent(v);
-			if (ultimateParentU == ultimateParentV) return 0; //already in same grp - no union needed
-
-			//size of u-grp should always be less
-			if(size[ultimateParentU] > size[ultimateParentV]) return unionBySize(v, u);
-			
-			//since size of u is small or equal it'll get attached to v
-			parent[ultimateParentU] = ultimateParentV;
-            size[ultimateParentV] += size[ultimateParentU];
-			return 1;
-		}
-        int getSize(int node){
-            return size[node];
-        }
-};
-
-class Solution {
-public:
-    int largestIsland(vector<vector<int>>& grid) {
-        //1st we will input the grid into our dsu dataset
-
-        int n = grid.size();
-        DSU dsu(n*n);
-
-        //defining lambda functions dir vector to help 
-        auto isValidLand = [n,&grid](int r, int c){ return (r>=0 && r<n && c>=0 && c<n && grid[r][c]); };
-        auto node = [n](int r, int c){ return (r*n + c); };
-        vector<pair<int,int>> dir = {{-1,0},{1,0},{0,-1},{0,1}};
-
-        for(int r = 0; r<n; r++){
-            for(int c = 0; c<n; c++){
-                if(!grid[r][c]) continue;
-                //check if there is any land in the neighbour, if there then club them
-                for(auto& [dr, dc] : dir) if(isValidLand(r+dr, c+dc)) dsu.unionBySize(node(r+dr, c+dc), node(r, c));
-            }
-        }
-
-        //now lets calculate the maxSize that we can get by flipping
-        int maxIsland = 0;
-
-        for(int r = 0; r<n; r++){
-            for(int c = 0; c<n; c++){
-                if(grid[r][c]) continue;
-
-                //if the cell is '0' and get the ""land"" neighbours' size and add them
-                int island = 1;
-                unordered_set<int> usedParents;
-                for(auto& [dr, dc] : dir){
-                    if(isValidLand(r+dr, c+dc)){
-                        int parent = dsu.ultimateParent(node(r+dr, c+dc));
-                        if(usedParents.find(parent) == usedParents.end()){
-                            island += dsu.getSize(parent);
-                            usedParents.insert(parent);
-                        }
-                    }
-                }
-
-                maxIsland = max(maxIsland, island);
-            }
-        }
-        return (maxIsland)? maxIsland:n*n;
-    }
 };"
 cbd440bf,Evaluate Boolean Expression to True,https://www.geeksforgeeks.org/problems/boolean-parenthesization5610/1,gfg,hard,DP,solved,"[STRIVER HARD] In Boolean Parenthesization, we use interval DP where getWays(start, end, isTrue) stores the number of ways to parenthesize the expression from start to end such that it evaluates to True/False. We try every operator as a partition (i += 2) and recursively calculate left_true, left_false, right_true, and right_false, then combine them according to the operator &, |, or ^. The base case is when only one operand is left, where we directly check T/F. Memoization avoids recalculating the same interval. Time complexity = O(n³), Space = O(n²).",2026-10-01,2026-10-01,https://www.youtube.com/watch?v=MM7fXopgyjw,"class Solution {
   private:
@@ -6773,5 +6740,143 @@ public:
 
         vector<string> finalAns(ans.begin(), ans.end());
         return finalAns;
+    }
+};"
+fe18bb80,Making a Large Island,https://leetcode.com/problems/making-a-large-island/,leetcode,hard,Graph,solved,"[STRIVER HARD] The Largest Island problem is solved using DSU (Disjoint Set Union). First, all adjacent 1s are merged into connected components using union by size and path compression. Then, for every 0, we simulate flipping it to 1 and calculate the resulting island size by adding the sizes of its unique neighbouring components using a set of parent IDs. We take the maximum such size. If the grid contains no 0, the answer is n².",2026-09-25,2026-09-26,https://www.youtube.com/watch?v=lgiz0Oup6gM,"class DSU {
+	private:
+		vector<int> parent, size;
+	public:
+		//constructor
+		DSU(int n) {
+			size.resize(n, 1); //size represents the no. of members in that grp - initially only one - just itself
+			parent.resize(n);
+			for(int i = 0; i<n; i++) parent[i] = i;
+		}
+		int ultimateParent(int node){
+			if (node == parent[node]) return node;
+			return parent[node] = ultimateParent(parent[node]);
+		}
+		bool unionBySize(int u, int v){
+			int ultimateParentU = ultimateParent(u);
+			int ultimateParentV = ultimateParent(v);
+			if (ultimateParentU == ultimateParentV) return 0; //already in same grp - no union needed
+
+			//size of u-grp should always be less
+			if(size[ultimateParentU] > size[ultimateParentV]) return unionBySize(v, u);
+			
+			//since size of u is small or equal it'll get attached to v
+			parent[ultimateParentU] = ultimateParentV;
+            size[ultimateParentV] += size[ultimateParentU];
+			return 1;
+		}
+        int getSize(int node){
+            return size[node];
+        }
+};
+
+class Solution {
+public:
+    int largestIsland(vector<vector<int>>& grid) {
+        //1st we will input the grid into our dsu dataset
+
+        int n = grid.size();
+        DSU dsu(n*n);
+
+        //defining lambda functions dir vector to help 
+        auto isValidLand = [n,&grid](int r, int c){ return (r>=0 && r<n && c>=0 && c<n && grid[r][c]); };
+        auto node = [n](int r, int c){ return (r*n + c); };
+        vector<pair<int,int>> dir = {{-1,0},{1,0},{0,-1},{0,1}};
+
+        for(int r = 0; r<n; r++){
+            for(int c = 0; c<n; c++){
+                if(!grid[r][c]) continue;
+                //check if there is any land in the neighbour, if there then club them
+                for(auto& [dr, dc] : dir) if(isValidLand(r+dr, c+dc)) dsu.unionBySize(node(r+dr, c+dc), node(r, c));
+            }
+        }
+
+        //now lets calculate the maxSize that we can get by flipping
+        int maxIsland = 0;
+
+        for(int r = 0; r<n; r++){
+            for(int c = 0; c<n; c++){
+                if(grid[r][c]) continue;
+
+                //if the cell is '0' and get the ""land"" neighbours' size and add them
+                int island = 1;
+                unordered_set<int> usedParents;
+                for(auto& [dr, dc] : dir){
+                    if(isValidLand(r+dr, c+dc)){
+                        int parent = dsu.ultimateParent(node(r+dr, c+dc));
+                        if(usedParents.find(parent) == usedParents.end()){
+                            island += dsu.getSize(parent);
+                            usedParents.insert(parent);
+                        }
+                    }
+                }
+
+                maxIsland = max(maxIsland, island);
+            }
+        }
+        return (maxIsland)? maxIsland:n*n;
+    }
+};"
+80c904bf,Number of Steps to Reduce a Number in Binary Representation to One,https://leetcode.com/problems/number-of-steps-to-reduce-a-number-in-binary-representation-to-one/description/,leetcode,hard,Bit Manipulation,solved,"The idea is to count the operations required to reduce the binary number to 1 without actually modifying the string. Traverse the string from right to left, excluding the leading 1, and maintain a carry variable to represent the effect of previous additions. For each bit, calculate effectiveBit = bit + carry. If it is 0, the number is even, so we need only one division operation. If it is 1, the number is odd, so we need an addition followed by a division, costing two operations, and set carry = 1. If it is 2, the effective bit is even due to the carry, so only one division is needed while keeping the carry as 1. This way, we count the operations in a single pass.
+
+Time Complexity: O(n)
+Space Complexity: O(1)",2026-10-27,2026-10-27,https://www.youtube.com/watch?v=sGweAOKMyeI,"class Solution {
+public:
+    int numSteps(string s) {
+        int n = s.size();
+
+        int operations = 0;
+        int carry = 0;
+
+        for(int i = n-1; i>0; i--){
+            int bit = s[i] - '0'; //converts '0' to 0 and '1' to 1
+            int newBit = (carry + bit) & 1; //new bit will be according to additions of two bits, take the 1st bit
+            carry = (carry + bit) >> 1; //new carry will be according to additions of two bits, take the 2nd bit
+
+            if(newBit == 0){
+                // we can just remove it by deviding it by 2 - so one operation;
+                operations++;
+            }
+            else{
+                // if the new bit is 1 we need to add one then devide by 2
+                //add 1
+                newBit = 0;
+                carry = 1;
+                operations++;
+
+                //devide by 2 to remove this newBit
+                operations++;
+            }
+        }
+        return carry + operations;
+    }
+};"
+3d33fcf8,Container With Most Water,https://leetcode.com/problems/container-with-most-water/,leetcode,medium,Sliding Window / 2 Pointer,solved,"We start with two pointers at the extreme ends of the array to get the maximum possible width. The area formed by two lines is min(height[l], height[r]) * (r-l), since the water level is limited by the shorter line.
+
+To maximize the area, we always move the pointer at the shorter line inward. This works because moving either pointer reduces the width. If we move the taller line instead, the height of the container cannot increase beyond the shorter line, so the area can only decrease. By moving the shorter line, we have a chance of finding a taller line that compensates for the reduced width and gives a larger area.
+
+We calculate the area at every step and update the maximum. This way, no potentially optimal pair is missed.
+
+Time complexity: O(n)
+
+Space complexity: O(1)",2026-10-25,2026-10-26,,"class Solution {
+public:
+    int maxArea(vector<int>& height) {
+        int n = height.size();
+        int l = 0;
+        int r = n - 1;
+        int area = 0;
+
+        while(l<r){
+            int a = min(height[l],height[r]) * (r-l);
+            area = max(area, a);
+            if(height[l] < height[r]) l++;
+            else r--;
+        }
+        return area;
     }
 };"
