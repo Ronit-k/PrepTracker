@@ -521,6 +521,116 @@ class Solution {
         return weightMst;
     }
 };"
+d3ff0b5a,Find Critical and Pseudo-Critical Edges in Minimum Spanning Tree,https://leetcode.com/problems/find-critical-and-pseudo-critical-edges-in-minimum-spanning-tree/,leetcode,hard,Graph,solved,"                Edge
+                 |
+                 v
+       Remove the edge
+                 |
+                 v
+      MST becomes heavier?
+          /            \
+        YES             NO
+         |               |
+         v               v
+     CRITICAL       Force the edge
+                         |
+                         v
+                MST stays same?
+                   /       \
+                 YES        NO
+                  |          |
+                  v          v
+             PSEUDO       Neither",2026-10-27,2026-10-27,,"class DSU {
+	private:
+		vector<int> parent, rank;
+	public:
+		//constructor
+		DSU(int n) {
+			rank.resize(n, 0);
+			parent.resize(n);
+			for(int i = 0; i<n; i++) parent[i] = i;
+		}
+		int ultimateParent(int node){
+			if (node == parent[node]) return node;
+			return parent[node] = ultimateParent(parent[node]);
+		}
+		bool unionByRank(int u, int v){
+			int ultimateParentU = ultimateParent(u);
+			int ultimateParentV = ultimateParent(v);
+			if (ultimateParentU == ultimateParentV) return 0; //already in same grp
+
+			//rank of u should always be less
+			if(rank[ultimateParentU] > rank[ultimateParentV]) return unionByRank(v, u);
+			
+			//since rank of u is small it'll get attached to v
+			parent[ultimateParentU] = ultimateParentV;
+			//increase the rank of V grp if equally big chunk gets attached
+			if (rank[ultimateParentU] == rank[ultimateParentV]) rank[ultimateParentV]++;
+			return 1;
+		}
+};
+
+class Solution {
+    private:
+        int kruskalsMST(int V, vector<vector<int>>& edges, int toExclude, int toInclude) {
+
+            int weightMst = 0;
+            int cntEdges = 0;
+            // 1) edges are already sorted
+
+            DSU dsu(V);
+            if(toInclude != -1){
+                dsu.unionByRank(edges[toInclude][0], edges[toInclude][1]);
+                weightMst += edges[toInclude][2];
+                cntEdges++;
+            }
+            // 2) pick those edges which connect unconnected components
+            for(int i = 0; i<edges.size(); i++){
+                if(i == toExclude) continue;
+
+                vector<int>& edge = edges[i];
+                int u = edge[0];
+                int v = edge[1];
+                int w = edge[2];
+                if(dsu.unionByRank(u, v)) {
+                    weightMst += w;
+                    cntEdges++;
+                }
+            }
+            return (cntEdges == V-1)? weightMst : INT_MAX;
+        }
+    public:
+        vector<vector<int>> findCriticalAndPseudoCriticalEdges(int n, vector<vector<int>> edges) {
+            vector<int> critical;
+            vector<int> pseudoCritical;
+
+            //appending indices into edges
+            for(int i = 0; i<edges.size(); i++){
+                edges[i].push_back(i);
+            }
+
+            //get the MST weight using kruskal's algo
+            // 1) sort according to the weight
+            sort(edges.begin(), edges.end(), [&](vector<int> a, vector<int> b){return a[2] < b[2];});
+            int weightMst = kruskalsMST(n, edges, -1, -1);
+
+            for(int i = 0; i<edges.size(); i++){
+                // calculate the weight excluding this edge
+                int weightAfterExcluding = kruskalsMST(n, edges, i, -1);
+                if(weightAfterExcluding > weightMst){// that means this was a critical edge
+                    critical.push_back(edges[i][3]);
+                }
+                else{// try including this edge in the MST
+                    int weightAfterIncluding = kruskalsMST(n, edges, -1, i);
+                    if(weightAfterIncluding == weightMst){// A mst could be formed by including this edge too
+                        pseudoCritical.push_back(edges[i][3]);
+                    }
+                }
+            }
+            return {critical, pseudoCritical};
+        }
+    };
+"
 f9c084c6,Kosaraju algorithm O(N+E),https://www.geeksforgeeks.org/problems/strongly-connected-components-kosarajus-algo/1,gfg,medium,Graph,solved,"[STRIVER HARD] this algo is finding the SCC, now the idea is if you do a dfs on sink you'll stay there and can isolate the sink vertices easily - but using topo sort finding the source vertex is easy (sorting in inc. order of finishing time), so we apply the toposort in the reversed graph to get the the source of reversed graph => sink of the actual graph then apply dfs in the order of toposort in actual graph",2026-09-26,2026-09-27,https://www.youtube.com/watch?v=V8qIqJxCioo&list=PLgUwDviBIf0rGEWe64KWas0Nryn7SCRWw&index=28,"class Solution {
   private:
   void dfs(vector<vector<int>>& graph, int node, vector<bool>& vis, stack<int>* topo = nullptr){
@@ -786,64 +896,6 @@ public:
         return cnt_islands;
     }
 };"
-c0a9b647,Number of Island II,https://www.naukri.com/code360/problems/number-of-islands-ii_1266048,naukri.com,hard,Graph,solved,"[STRIVER HARD] The Number of Islands II problem is solved efficiently using DSU (Disjoint Set Union). Initially, every cell is treated as a separate component, but only cells that are converted to land are considered active. For each query, we turn the cell into land and increase the island count by 1. Then we check its four neighbouring cells; if a neighbour is already land and belongs to a different DSU component, we union the two components and decrease the island count by 1. Path compression and union by rank keep DSU operations nearly constant time, giving an overall complexity of approximately O(Q · α(NM)), where Q is the number of queries and α is the inverse Ackermann function.",2026-09-25,2026-09-25,https://www.youtube.com/watch?v=Rn6B-Q4SNyA,"class DSU {
-	private:
-		vector<int> parent, rank;
-	public:
-		//constructor
-		DSU(int n) {
-			rank.resize(n, 0);
-			parent.resize(n);
-			for(int i = 0; i<n; i++) parent[i] = i;
-		}
-		int ultimateParent(int node){
-			if (node == parent[node]) return node;
-			return parent[node] = ultimateParent(parent[node]);
-		}
-		bool unionByRank(int u, int v){
-			int ultimateParentU = ultimateParent(u);
-			int ultimateParentV = ultimateParent(v);
-			if (ultimateParentU == ultimateParentV) return 0; //already in same grp
-
-			//rank of u should always be less
-			if(rank[ultimateParentU] > rank[ultimateParentV]) return unionByRank(v, u);
-			
-			//since rank of u is small it'll get attached to v
-			parent[ultimateParentU] = ultimateParentV;
-			//increase the rank of V grp if equally big chunk gets attached
-			if (rank[ultimateParentU] == rank[ultimateParentV]) rank[ultimateParentV]++;
-			return 1;
-		}
-};
-
-vector<int> numOfIslandsII(int n, int m, vector<vector<int>> &q){
-	DSU dsu(n*m);
-	vector<vector<bool>> grid(n, vector<bool>(m, 0));
-
-	vector<int> ans;
-	int cntIslands = 0;
-
-	//lambda functrions to help 
-	auto isValidLand = [n,m,&grid](int r, int c){ return (r>=0 && r<n && c>=0 && c<m && grid[r][c]); };
-	auto node = [m](int r, int c){ return (r*m + c); };
-
-	for(auto& query : q){
-		int r = query[0];
-		int c = query[1];
-		grid[r][c] = 1;
-		cntIslands++;
-		//this node is now land
-
-		//check if there is any land in the neighbour, if there then club them
-		if (isValidLand(r-1,c) && dsu.unionByRank(node(r-1,c), node(r,c))) cntIslands--; //up
-		if (isValidLand(r+1,c) && dsu.unionByRank(node(r+1,c), node(r,c))) cntIslands--; //down
-		if (isValidLand(r,c-1) && dsu.unionByRank(node(r,c-1), node(r,c))) cntIslands--; //left
-		if (isValidLand(r,c+1) && dsu.unionByRank(node(r,c+1), node(r,c))) cntIslands--; //right
-
-		ans.push_back(cntIslands);
-	}
-	return ans;
-}"
 662448e4,0-1 Knapsack,https://www.geeksforgeeks.org/problems/0-1-knapsack-problem0945/1?utm_source=chatgpt.com,gfg,easy,DP,solved,just try all possibilities of take and notTake,2026-10-19,2026-10-20,,"class Solution {
   private:
     int getMaxVal(int i, int capacityLeft, vector<int> &val, vector<int> &wt, vector<vector<int>>& dp){
@@ -5533,7 +5585,7 @@ public:
         return getMaxSum(0, arr, k, dp);
     }
 };"
-f4d04e75,Most Stones Removed with Same Row or Column,https://leetcode.com/problems/most-stones-removed-with-same-row-or-column/description/,leetcode,hard,Graph,solved,"[STRIVER HARD] the main idea is to take rows and columns as nodes and grp them based on the stones position, if stone's on x,y -> group row x and col y, then you can remove all the stones in a grp leaving just one - like this if you'll sum all the removed stones you'll get total stones - total grps as ans",2026-09-26,2026-09-27,https://www.youtube.com/watch?v=OwMNX8SPavM,"class DSU {
+c0a9b647,Number of Island II,https://www.naukri.com/code360/problems/number-of-islands-ii_1266048,naukri.com,hard,Graph,solved,"[STRIVER HARD] The Number of Islands II problem is solved efficiently using DSU (Disjoint Set Union). Initially, every cell is treated as a separate component, but only cells that are converted to land are considered active. For each query, we turn the cell into land and increase the island count by 1. Then we check its four neighbouring cells; if a neighbour is already land and belongs to a different DSU component, we union the two components and decrease the island count by 1. Path compression and union by rank keep DSU operations nearly constant time, giving an overall complexity of approximately O(Q · α(NM)), where Q is the number of queries and α is the inverse Ackermann function.",2026-09-25,2026-09-25,https://www.youtube.com/watch?v=Rn6B-Q4SNyA,"class DSU {
 	private:
 		vector<int> parent, rank;
 	public:
@@ -5561,37 +5613,36 @@ f4d04e75,Most Stones Removed with Same Row or Column,https://leetcode.com/proble
 			if (rank[ultimateParentU] == rank[ultimateParentV]) rank[ultimateParentV]++;
 			return 1;
 		}
-        int getTotalGroups(){
-            //only those ultimate parents with rank>0 is a grp
-            int cnt = 0;
-            for(int i = 0; i<parent.size(); ++i) if(parent[i] == i && rank[i]>0) cnt++;
-            return cnt;
-        }
 };
-class Solution {
-public:
-    int removeStones(vector<vector<int>>& stones) {
-        //the idea is to make nodes of rows and columns and then how they'll be grouped will be decided by the position of stones
-        //first we need to find the dimensions of rows and columns
-        int m = 0, n=0; //rows x cols
-        for(auto& stone : stones){
-            m = max(m, stone[0]);
-            n = max(n, stone[1]);
-        }
 
-        DSU dsu(n+m+2); // rows 0-m -> 0-m || cols 0-n -> m+1 - m+n+1
+vector<int> numOfIslandsII(int n, int m, vector<vector<int>> &q){
+	DSU dsu(n*m);
+	vector<vector<bool>> grid(n, vector<bool>(m, 0));
 
-        for(auto& stone : stones){
-            int rowNode = stone[0];
-            int colNode = stone[1];
-            //they both are now in same grp
-            dsu.unionByRank(rowNode, colNode+m+1);
-        }
+	vector<int> ans;
+	int cntIslands = 0;
 
-        //count the no. of grps 
-        return stones.size() - dsu.getTotalGroups();
-    }
-};"
+	//lambda functrions to help 
+	auto isValidLand = [n,m,&grid](int r, int c){ return (r>=0 && r<n && c>=0 && c<m && grid[r][c]); };
+	auto node = [m](int r, int c){ return (r*m + c); };
+
+	for(auto& query : q){
+		int r = query[0];
+		int c = query[1];
+		grid[r][c] = 1;
+		cntIslands++;
+		//this node is now land
+
+		//check if there is any land in the neighbour, if there then club them
+		if (isValidLand(r-1,c) && dsu.unionByRank(node(r-1,c), node(r,c))) cntIslands--; //up
+		if (isValidLand(r+1,c) && dsu.unionByRank(node(r+1,c), node(r,c))) cntIslands--; //down
+		if (isValidLand(r,c-1) && dsu.unionByRank(node(r,c-1), node(r,c))) cntIslands--; //left
+		if (isValidLand(r,c+1) && dsu.unionByRank(node(r,c+1), node(r,c))) cntIslands--; //right
+
+		ans.push_back(cntIslands);
+	}
+	return ans;
+}"
 a1f0c689,Count the Number of Beautiful Subarrays,https://leetcode.com/problems/count-the-number-of-beautiful-subarrays/,leetcode,medium,Hashing,solved,exactly same as previous question  - the main main main thing was to identify - A subarray is beautiful if its xor is equal to zero.,2026-10-20,2026-10-20,,"class Solution {
 private:
 
@@ -6260,6 +6311,65 @@ public:
         return len == INT_MAX ? 0 : len;
     }
 };"
+f4d04e75,Most Stones Removed with Same Row or Column,https://leetcode.com/problems/most-stones-removed-with-same-row-or-column/description/,leetcode,hard,Graph,solved,"[STRIVER HARD] the main idea is to take rows and columns as nodes and grp them based on the stones position, if stone's on x,y -> group row x and col y, then you can remove all the stones in a grp leaving just one - like this if you'll sum all the removed stones you'll get total stones - total grps as ans",2026-09-26,2026-09-27,https://www.youtube.com/watch?v=OwMNX8SPavM,"class DSU {
+	private:
+		vector<int> parent, rank;
+	public:
+		//constructor
+		DSU(int n) {
+			rank.resize(n, 0);
+			parent.resize(n);
+			for(int i = 0; i<n; i++) parent[i] = i;
+		}
+		int ultimateParent(int node){
+			if (node == parent[node]) return node;
+			return parent[node] = ultimateParent(parent[node]);
+		}
+		bool unionByRank(int u, int v){
+			int ultimateParentU = ultimateParent(u);
+			int ultimateParentV = ultimateParent(v);
+			if (ultimateParentU == ultimateParentV) return 0; //already in same grp
+
+			//rank of u should always be less
+			if(rank[ultimateParentU] > rank[ultimateParentV]) return unionByRank(v, u);
+			
+			//since rank of u is small it'll get attached to v
+			parent[ultimateParentU] = ultimateParentV;
+			//increase the rank of V grp if equally big chunk gets attached
+			if (rank[ultimateParentU] == rank[ultimateParentV]) rank[ultimateParentV]++;
+			return 1;
+		}
+        int getTotalGroups(){
+            //only those ultimate parents with rank>0 is a grp
+            int cnt = 0;
+            for(int i = 0; i<parent.size(); ++i) if(parent[i] == i && rank[i]>0) cnt++;
+            return cnt;
+        }
+};
+class Solution {
+public:
+    int removeStones(vector<vector<int>>& stones) {
+        //the idea is to make nodes of rows and columns and then how they'll be grouped will be decided by the position of stones
+        //first we need to find the dimensions of rows and columns
+        int m = 0, n=0; //rows x cols
+        for(auto& stone : stones){
+            m = max(m, stone[0]);
+            n = max(n, stone[1]);
+        }
+
+        DSU dsu(n+m+2); // rows 0-m -> 0-m || cols 0-n -> m+1 - m+n+1
+
+        for(auto& stone : stones){
+            int rowNode = stone[0];
+            int colNode = stone[1];
+            //they both are now in same grp
+            dsu.unionByRank(rowNode, colNode+m+1);
+        }
+
+        //count the no. of grps 
+        return stones.size() - dsu.getTotalGroups();
+    }
+};"
 4c80f856,Bridges in graph,https://leetcode.com/problems/critical-connections-in-a-network/,leetcode,gaand_faad,Graph,solved,[STIVER HARD] difficult to explain the intuition just read the code and see the video on 2x,2026-09-26,2026-09-27,https://youtu.be/qrAub5z8FeA,"class Solution {
 private:
     int time = 0;
@@ -6304,59 +6414,6 @@ public:
         vector<int> lowest_time(n, -1);
         getCC(0, -1, graph, vis, insetion_time, lowest_time, CC);
         return CC;
-    }
-};"
-beed3d5c,Articulation point in graph,https://www.geeksforgeeks.org/problems/articulation-point2616/1,gfg,gaand_faad,Graph,solved,[STIVER HARD] difficult to explain the intuition just read the code and see the video on 2x (similar to bridges in graph),2026-09-26,2026-09-27,https://youtu.be/j1QDfU21iZk,"class Solution {
-  private:
-  int timer = 0;
-    void art_dfs(int node, int parent, vector<vector<int>>& graph, vector<int>& tin, 
-                 vector<int>& low, vector<bool>& mark_art_point){
-                     
-        tin[node] = low[node] = ++timer;
-        int child = 0;
-        //check all the neighbours
-        for(auto& nbr : graph[node]){
-            if (nbr == parent) continue; // we don't care if its a parent - just skip
-            if (tin[nbr] == 1e9){ //it's not visited
-                //visit it 
-                art_dfs(nbr, node, graph, tin, low, mark_art_point);
-                //take it low if it is lower
-                low[node] = min(low[node], low[nbr]);
-                if(!(tin[node] > low[nbr]) && parent != -1) mark_art_point[node] = true; //MAIN CONDITION
-                child++;
-            }
-            else{ //it's visited
-                //take its insertion time then
-                low[node] = min(low[node], tin[nbr]);
-            }
-        }
-        
-        if (child > 1 && parent == -1) mark_art_point[node] = true;
-        return;
-    }
-    
-  public:
-    vector<int> articulationPoints(int V, vector<vector<int>>& edges) {
-        //forminng the adj matrix for this UNDIRECTED GRAPH
-        vector<vector<int>> graph(V);
-        for(auto& edge : edges ){
-            graph[edge[0]].push_back(edge[1]);
-            graph[edge[1]].push_back(edge[0]);
-        }
-        
-        //initialising helping vectors
-        vector<int> tin(V, 1e9);
-        vector<int> low(V, 1e9);
-        vector<bool> mark_art_point(V, false);
-        
-        for(int i = 0; i<V; ++i){
-            if(tin[i] != 1e9) continue; //already visited
-            art_dfs(i, -1, graph, tin, low, mark_art_point);
-        }
-        
-        vector<int> ans;
-        for(int i = 0; i<V; ++i) if(mark_art_point[i]) ans.push_back(i);
-        return ans.size()? ans:vector<int>{-1};
     }
 };"
 cbd440bf,Evaluate Boolean Expression to True,https://www.geeksforgeeks.org/problems/boolean-parenthesization5610/1,gfg,hard,DP,solved,"[STRIVER HARD] In Boolean Parenthesization, we use interval DP where getWays(start, end, isTrue) stores the number of ways to parenthesize the expression from start to end such that it evaluates to True/False. We try every operator as a partition (i += 2) and recursively calculate left_true, left_false, right_true, and right_false, then combine them according to the operator &, |, or ^. The base case is when only one operand is left, where we directly check T/F. Memoization avoids recalculating the same interval. Time complexity = O(n³), Space = O(n²).",2026-10-01,2026-10-01,https://www.youtube.com/watch?v=MM7fXopgyjw,"class Solution {
@@ -6728,83 +6785,57 @@ public:
         return finalAns;
     }
 };"
-fe18bb80,Making a Large Island,https://leetcode.com/problems/making-a-large-island/,leetcode,hard,Graph,solved,"[STRIVER HARD] The Largest Island problem is solved using DSU (Disjoint Set Union). First, all adjacent 1s are merged into connected components using union by size and path compression. Then, for every 0, we simulate flipping it to 1 and calculate the resulting island size by adding the sizes of its unique neighbouring components using a set of parent IDs. We take the maximum such size. If the grid contains no 0, the answer is n².",2026-09-25,2026-09-26,https://www.youtube.com/watch?v=lgiz0Oup6gM,"class DSU {
-	private:
-		vector<int> parent, size;
-	public:
-		//constructor
-		DSU(int n) {
-			size.resize(n, 1); //size represents the no. of members in that grp - initially only one - just itself
-			parent.resize(n);
-			for(int i = 0; i<n; i++) parent[i] = i;
-		}
-		int ultimateParent(int node){
-			if (node == parent[node]) return node;
-			return parent[node] = ultimateParent(parent[node]);
-		}
-		bool unionBySize(int u, int v){
-			int ultimateParentU = ultimateParent(u);
-			int ultimateParentV = ultimateParent(v);
-			if (ultimateParentU == ultimateParentV) return 0; //already in same grp - no union needed
-
-			//size of u-grp should always be less
-			if(size[ultimateParentU] > size[ultimateParentV]) return unionBySize(v, u);
-			
-			//since size of u is small or equal it'll get attached to v
-			parent[ultimateParentU] = ultimateParentV;
-            size[ultimateParentV] += size[ultimateParentU];
-			return 1;
-		}
-        int getSize(int node){
-            return size[node];
-        }
-};
-
-class Solution {
-public:
-    int largestIsland(vector<vector<int>>& grid) {
-        //1st we will input the grid into our dsu dataset
-
-        int n = grid.size();
-        DSU dsu(n*n);
-
-        //defining lambda functions dir vector to help 
-        auto isValidLand = [n,&grid](int r, int c){ return (r>=0 && r<n && c>=0 && c<n && grid[r][c]); };
-        auto node = [n](int r, int c){ return (r*n + c); };
-        vector<pair<int,int>> dir = {{-1,0},{1,0},{0,-1},{0,1}};
-
-        for(int r = 0; r<n; r++){
-            for(int c = 0; c<n; c++){
-                if(!grid[r][c]) continue;
-                //check if there is any land in the neighbour, if there then club them
-                for(auto& [dr, dc] : dir) if(isValidLand(r+dr, c+dc)) dsu.unionBySize(node(r+dr, c+dc), node(r, c));
+beed3d5c,Articulation point in graph,https://www.geeksforgeeks.org/problems/articulation-point2616/1,gfg,gaand_faad,Graph,solved,[STIVER HARD] difficult to explain the intuition just read the code and see the video on 2x (similar to bridges in graph),2026-09-26,2026-09-27,https://youtu.be/j1QDfU21iZk,"class Solution {
+  private:
+  int timer = 0;
+    void art_dfs(int node, int parent, vector<vector<int>>& graph, vector<int>& tin, 
+                 vector<int>& low, vector<bool>& mark_art_point){
+                     
+        tin[node] = low[node] = ++timer;
+        int child = 0;
+        //check all the neighbours
+        for(auto& nbr : graph[node]){
+            if (nbr == parent) continue; // we don't care if its a parent - just skip
+            if (tin[nbr] == 1e9){ //it's not visited
+                //visit it 
+                art_dfs(nbr, node, graph, tin, low, mark_art_point);
+                //take it low if it is lower
+                low[node] = min(low[node], low[nbr]);
+                if(!(tin[node] > low[nbr]) && parent != -1) mark_art_point[node] = true; //MAIN CONDITION
+                child++;
+            }
+            else{ //it's visited
+                //take its insertion time then
+                low[node] = min(low[node], tin[nbr]);
             }
         }
-
-        //now lets calculate the maxSize that we can get by flipping
-        int maxIsland = 0;
-
-        for(int r = 0; r<n; r++){
-            for(int c = 0; c<n; c++){
-                if(grid[r][c]) continue;
-
-                //if the cell is '0' and get the ""land"" neighbours' size and add them
-                int island = 1;
-                unordered_set<int> usedParents;
-                for(auto& [dr, dc] : dir){
-                    if(isValidLand(r+dr, c+dc)){
-                        int parent = dsu.ultimateParent(node(r+dr, c+dc));
-                        if(usedParents.find(parent) == usedParents.end()){
-                            island += dsu.getSize(parent);
-                            usedParents.insert(parent);
-                        }
-                    }
-                }
-
-                maxIsland = max(maxIsland, island);
-            }
+        
+        if (child > 1 && parent == -1) mark_art_point[node] = true;
+        return;
+    }
+    
+  public:
+    vector<int> articulationPoints(int V, vector<vector<int>>& edges) {
+        //forminng the adj matrix for this UNDIRECTED GRAPH
+        vector<vector<int>> graph(V);
+        for(auto& edge : edges ){
+            graph[edge[0]].push_back(edge[1]);
+            graph[edge[1]].push_back(edge[0]);
         }
-        return (maxIsland)? maxIsland:n*n;
+        
+        //initialising helping vectors
+        vector<int> tin(V, 1e9);
+        vector<int> low(V, 1e9);
+        vector<bool> mark_art_point(V, false);
+        
+        for(int i = 0; i<V; ++i){
+            if(tin[i] != 1e9) continue; //already visited
+            art_dfs(i, -1, graph, tin, low, mark_art_point);
+        }
+        
+        vector<int> ans;
+        for(int i = 0; i<V; ++i) if(mark_art_point[i]) ans.push_back(i);
+        return ans.size()? ans:vector<int>{-1};
     }
 };"
 80c904bf,Number of Steps to Reduce a Number in Binary Representation to One,https://leetcode.com/problems/number-of-steps-to-reduce-a-number-in-binary-representation-to-one/description/,leetcode,hard,Bit Manipulation,solved,"The idea is to count the operations required to reduce the binary number to 1 without actually modifying the string. Traverse the string from right to left, excluding the leading 1, and maintain a carry variable to represent the effect of previous additions. For each bit, calculate effectiveBit = bit + carry. If it is 0, the number is even, so we need only one division operation. If it is 1, the number is odd, so we need an addition followed by a division, costing two operations, and set carry = 1. If it is 2, the effective bit is even due to the carry, so only one division is needed while keeping the carry as 1. This way, we count the operations in a single pass.
@@ -6910,6 +6941,85 @@ public:
         return fuel;
     }
 };"
+fe18bb80,Making a Large Island,https://leetcode.com/problems/making-a-large-island/,leetcode,hard,Graph,solved,"[STRIVER HARD] The Largest Island problem is solved using DSU (Disjoint Set Union). First, all adjacent 1s are merged into connected components using union by size and path compression. Then, for every 0, we simulate flipping it to 1 and calculate the resulting island size by adding the sizes of its unique neighbouring components using a set of parent IDs. We take the maximum such size. If the grid contains no 0, the answer is n².",2026-09-25,2026-09-26,https://www.youtube.com/watch?v=lgiz0Oup6gM,"class DSU {
+	private:
+		vector<int> parent, size;
+	public:
+		//constructor
+		DSU(int n) {
+			size.resize(n, 1); //size represents the no. of members in that grp - initially only one - just itself
+			parent.resize(n);
+			for(int i = 0; i<n; i++) parent[i] = i;
+		}
+		int ultimateParent(int node){
+			if (node == parent[node]) return node;
+			return parent[node] = ultimateParent(parent[node]);
+		}
+		bool unionBySize(int u, int v){
+			int ultimateParentU = ultimateParent(u);
+			int ultimateParentV = ultimateParent(v);
+			if (ultimateParentU == ultimateParentV) return 0; //already in same grp - no union needed
+
+			//size of u-grp should always be less
+			if(size[ultimateParentU] > size[ultimateParentV]) return unionBySize(v, u);
+			
+			//since size of u is small or equal it'll get attached to v
+			parent[ultimateParentU] = ultimateParentV;
+            size[ultimateParentV] += size[ultimateParentU];
+			return 1;
+		}
+        int getSize(int node){
+            return size[node];
+        }
+};
+
+class Solution {
+public:
+    int largestIsland(vector<vector<int>>& grid) {
+        //1st we will input the grid into our dsu dataset
+
+        int n = grid.size();
+        DSU dsu(n*n);
+
+        //defining lambda functions dir vector to help 
+        auto isValidLand = [n,&grid](int r, int c){ return (r>=0 && r<n && c>=0 && c<n && grid[r][c]); };
+        auto node = [n](int r, int c){ return (r*n + c); };
+        vector<pair<int,int>> dir = {{-1,0},{1,0},{0,-1},{0,1}};
+
+        for(int r = 0; r<n; r++){
+            for(int c = 0; c<n; c++){
+                if(!grid[r][c]) continue;
+                //check if there is any land in the neighbour, if there then club them
+                for(auto& [dr, dc] : dir) if(isValidLand(r+dr, c+dc)) dsu.unionBySize(node(r+dr, c+dc), node(r, c));
+            }
+        }
+
+        //now lets calculate the maxSize that we can get by flipping
+        int maxIsland = 0;
+
+        for(int r = 0; r<n; r++){
+            for(int c = 0; c<n; c++){
+                if(grid[r][c]) continue;
+
+                //if the cell is '0' and get the ""land"" neighbours' size and add them
+                int island = 1;
+                unordered_set<int> usedParents;
+                for(auto& [dr, dc] : dir){
+                    if(isValidLand(r+dr, c+dc)){
+                        int parent = dsu.ultimateParent(node(r+dr, c+dc));
+                        if(usedParents.find(parent) == usedParents.end()){
+                            island += dsu.getSize(parent);
+                            usedParents.insert(parent);
+                        }
+                    }
+                }
+
+                maxIsland = max(maxIsland, island);
+            }
+        }
+        return (maxIsland)? maxIsland:n*n;
+    }
+};"
 620083ba,Minimum Moves,https://www.fastprep.io/problems/harness-minimum-moves?utm_source=chatgpt.com,fastprep.io,medium,Graph,solved,"[Harness OA]
 the overall approach is simple bfs, since each jump costs 1 move, bfs will give us the minimum number of moves required to reach the destination.
 
@@ -6975,23 +7085,3 @@ public:
     return -1;
   }
 };"
-d3ff0b5a,Find Critical and Pseudo-Critical Edges in Minimum Spanning Tree,,,hard,Graph,solved,"                Edge
-                 |
-                 v
-       Remove the edge
-                 |
-                 v
-      MST becomes heavier?
-          /            \
-        YES             NO
-         |               |
-         v               v
-     CRITICAL       Force the edge
-                         |
-                         v
-                MST stays same?
-                   /       \
-                 YES        NO
-                  |          |
-                  v          v
-             PSEUDO       Neither",2026-10-27,2026-10-27,,
