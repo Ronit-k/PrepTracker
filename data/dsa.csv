@@ -470,6 +470,56 @@ Space Complexity: O(V + E)",2026-10-27,2026-10-27,https://www.youtube.com/watch?
         return weightMST;
     }
 };"
+c809491c,Min Cost to Connect All Points,"https://leetcode.com/problems/min-cost-to-connect-all-points/In a complete graph, explicitly building the adjacency list takes O(n²) space. Since the graph is already fully connected, we can calculate the Manhattan distance between any two points whenever needed instead of storing all edges.  This reduces the space complexity from O(n²) to O(n) while keeping the same MST approach.  Time Complexity: O(n² log n) for your current implementation.  Space Complexity: O(n²) for the adjacency list.",leetcode,medium,Graph,solved,"In this question, we need to find the MST of a fully connected graph where each point is a vertex and the Manhattan distance between two points is the edge weight.
+So, we use Prim's algorithm
+
+Time Complexity: O(n² log n) 
+Space Complexity: O(n²)",2026-10-28,2026-10-28,,"class Solution {
+private: 
+    int getManDist(int x1, int y1, int x2, int y2){
+        return abs(x1-x2) + abs(y1-y2);
+    }
+public:
+    int minCostConnectPoints(vector<vector<int>>& points) {
+        int ans = 0;
+        int n = points.size();
+
+        //ith point is treated as ith vertex in a fully connected graph of these points, then we'll calculate the MST of it
+
+        //creating an adj list of this undirected graph
+        vector<vector<pair<int,int>>> adj(n); //stores from -> {to, wt}
+        for(int i = 0; i<n; i++){
+            for(int j = i+1; j<n; j++){
+                //create an edge from i to j and j to i
+                int wt = getManDist(points[i][0], points[i][1], points[j][0], points[j][1]);
+                adj[i].push_back({j, wt});
+                adj[j].push_back({i, wt});
+            }
+        }
+
+        //find the MSt's weight
+        priority_queue< pair<int,int>, 
+                        vector<pair<int,int>>, 
+                        greater<pair<int,int>> > pq; //{wt, node}
+        vector<bool> vis(n, 0);
+        pq.push({0,0});
+
+        while(!pq.empty()){
+            auto [wt, from] = pq.top();
+            pq.pop();
+            
+            if(vis[from]) continue;
+
+            ans += wt;
+            vis[from] = 1;
+
+            for(auto& [to, ewt]: adj[from]){
+                if (!vis[to]) pq.push({ewt, to});
+            }
+        }
+        return ans;
+    }
+};"
 418ac65a,Kruskal's Algorithm - Minimum Spanning Tree,https://www.geeksforgeeks.org/problems/minimum-spanning-tree-kruskals-algorithm/1,gfg,medium,Graph,solved,"algo is simple
 1) sort the edges according to their weights
 2) pick those edges which connect unconnected components
@@ -836,64 +886,6 @@ public:
             }
         }
         return extraEdges;
-    }
-};"
-31d49ad9,Number of Islands,https://leetcode.com/problems/number-of-islands/https://leetcode.com/problems/number-of-islands/,leetcode,easy,Graph,solved,"We traverse every cell of the grid. Whenever we encounter an unvisited land cell ('1'), we start BFS from it and increment the island count. During BFS, we explore its four adjacent cells (up, down, left, right) and mark every connected land cell as visited by adding it to the queue. This ensures that all cells belonging to the same island are visited in a single BFS traversal, so we count each island exactly once.
-
-Time complexity: O(n × m), since each cell is visited at most once.
-
-Space complexity: O(n × m) for the visited matrix and queue in the worst case.",2026-10-25,2026-10-26,,"class Solution {
-private:
-    void bfs(int i, int j, vector<vector<int>>& vis, vector<vector<char>>& grid){
-        int n = grid.size();
-        int m = grid[0].size();
-
-        queue<pair<int,int>> q; //stores {i,j}
-        q.push({i,j});
-
-        int drow[] = {-1, 1, 0, 0};
-        int dcol[] = {0, 0, -1, 1};
-        //bfs
-        while(!q.empty()){
-            int r = q.front().first;
-            int c = q.front().second;
-            q.pop();
-
-            for(int k = 0; k<4; k++){
-                //get the neighbours
-                int nrow = r + drow[k];
-                int ncol = c + dcol[k];
-
-                //checks
-                if (nrow < 0 || nrow > n-1) continue;
-                if (ncol < 0 || ncol > m-1) continue;
-
-                //visit them
-                if (!vis[nrow][ncol] && grid[nrow][ncol] == '1'){
-                    q.push({nrow, ncol});
-                    vis[nrow][ncol] = 1;
-                }
-            }
-        }
-        return;
-    }
-    
-public:
-    int numIslands(vector<vector<char>>& grid) {
-        int n = grid.size();
-        int m = grid[0].size();
-
-        vector<vector<int>> vis(n, vector<int>(m, 0));
-        int cnt_islands = 0;
-        for(int i = 0; i<n; i++){
-            for(int j = 0; j<m; j++){
-                if (!vis[i][j] && grid[i][j] == '1'){
-                    bfs(i,j,vis,grid);
-                    cnt_islands++;
-                }
-            }
-        }
-        return cnt_islands;
     }
 };"
 662448e4,0-1 Knapsack,https://www.geeksforgeeks.org/problems/0-1-knapsack-problem0945/1?utm_source=chatgpt.com,gfg,easy,DP,solved,just try all possibilities of take and notTake,2026-10-19,2026-10-20,,"class Solution {
@@ -5585,64 +5577,64 @@ public:
         return getMaxSum(0, arr, k, dp);
     }
 };"
-c0a9b647,Number of Island II,https://www.naukri.com/code360/problems/number-of-islands-ii_1266048,naukri.com,hard,Graph,solved,"[STRIVER HARD] The Number of Islands II problem is solved efficiently using DSU (Disjoint Set Union). Initially, every cell is treated as a separate component, but only cells that are converted to land are considered active. For each query, we turn the cell into land and increase the island count by 1. Then we check its four neighbouring cells; if a neighbour is already land and belongs to a different DSU component, we union the two components and decrease the island count by 1. Path compression and union by rank keep DSU operations nearly constant time, giving an overall complexity of approximately O(Q · α(NM)), where Q is the number of queries and α is the inverse Ackermann function.",2026-09-25,2026-09-25,https://www.youtube.com/watch?v=Rn6B-Q4SNyA,"class DSU {
-	private:
-		vector<int> parent, rank;
-	public:
-		//constructor
-		DSU(int n) {
-			rank.resize(n, 0);
-			parent.resize(n);
-			for(int i = 0; i<n; i++) parent[i] = i;
-		}
-		int ultimateParent(int node){
-			if (node == parent[node]) return node;
-			return parent[node] = ultimateParent(parent[node]);
-		}
-		bool unionByRank(int u, int v){
-			int ultimateParentU = ultimateParent(u);
-			int ultimateParentV = ultimateParent(v);
-			if (ultimateParentU == ultimateParentV) return 0; //already in same grp
+31d49ad9,Number of Islands,https://leetcode.com/problems/number-of-islands/https://leetcode.com/problems/number-of-islands/,leetcode,easy,Graph,solved,"We traverse every cell of the grid. Whenever we encounter an unvisited land cell ('1'), we start BFS from it and increment the island count. During BFS, we explore its four adjacent cells (up, down, left, right) and mark every connected land cell as visited by adding it to the queue. This ensures that all cells belonging to the same island are visited in a single BFS traversal, so we count each island exactly once.
 
-			//rank of u should always be less
-			if(rank[ultimateParentU] > rank[ultimateParentV]) return unionByRank(v, u);
-			
-			//since rank of u is small it'll get attached to v
-			parent[ultimateParentU] = ultimateParentV;
-			//increase the rank of V grp if equally big chunk gets attached
-			if (rank[ultimateParentU] == rank[ultimateParentV]) rank[ultimateParentV]++;
-			return 1;
-		}
-};
+Time complexity: O(n × m), since each cell is visited at most once.
 
-vector<int> numOfIslandsII(int n, int m, vector<vector<int>> &q){
-	DSU dsu(n*m);
-	vector<vector<bool>> grid(n, vector<bool>(m, 0));
+Space complexity: O(n × m) for the visited matrix and queue in the worst case.",2026-10-25,2026-10-26,,"class Solution {
+private:
+    void bfs(int i, int j, vector<vector<int>>& vis, vector<vector<char>>& grid){
+        int n = grid.size();
+        int m = grid[0].size();
 
-	vector<int> ans;
-	int cntIslands = 0;
+        queue<pair<int,int>> q; //stores {i,j}
+        q.push({i,j});
 
-	//lambda functrions to help 
-	auto isValidLand = [n,m,&grid](int r, int c){ return (r>=0 && r<n && c>=0 && c<m && grid[r][c]); };
-	auto node = [m](int r, int c){ return (r*m + c); };
+        int drow[] = {-1, 1, 0, 0};
+        int dcol[] = {0, 0, -1, 1};
+        //bfs
+        while(!q.empty()){
+            int r = q.front().first;
+            int c = q.front().second;
+            q.pop();
 
-	for(auto& query : q){
-		int r = query[0];
-		int c = query[1];
-		grid[r][c] = 1;
-		cntIslands++;
-		//this node is now land
+            for(int k = 0; k<4; k++){
+                //get the neighbours
+                int nrow = r + drow[k];
+                int ncol = c + dcol[k];
 
-		//check if there is any land in the neighbour, if there then club them
-		if (isValidLand(r-1,c) && dsu.unionByRank(node(r-1,c), node(r,c))) cntIslands--; //up
-		if (isValidLand(r+1,c) && dsu.unionByRank(node(r+1,c), node(r,c))) cntIslands--; //down
-		if (isValidLand(r,c-1) && dsu.unionByRank(node(r,c-1), node(r,c))) cntIslands--; //left
-		if (isValidLand(r,c+1) && dsu.unionByRank(node(r,c+1), node(r,c))) cntIslands--; //right
+                //checks
+                if (nrow < 0 || nrow > n-1) continue;
+                if (ncol < 0 || ncol > m-1) continue;
 
-		ans.push_back(cntIslands);
-	}
-	return ans;
-}"
+                //visit them
+                if (!vis[nrow][ncol] && grid[nrow][ncol] == '1'){
+                    q.push({nrow, ncol});
+                    vis[nrow][ncol] = 1;
+                }
+            }
+        }
+        return;
+    }
+    
+public:
+    int numIslands(vector<vector<char>>& grid) {
+        int n = grid.size();
+        int m = grid[0].size();
+
+        vector<vector<int>> vis(n, vector<int>(m, 0));
+        int cnt_islands = 0;
+        for(int i = 0; i<n; i++){
+            for(int j = 0; j<m; j++){
+                if (!vis[i][j] && grid[i][j] == '1'){
+                    bfs(i,j,vis,grid);
+                    cnt_islands++;
+                }
+            }
+        }
+        return cnt_islands;
+    }
+};"
 a1f0c689,Count the Number of Beautiful Subarrays,https://leetcode.com/problems/count-the-number-of-beautiful-subarrays/,leetcode,medium,Hashing,solved,exactly same as previous question  - the main main main thing was to identify - A subarray is beautiful if its xor is equal to zero.,2026-10-20,2026-10-20,,"class Solution {
 private:
 
@@ -6311,6 +6303,64 @@ public:
         return len == INT_MAX ? 0 : len;
     }
 };"
+c0a9b647,Number of Island II,https://www.naukri.com/code360/problems/number-of-islands-ii_1266048,naukri.com,hard,Graph,solved,"[STRIVER HARD] The Number of Islands II problem is solved efficiently using DSU (Disjoint Set Union). Initially, every cell is treated as a separate component, but only cells that are converted to land are considered active. For each query, we turn the cell into land and increase the island count by 1. Then we check its four neighbouring cells; if a neighbour is already land and belongs to a different DSU component, we union the two components and decrease the island count by 1. Path compression and union by rank keep DSU operations nearly constant time, giving an overall complexity of approximately O(Q · α(NM)), where Q is the number of queries and α is the inverse Ackermann function.",2026-09-25,2026-09-25,https://www.youtube.com/watch?v=Rn6B-Q4SNyA,"class DSU {
+	private:
+		vector<int> parent, rank;
+	public:
+		//constructor
+		DSU(int n) {
+			rank.resize(n, 0);
+			parent.resize(n);
+			for(int i = 0; i<n; i++) parent[i] = i;
+		}
+		int ultimateParent(int node){
+			if (node == parent[node]) return node;
+			return parent[node] = ultimateParent(parent[node]);
+		}
+		bool unionByRank(int u, int v){
+			int ultimateParentU = ultimateParent(u);
+			int ultimateParentV = ultimateParent(v);
+			if (ultimateParentU == ultimateParentV) return 0; //already in same grp
+
+			//rank of u should always be less
+			if(rank[ultimateParentU] > rank[ultimateParentV]) return unionByRank(v, u);
+			
+			//since rank of u is small it'll get attached to v
+			parent[ultimateParentU] = ultimateParentV;
+			//increase the rank of V grp if equally big chunk gets attached
+			if (rank[ultimateParentU] == rank[ultimateParentV]) rank[ultimateParentV]++;
+			return 1;
+		}
+};
+
+vector<int> numOfIslandsII(int n, int m, vector<vector<int>> &q){
+	DSU dsu(n*m);
+	vector<vector<bool>> grid(n, vector<bool>(m, 0));
+
+	vector<int> ans;
+	int cntIslands = 0;
+
+	//lambda functrions to help 
+	auto isValidLand = [n,m,&grid](int r, int c){ return (r>=0 && r<n && c>=0 && c<m && grid[r][c]); };
+	auto node = [m](int r, int c){ return (r*m + c); };
+
+	for(auto& query : q){
+		int r = query[0];
+		int c = query[1];
+		grid[r][c] = 1;
+		cntIslands++;
+		//this node is now land
+
+		//check if there is any land in the neighbour, if there then club them
+		if (isValidLand(r-1,c) && dsu.unionByRank(node(r-1,c), node(r,c))) cntIslands--; //up
+		if (isValidLand(r+1,c) && dsu.unionByRank(node(r+1,c), node(r,c))) cntIslands--; //down
+		if (isValidLand(r,c-1) && dsu.unionByRank(node(r,c-1), node(r,c))) cntIslands--; //left
+		if (isValidLand(r,c+1) && dsu.unionByRank(node(r,c+1), node(r,c))) cntIslands--; //right
+
+		ans.push_back(cntIslands);
+	}
+	return ans;
+}"
 f4d04e75,Most Stones Removed with Same Row or Column,https://leetcode.com/problems/most-stones-removed-with-same-row-or-column/description/,leetcode,hard,Graph,solved,"[STRIVER HARD] the main idea is to take rows and columns as nodes and grp them based on the stones position, if stone's on x,y -> group row x and col y, then you can remove all the stones in a grp leaving just one - like this if you'll sum all the removed stones you'll get total stones - total grps as ans",2026-09-26,2026-09-27,https://www.youtube.com/watch?v=OwMNX8SPavM,"class DSU {
 	private:
 		vector<int> parent, rank;
@@ -6368,52 +6418,6 @@ public:
 
         //count the no. of grps 
         return stones.size() - dsu.getTotalGroups();
-    }
-};"
-4c80f856,Bridges in graph,https://leetcode.com/problems/critical-connections-in-a-network/,leetcode,gaand_faad,Graph,solved,[STIVER HARD] difficult to explain the intuition just read the code and see the video on 2x,2026-09-26,2026-09-27,https://youtu.be/qrAub5z8FeA,"class Solution {
-private:
-    int time = 0;
-    void getCC(int node, int parent, vector<vector<int>>& graph, vector<bool>& vis, 
-               vector<int>& insertion_time, vector<int>& lowest_time, vector<vector<int>>& CC){
-
-        vis[node] = 1;
-        insertion_time[node] = time;
-        lowest_time[node] = time++;
-
-        for(auto neighbour : graph[node]){
-            // if parent - no need to do anything
-            if (neighbour == parent) continue;
-            //else explore the neighbour if not visited and while returning tak its time if lower
-            if (!vis[neighbour]){
-                getCC(neighbour, node, graph, vis, insertion_time, lowest_time, CC);
-                // after exploring if we would have found any back edge aka cycle then the lowest of the neighboud would have been updated to a lower value than the node, if no cycle was found => it is a bridge
-                lowest_time[node] = min(lowest_time[node], lowest_time[neighbour]);
-                if (!(insertion_time[node] >= lowest_time[neighbour])){ //MAIN CONDITION
-                    CC.push_back({node, neighbour});
-                }
-            }
-            // if it is vis and not the parent then it is a cycle i.e. lowest_time needs to be updated
-            else{
-                lowest_time[node] = min(lowest_time[node], insertion_time[neighbour]);
-            }
-        }
-        return;
-    }
-public:
-    vector<vector<int>> criticalConnections(int n, vector<vector<int>>& connections) {
-        vector<vector<int>> CC;
-        vector<vector<int>> graph(n);
-        vector<bool> vis(n, false);
-        //make adj of graph
-        for(auto edge : connections){
-            graph[edge[0]].push_back(edge[1]);
-            graph[edge[1]].push_back(edge[0]);
-        }
-
-        vector<int> insetion_time(n, -1);
-        vector<int> lowest_time(n, -1);
-        getCC(0, -1, graph, vis, insetion_time, lowest_time, CC);
-        return CC;
     }
 };"
 cbd440bf,Evaluate Boolean Expression to True,https://www.geeksforgeeks.org/problems/boolean-parenthesization5610/1,gfg,hard,DP,solved,"[STRIVER HARD] In Boolean Parenthesization, we use interval DP where getWays(start, end, isTrue) stores the number of ways to parenthesize the expression from start to end such that it evaluates to True/False. We try every operator as a partition (i += 2) and recursively calculate left_true, left_false, right_true, and right_false, then combine them according to the operator &, |, or ^. The base case is when only one operand is left, where we directly check T/F. Memoization avoids recalculating the same interval. Time complexity = O(n³), Space = O(n²).",2026-10-01,2026-10-01,https://www.youtube.com/watch?v=MM7fXopgyjw,"class Solution {
@@ -6785,57 +6789,50 @@ public:
         return finalAns;
     }
 };"
-beed3d5c,Articulation point in graph,https://www.geeksforgeeks.org/problems/articulation-point2616/1,gfg,gaand_faad,Graph,solved,[STIVER HARD] difficult to explain the intuition just read the code and see the video on 2x (similar to bridges in graph),2026-09-26,2026-09-27,https://youtu.be/j1QDfU21iZk,"class Solution {
-  private:
-  int timer = 0;
-    void art_dfs(int node, int parent, vector<vector<int>>& graph, vector<int>& tin, 
-                 vector<int>& low, vector<bool>& mark_art_point){
-                     
-        tin[node] = low[node] = ++timer;
-        int child = 0;
-        //check all the neighbours
-        for(auto& nbr : graph[node]){
-            if (nbr == parent) continue; // we don't care if its a parent - just skip
-            if (tin[nbr] == 1e9){ //it's not visited
-                //visit it 
-                art_dfs(nbr, node, graph, tin, low, mark_art_point);
-                //take it low if it is lower
-                low[node] = min(low[node], low[nbr]);
-                if(!(tin[node] > low[nbr]) && parent != -1) mark_art_point[node] = true; //MAIN CONDITION
-                child++;
+4c80f856,Bridges in graph,https://leetcode.com/problems/critical-connections-in-a-network/,leetcode,gaand_faad,Graph,solved,[STIVER HARD] difficult to explain the intuition just read the code and see the video on 2x,2026-09-26,2026-09-27,https://youtu.be/qrAub5z8FeA,"class Solution {
+private:
+    int time = 0;
+    void getCC(int node, int parent, vector<vector<int>>& graph, vector<bool>& vis, 
+               vector<int>& insertion_time, vector<int>& lowest_time, vector<vector<int>>& CC){
+
+        vis[node] = 1;
+        insertion_time[node] = time;
+        lowest_time[node] = time++;
+
+        for(auto neighbour : graph[node]){
+            // if parent - no need to do anything
+            if (neighbour == parent) continue;
+            //else explore the neighbour if not visited and while returning tak its time if lower
+            if (!vis[neighbour]){
+                getCC(neighbour, node, graph, vis, insertion_time, lowest_time, CC);
+                // after exploring if we would have found any back edge aka cycle then the lowest of the neighboud would have been updated to a lower value than the node, if no cycle was found => it is a bridge
+                lowest_time[node] = min(lowest_time[node], lowest_time[neighbour]);
+                if (!(insertion_time[node] >= lowest_time[neighbour])){ //MAIN CONDITION
+                    CC.push_back({node, neighbour});
+                }
             }
-            else{ //it's visited
-                //take its insertion time then
-                low[node] = min(low[node], tin[nbr]);
+            // if it is vis and not the parent then it is a cycle i.e. lowest_time needs to be updated
+            else{
+                lowest_time[node] = min(lowest_time[node], insertion_time[neighbour]);
             }
         }
-        
-        if (child > 1 && parent == -1) mark_art_point[node] = true;
         return;
     }
-    
-  public:
-    vector<int> articulationPoints(int V, vector<vector<int>>& edges) {
-        //forminng the adj matrix for this UNDIRECTED GRAPH
-        vector<vector<int>> graph(V);
-        for(auto& edge : edges ){
+public:
+    vector<vector<int>> criticalConnections(int n, vector<vector<int>>& connections) {
+        vector<vector<int>> CC;
+        vector<vector<int>> graph(n);
+        vector<bool> vis(n, false);
+        //make adj of graph
+        for(auto edge : connections){
             graph[edge[0]].push_back(edge[1]);
             graph[edge[1]].push_back(edge[0]);
         }
-        
-        //initialising helping vectors
-        vector<int> tin(V, 1e9);
-        vector<int> low(V, 1e9);
-        vector<bool> mark_art_point(V, false);
-        
-        for(int i = 0; i<V; ++i){
-            if(tin[i] != 1e9) continue; //already visited
-            art_dfs(i, -1, graph, tin, low, mark_art_point);
-        }
-        
-        vector<int> ans;
-        for(int i = 0; i<V; ++i) if(mark_art_point[i]) ans.push_back(i);
-        return ans.size()? ans:vector<int>{-1};
+
+        vector<int> insetion_time(n, -1);
+        vector<int> lowest_time(n, -1);
+        getCC(0, -1, graph, vis, insetion_time, lowest_time, CC);
+        return CC;
     }
 };"
 80c904bf,Number of Steps to Reduce a Number in Binary Representation to One,https://leetcode.com/problems/number-of-steps-to-reduce-a-number-in-binary-representation-to-one/description/,leetcode,hard,Bit Manipulation,solved,"The idea is to count the operations required to reduce the binary number to 1 without actually modifying the string. Traverse the string from right to left, excluding the leading 1, and maintain a carry variable to represent the effect of previous additions. For each bit, calculate effectiveBit = bit + carry. If it is 0, the number is even, so we need only one division operation. If it is 1, the number is odd, so we need an addition followed by a division, costing two operations, and set carry = 1. If it is 2, the effective bit is even due to the carry, so only one division is needed while keeping the carry as 1. This way, we count the operations in a single pass.
@@ -6939,6 +6936,59 @@ public:
         dfs(0, adj, vis, seats);
 
         return fuel;
+    }
+};"
+beed3d5c,Articulation point in graph,https://www.geeksforgeeks.org/problems/articulation-point2616/1,gfg,gaand_faad,Graph,solved,[STIVER HARD] difficult to explain the intuition just read the code and see the video on 2x (similar to bridges in graph),2026-09-26,2026-09-27,https://youtu.be/j1QDfU21iZk,"class Solution {
+  private:
+  int timer = 0;
+    void art_dfs(int node, int parent, vector<vector<int>>& graph, vector<int>& tin, 
+                 vector<int>& low, vector<bool>& mark_art_point){
+                     
+        tin[node] = low[node] = ++timer;
+        int child = 0;
+        //check all the neighbours
+        for(auto& nbr : graph[node]){
+            if (nbr == parent) continue; // we don't care if its a parent - just skip
+            if (tin[nbr] == 1e9){ //it's not visited
+                //visit it 
+                art_dfs(nbr, node, graph, tin, low, mark_art_point);
+                //take it low if it is lower
+                low[node] = min(low[node], low[nbr]);
+                if(!(tin[node] > low[nbr]) && parent != -1) mark_art_point[node] = true; //MAIN CONDITION
+                child++;
+            }
+            else{ //it's visited
+                //take its insertion time then
+                low[node] = min(low[node], tin[nbr]);
+            }
+        }
+        
+        if (child > 1 && parent == -1) mark_art_point[node] = true;
+        return;
+    }
+    
+  public:
+    vector<int> articulationPoints(int V, vector<vector<int>>& edges) {
+        //forminng the adj matrix for this UNDIRECTED GRAPH
+        vector<vector<int>> graph(V);
+        for(auto& edge : edges ){
+            graph[edge[0]].push_back(edge[1]);
+            graph[edge[1]].push_back(edge[0]);
+        }
+        
+        //initialising helping vectors
+        vector<int> tin(V, 1e9);
+        vector<int> low(V, 1e9);
+        vector<bool> mark_art_point(V, false);
+        
+        for(int i = 0; i<V; ++i){
+            if(tin[i] != 1e9) continue; //already visited
+            art_dfs(i, -1, graph, tin, low, mark_art_point);
+        }
+        
+        vector<int> ans;
+        for(int i = 0; i<V; ++i) if(mark_art_point[i]) ans.push_back(i);
+        return ans.size()? ans:vector<int>{-1};
     }
 };"
 fe18bb80,Making a Large Island,https://leetcode.com/problems/making-a-large-island/,leetcode,hard,Graph,solved,"[STRIVER HARD] The Largest Island problem is solved using DSU (Disjoint Set Union). First, all adjacent 1s are merged into connected components using union by size and path compression. Then, for every 0, we simulate flipping it to 1 and calculate the resulting island size by adding the sizes of its unique neighbouring components using a set of parent IDs. We take the maximum such size. If the grid contains no 0, the answer is n².",2026-09-25,2026-09-26,https://www.youtube.com/watch?v=lgiz0Oup6gM,"class DSU {
