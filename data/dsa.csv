@@ -6930,6 +6930,97 @@ public:
         return fuel;
     }
 };"
+a42b4ad9,Remove Max Number of Edges to Keep Graph Fully Traversable,https://leetcode.com/problems/remove-max-number-of-edges-to-keep-graph-fully-traversable/,leetcode,hard,Graph,solved,"The key idea is to maintain two separate DSUs for Alice and Bob. First, process all Type 3 edges since they can be shared by both. An edge is counted as used if it connects different components in at least one of the two DSUs. Then process Type 1 edges only for Alice and Type 2 edges only for Bob. If either DSU still has more than one connected component, return -1; otherwise, the answer is the total number of edges minus the number of used edges. Since vertices are 1-indexed, initialize both DSUs with n+1 elements and count components from index 1 to n.
+
+Time Complexity: O(E α(N)).
+
+Space Complexity: O(N + E).",2026-11-01,2026-11-01,https://www.youtube.com/watch?v=8S5jpVM3kWw,"class DSU {
+	private:
+		vector<int> parent, rank;
+	public:
+		//constructor
+		DSU(int n) {
+			rank.resize(n, 0);
+			parent.resize(n);
+			for(int i = 0; i<n; i++) parent[i] = i;
+		}
+		int ultimateParent(int node){
+			if (node == parent[node]) return node;
+			return parent[node] = ultimateParent(parent[node]);
+		}
+		bool unionByRank(int u, int v){
+			int ultimateParentU = ultimateParent(u);
+			int ultimateParentV = ultimateParent(v);
+			if (ultimateParentU == ultimateParentV) return 0; //already in same grp
+
+			//rank of u should always be less
+			if(rank[ultimateParentU] > rank[ultimateParentV]) return unionByRank(v, u);
+			
+			//since rank of u is small it'll get attached to v
+			parent[ultimateParentU] = ultimateParentV;
+			//increase the rank of V grp if equally big chunk gets attached
+			if (rank[ultimateParentU] == rank[ultimateParentV]) rank[ultimateParentV]++;
+			return 1;
+		}
+        int cntGroups(){
+            int cnt = 0;
+            for(int i = 0; i<parent.size(); i++){
+                if(parent[i] == i) cnt++;
+            }
+            return cnt;
+        }
+};
+
+
+class Solution {
+public:
+    int maxNumEdgesToRemove(int n, vector<vector<int>>& edges) {
+        vector<vector<int>> type1Edges; //aliice
+        vector<vector<int>> type2Edges; //bob
+        vector<vector<int>> type3Edges; //common
+
+        for(auto& edge : edges){
+            if(edge[0] == 1){
+                type1Edges.push_back(edge);
+            }
+            else if(edge[0] == 2){
+                type2Edges.push_back(edge);
+            }
+            else if(edge[0] == 3){
+                type3Edges.push_back(edge);
+            }
+        }
+
+        DSU alice(n);
+        DSU bob(n);
+        int cntEdges = 0;
+
+        //first use all the common ot type 3 edges
+        for(auto& edge : type3Edges){
+            int u = edge[1] - 1;
+            int v = edge[2] - 1;
+            if(alice.unionByRank(u,v) && bob.unionByRank(u,v)) cntEdges++;
+        }
+
+        //connect alice's graph
+        for(auto& edge : type1Edges){
+            int u = edge[1] - 1;
+            int v = edge[2] - 1;
+            if(alice.unionByRank(u,v)) cntEdges++;
+        }
+
+        //connect bob's graph
+        for(auto& edge : type2Edges){
+            int u = edge[1] - 1;
+            int v = edge[2] - 1;
+            if(bob.unionByRank(u,v)) cntEdges++;
+        }
+        if(alice.cntGroups() != 1 || bob.cntGroups() != 1) return -1;
+
+        return edges.size() - cntEdges;
+    }
+};
+"
 4c80f856,Bridges in graph,https://leetcode.com/problems/critical-connections-in-a-network/,leetcode,gaand_faad,Graph,solved,[STIVER HARD] difficult to explain the intuition just read the code and see the video on 2x,2026-09-26,2026-09-27,https://youtu.be/qrAub5z8FeA,"class Solution {
 private:
     int time = 0;
