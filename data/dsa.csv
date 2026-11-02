@@ -7299,3 +7299,98 @@ public:
  * int param_1 = obj->get(key);
  * obj->put(key,value);
  */"
+3417c191,Sort Items by Groups Respecting Dependencies,https://leetcode.com/problems/sort-items-by-groups-respecting-dependencies/description/,leetcode,hard,Graph,solved,"The main idea is to perform two separate topological sorts: one on the item-level graph and another on the group-level graph. The item graph contains all dependency edges between items, while the group graph contains edges only between different groups. First, assign a unique group ID to every ungrouped item so that each item belongs to exactly one group. After obtaining both topological orders, traverse the item-level order and place each item into its respective group, preserving the relative ordering of items within that group. Finally, traverse the group-level order and concatenate the items of each group to obtain the answer. This ensures that all dependencies are satisfied while keeping items belonging to the same group together.
+
+Time Complexity: O(N + M + E), where N is the number of items, M is the total number of groups after assigning IDs, and E is the number of dependencies.
+
+Space Complexity: O(N + M + E).",2026-11-02,2026-11-02,,"class Solution {
+private:
+    vector<int> topoSort(vector<vector<int>>& adj){
+        // using kahns algo
+        int n = adj.size();
+        vector<int> indegree(n, 0);
+
+        for(int i = 0; i<n; i++){
+            for(auto& nbr : adj[i]){
+                indegree[nbr]++;
+            }
+        }
+
+        queue<int> q;
+        vector<int> topo;
+
+        //push all the elements with indegree 0
+        for(int i = 0; i<n; i++){
+            if (indegree[i] == 0) q.push(i);
+        }
+
+        while(!q.empty()){
+            int node = q.front();
+            q.pop();
+
+            topo.push_back(node);
+
+            //remove this node, i.e reduce the indegrees of its neighbours, and push them if indegree = 0
+            for(auto& nbr : adj[node]){
+                indegree[nbr]--;
+                if(indegree[nbr] == 0) q.push(nbr);
+            }
+        }
+
+        return (topo.size() == n)? topo : vector<int>{-1};
+    }
+public:
+    vector<int> sortItems(int n, int m, vector<int>& group, vector<vector<int>>& beforeItems) {
+
+        //assign a unique group to every item which doesn't belong to any group
+        for(int i = 0; i<n; i++){
+            if(group[i] == -1){
+                group[i] = m++;
+            }
+        }
+
+        // make an item graph and a group graph, then do topological sort on both graphs.
+        // Finally, we can get the result by combining the two topological sorts.
+
+        vector<vector<int>> itemGraph(n);
+        vector<vector<int>> groupGraph(m);
+
+        //making itemGraph to obtain the item level order
+        for(int i = 0; i<n; i++){
+            for(auto beforeItem : beforeItems[i]){
+                itemGraph[beforeItem].push_back(i); //making beforeITEM -> i connection
+            }
+        }
+
+        //making groupGraph to obtain the group level order
+        for(int i = 0; i<n; i++){
+            for(auto beforeItem : beforeItems[i]){
+                if(group[beforeItem] == group[i]) continue;
+
+                groupGraph[group[beforeItem]].push_back(group[i]);
+            }
+        }
+
+        vector<int> itemOrder = topoSort(itemGraph);
+        vector<int> groupOrder = topoSort(groupGraph);
+
+        if(itemOrder[0] == -1 || groupOrder[0] == -1) return {};
+
+        //arrange the items in their respective groups according to their order in itemOrder
+        vector<vector<int>> groupedItems(m);
+
+        for(auto& item : itemOrder){
+            groupedItems[group[item]].push_back(item);
+        }
+
+        //now arrange these groups according to their order in groupOrder
+        vector<int> ans;
+
+        for(auto& grp : groupOrder){
+            for(auto& item : groupedItems[grp]){
+                ans.push_back(item);
+            }
+        }
+        return ans;
+    }
+};"
