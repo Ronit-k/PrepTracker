@@ -2457,6 +2457,41 @@ public:
         return ans;
     }
 };"
+50f146cc,Shortest Subarray with Sum at Least k,https://leetcode.com/problems/shortest-subarray-with-sum-at-least-k/,leetcode,hard,Stacks and Queues,solved,"Since the array can contain negative numbers, a normal sliding window won't work. We use prefix sums and a monotonic deque to find the shortest subarray whose sum is at least k. The deque stores indices in increasing order of their prefix sums. Whenever the difference between the current prefix sum and the front prefix sum is at least k, we update the minimum length and remove the front because that starting index has already given us a valid subarray. While inserting a new prefix sum, we remove elements from the back whose prefix sums are greater than or equal to the current one, since the current index is a better starting point for future subarrays.
+
+Time Complexity: O(n)
+
+Space Complexity: O(n)",2026-11-01,2026-11-02,https://www.youtube.com/watch?v=5AY70aAHZiQ,"class Solution {
+public:
+    int shortestSubarray(vector<int>& nums, int k) {
+        int n = nums.size();
+
+        vector<long long> prefixSum(n+1, 0);
+        for(int i = 0; i<n; i++){
+            prefixSum[i+1] = prefixSum[i] + nums[i];
+        }
+
+        deque<int> dq; // stores indices of increasing prefix sums
+        int minLen = INT_MAX;
+
+        for(int j = 0; j<=n; j++){
+
+            // check if we found a valid subarray, we remove the elements from the front of the dequeue - as it would have the min sum
+            while(!dq.empty() && prefixSum[j] - prefixSum[dq.front()] >= k){
+                minLen = min(minLen, j - dq.front());
+                dq.pop_front();
+            }
+
+            // maintain increasing prefix sums, while pushing the  current prefix sum - we maintain the an inc order
+            while(!dq.empty() && prefixSum[j] <= prefixSum[dq.back()]){
+                dq.pop_back();
+            }
+
+            dq.push_back(j);
+        }
+        return minLen == INT_MAX ? -1 : minLen;
+    }
+};"
 5cfe8600,Trapping Rainwater,https://leetcode.com/problems/trapping-rain-water/description/,leetcode,hard,Stacks and Queues,solved,"[STRIVER HARD] the idea is to iterate from left and right simultaneously, and we move the pointer with smaller height, if we encounter a block taller than our directional max we just update the directional max if not, then it means that we are at a position from where there is some thing taller behind me and there something even taller in front of me so the water stored just above me will be my directional max minus my height - like this we can accumulate the possible water stored on top of each block",2026-10-04,2026-10-04,https://www.youtube.com/watch?v=1_5VuquLbXg,"class Solution {
 public:
     int trap(vector<int>& arr) {
@@ -2579,86 +2614,6 @@ public:
             maxRectArea = max(maxRectArea, largestRectangleArea(heights));
         }
         return maxRectArea;
-    }
-};"
-c67d9b71,Implement LRU Cache,https://leetcode.com/problems/lru-cache/description/,leetcode,hard,Stacks and Queues,solved,"[STRIVER HARD] This is just a Implementation heavy problem
-we need to use a doubly linked list(DLL) to maintain the LRU property and a map of(key, node) to fetch from DLL in O(1). the most recently used element will be right after head for this implement a InsertAfterHead function and to delete the element if capacity reaches above k we need a Delete funtion, rest is pretty clear form the code",2026-10-05,2026-10-06,https://www.youtube.com/watch?v=z9bJUPxzFOw,"// no use of freq in LRU, it'll be used in LFU
-struct Node { 
-    int key, val, freq; 
-    Node* prev;
-    Node* next; 
-
-    Node(int k, int v, int f) : key(k), val(v), freq(f), prev(nullptr), next(nullptr) {} // constructore using initializer list
-    Node(int k, int v) : Node(k,v,0) {} 
-};
-
-class LRUCache {
-public:
-    unordered_map<int, Node*> mp; // map for O(1) lookup and deletion of values {key, node}
-    Node *head, *tail; // defining head and tail of a doubly linked list
-    int k;
-
-    void Delete(Node* node){
-        //remove from the map
-        mp.erase(node->key);
-
-        //remove from the DLL
-        Node* prevNode = node->prev;
-        Node* nextNode = node->next;
-        prevNode->next = nextNode;
-        nextNode->prev = prevNode;
-
-        //clean the node too
-        node->prev = node->next = nullptr;
-        return;
-    }
-
-    void InsertAfterHead(Node* node){
-        //added for LFU
-        mp[node->key] = node;
-
-        //remove from the DLL if it is in DLL
-        if (node->prev && node->next){
-            Node* prevNode = node->prev;
-            Node* nextNode = node->next;
-            prevNode->next = nextNode;
-            nextNode->prev = prevNode;
-        }
-
-        //insert after head, juggling with the pointers
-        node->next = head->next;
-        head->next->prev = node;
-        head->next = node;
-        node->prev = head;
-
-        return;
-    }
-public:
-    LRUCache(int capacity) {
-        k = capacity;
-        head = new Node(-1, -1);
-        tail = new Node(-1, -1);
-        head->next = tail;
-        tail->prev = head;
-    }
-    int get(int key) {
-        if(mp.find(key) == mp.end()) return -1; //not a valid value
-
-        // if its call so we have to push this node just after head as this is the most recently used one
-        InsertAfterHead(mp[key]);
-        return mp[key]->val;
-}
-    void put(int key, int value) {
-        if(mp.find(key) == mp.end()) {
-            if(mp.size() == k) Delete(tail->prev);
-
-            Node* node = new Node(key, value);
-            InsertAfterHead(node);
-        }
-        else {
-            mp[key]->val = value;
-            InsertAfterHead(mp[key]);
-        }
     }
 };"
 13757340,Kth largest Element in an array,https://leetcode.com/problems/kth-largest-element-in-an-array/,leetcode,medium,Heaps,solved,[STRIVER HARD] video ref is related and code is self explanatory,2026-10-06,2026-10-07,https://www.youtube.com/watch?v=3DdP6Ef8YZM,"class Solution {
@@ -5788,9 +5743,8 @@ public:
         return ans;
     }
 };"
-6ce42126,Implement LFU Cache,https://leetcode.com/problems/lfu-cache/description/,leetcode,gaand_faad,Stacks and Queues,solved,"[STRIVER HARD] main points are : 
-now we have to maintain a LRU for every frequency and maintain it and Node now stores frequency too
-so we define a increaseFrequency function that removes the node from the curr LRU, ince the freq, and puts it in the LRU of the higher freq - WHILE INSERTTING AFTER THE HEAD IN THE HIGHER FREQ LRU< DONT FORGET TO ALSO INSERT IT IN THE MAP OF THE HIGHER FREQ LRU, this handled by the insertAfterHead function here, rest is pretty self e xplanotory if you read the code",2026-10-05,2026-10-06,https://www.youtube.com/watch?v=0PSB9y8ehbk&list=PLgUwDviBIf0p4ozDR_kJJkONnb1wdx2Ma&index=80,"//LFU is implemented by having a list {freq,LRU} i.e. LRUs for every frequency
+c67d9b71,Implement LRU Cache,https://leetcode.com/problems/lru-cache/description/,leetcode,hard,Stacks and Queues,solved,"[STRIVER HARD] This is just a Implementation heavy problem
+we need to use a doubly linked list(DLL) to maintain the LRU property and a map of(key, node) to fetch from DLL in O(1). the most recently used element will be right after head for this implement a InsertAfterHead function and to delete the element if capacity reaches above k we need a Delete funtion, rest is pretty clear form the code",2026-10-05,2026-10-06,https://www.youtube.com/watch?v=z9bJUPxzFOw,"// no use of freq in LRU, it'll be used in LFU
 struct Node { 
     int key, val, freq; 
     Node* prev;
@@ -5841,6 +5795,7 @@ public:
 
         return;
     }
+public:
     LRUCache(int capacity) {
         k = capacity;
         head = new Node(-1, -1);
@@ -5848,76 +5803,26 @@ public:
         head->next = tail;
         tail->prev = head;
     }
-
-};
-
-class LFUCache {
-private: 
-    unordered_map<int, LRUCache*> freqList; //stores {freq, LRU}
-    unordered_map<int, Node*> keyList; //stores {key, node} total nodes in the LFU to maintain the capacity
-    int minFreq;
-    int k;
-
-    void IncreaseFrequency(Node* node){
-        //remove from old LRU
-        freqList[node->freq]->Delete(node);
-        //inc the node->freq and minFreq if needed;
-        if(freqList[node->freq]->mp.empty() && node->freq == minFreq) minFreq++;
-        node->freq++;
-        // insert the node into new higher freq
-        if(freqList.find(node->freq) == freqList.end()) freqList[node->freq] = new LRUCache(k);
-        freqList[node->freq]->InsertAfterHead(node);
-    }
-public:
-    LFUCache(int capacity) {
-        k = capacity;
-        minFreq = 0;
-    }
-    
     int get(int key) {
-        if(keyList.find(key) == keyList.end()) return -1;
+        if(mp.find(key) == mp.end()) return -1; //not a valid value
 
-        //this node has been accessed so it needs to get a higher frequency
-        IncreaseFrequency(keyList[key]);
-        return keyList[key]->val;
-    }
-    
+        // if its call so we have to push this node just after head as this is the most recently used one
+        InsertAfterHead(mp[key]);
+        return mp[key]->val;
+}
     void put(int key, int value) {
-        Node* node;
-        // if the key is new, we will make a node out of it and insert it in the freqList[1]
-        if(keyList.find(key) == keyList.end()){
-            // if we are out of size then delete the LFU's LRU
-            if(keyList.size() == k) {
-                keyList.erase(freqList[minFreq]->tail->prev->key);
-                freqList[minFreq]->Delete(freqList[minFreq]->tail->prev);
-            }
+        if(mp.find(key) == mp.end()) {
+            if(mp.size() == k) Delete(tail->prev);
 
-            //make a new node
-            node = new Node(key, value, 1);
-            minFreq = 1;
-            //add it to the keylist
-            keyList[key] = node;
-            //add it to the frerqList
-            if(freqList.find(node->freq) == freqList.end()) freqList[node->freq] = new LRUCache(k);
-            freqList[node->freq]->InsertAfterHead(node);
+            Node* node = new Node(key, value);
+            InsertAfterHead(node);
         }
-        //if the node is already present in the keylist
         else {
-            // update its value
-            keyList[key]->val = value;
-            //this node has been accessed so it needs to get a higher frequency
-            IncreaseFrequency(keyList[key]);
+            mp[key]->val = value;
+            InsertAfterHead(mp[key]);
         }
-        return;
     }
-};
-
-/**
- * Your LFUCache object will be instantiated and called as such:
- * LFUCache* obj = new LFUCache(capacity);
- * int param_1 = obj->get(key);
- * obj->put(key,value);
- */"
+};"
 808eccbb,Clone a LinkedList with Next and Random Pointers,https://leetcode.com/problems/copy-list-with-random-pointer/description/,leetcode,medium,Linked List,solved,"[STRIVER HARD] the O(n) S.C. approach is simple by maintaining a hash map to store the old and corresponding new node, but the optimal approach is in O(1) Space, it goes in 3 passed:
 pass1 - insert copies of nodes in betwee
 pass2 - fix the random pointers
@@ -7264,3 +7169,133 @@ public:
     return -1;
   }
 };"
+6ce42126,Implement LFU Cache,https://leetcode.com/problems/lfu-cache/description/,leetcode,gaand_faad,Stacks and Queues,solved,"[STRIVER HARD] main points are : 
+now we have to maintain a LRU for every frequency and maintain it and Node now stores frequency too
+so we define a increaseFrequency function that removes the node from the curr LRU, ince the freq, and puts it in the LRU of the higher freq - WHILE INSERTTING AFTER THE HEAD IN THE HIGHER FREQ LRU< DONT FORGET TO ALSO INSERT IT IN THE MAP OF THE HIGHER FREQ LRU, this handled by the insertAfterHead function here, rest is pretty self e xplanotory if you read the code",2026-10-05,2026-10-06,https://www.youtube.com/watch?v=0PSB9y8ehbk&list=PLgUwDviBIf0p4ozDR_kJJkONnb1wdx2Ma&index=80,"//LFU is implemented by having a list {freq,LRU} i.e. LRUs for every frequency
+struct Node { 
+    int key, val, freq; 
+    Node* prev;
+    Node* next; 
+
+    Node(int k, int v, int f) : key(k), val(v), freq(f), prev(nullptr), next(nullptr) {} // constructore using initializer list
+    Node(int k, int v) : Node(k,v,0) {} 
+};
+
+class LRUCache {
+public:
+    unordered_map<int, Node*> mp; // map for O(1) lookup and deletion of values {key, node}
+    Node *head, *tail; // defining head and tail of a doubly linked list
+    int k;
+
+    void Delete(Node* node){
+        //remove from the map
+        mp.erase(node->key);
+
+        //remove from the DLL
+        Node* prevNode = node->prev;
+        Node* nextNode = node->next;
+        prevNode->next = nextNode;
+        nextNode->prev = prevNode;
+
+        //clean the node too
+        node->prev = node->next = nullptr;
+        return;
+    }
+
+    void InsertAfterHead(Node* node){
+        //added for LFU
+        mp[node->key] = node;
+
+        //remove from the DLL if it is in DLL
+        if (node->prev && node->next){
+            Node* prevNode = node->prev;
+            Node* nextNode = node->next;
+            prevNode->next = nextNode;
+            nextNode->prev = prevNode;
+        }
+
+        //insert after head, juggling with the pointers
+        node->next = head->next;
+        head->next->prev = node;
+        head->next = node;
+        node->prev = head;
+
+        return;
+    }
+    LRUCache(int capacity) {
+        k = capacity;
+        head = new Node(-1, -1);
+        tail = new Node(-1, -1);
+        head->next = tail;
+        tail->prev = head;
+    }
+
+};
+
+class LFUCache {
+private: 
+    unordered_map<int, LRUCache*> freqList; //stores {freq, LRU}
+    unordered_map<int, Node*> keyList; //stores {key, node} total nodes in the LFU to maintain the capacity
+    int minFreq;
+    int k;
+
+    void IncreaseFrequency(Node* node){
+        //remove from old LRU
+        freqList[node->freq]->Delete(node);
+        //inc the node->freq and minFreq if needed;
+        if(freqList[node->freq]->mp.empty() && node->freq == minFreq) minFreq++;
+        node->freq++;
+        // insert the node into new higher freq
+        if(freqList.find(node->freq) == freqList.end()) freqList[node->freq] = new LRUCache(k);
+        freqList[node->freq]->InsertAfterHead(node);
+    }
+public:
+    LFUCache(int capacity) {
+        k = capacity;
+        minFreq = 0;
+    }
+    
+    int get(int key) {
+        if(keyList.find(key) == keyList.end()) return -1;
+
+        //this node has been accessed so it needs to get a higher frequency
+        IncreaseFrequency(keyList[key]);
+        return keyList[key]->val;
+    }
+    
+    void put(int key, int value) {
+        Node* node;
+        // if the key is new, we will make a node out of it and insert it in the freqList[1]
+        if(keyList.find(key) == keyList.end()){
+            // if we are out of size then delete the LFU's LRU
+            if(keyList.size() == k) {
+                keyList.erase(freqList[minFreq]->tail->prev->key);
+                freqList[minFreq]->Delete(freqList[minFreq]->tail->prev);
+            }
+
+            //make a new node
+            node = new Node(key, value, 1);
+            minFreq = 1;
+            //add it to the keylist
+            keyList[key] = node;
+            //add it to the frerqList
+            if(freqList.find(node->freq) == freqList.end()) freqList[node->freq] = new LRUCache(k);
+            freqList[node->freq]->InsertAfterHead(node);
+        }
+        //if the node is already present in the keylist
+        else {
+            // update its value
+            keyList[key]->val = value;
+            //this node has been accessed so it needs to get a higher frequency
+            IncreaseFrequency(keyList[key]);
+        }
+        return;
+    }
+};
+
+/**
+ * Your LFUCache object will be instantiated and called as such:
+ * LFUCache* obj = new LFUCache(capacity);
+ * int param_1 = obj->get(key);
+ * obj->put(key,value);
+ */"
