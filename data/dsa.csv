@@ -7394,3 +7394,94 @@ public:
         return ans;
     }
 };"
+c72193ad,Path with Max Probability,https://leetcode.com/problems/path-with-maximum-probability/description/,leetcode,medium,Graph,solved,"Since we need to find the path with the maximum probability, we use a max-heap instead of the usual min-heap used in Dijkstra's algorithm. Each node stores the maximum probability with which it can be reached. Starting with probability 1 at the source, we multiply the current path probability by the edge probability to calculate the probability of reaching a neighbour. If this probability is greater than the previously recorded probability for that neighbour, we update it and push it into the max-heap. Since the heap always processes the highest-probability path first, we can return the probability as soon as we reach the destination.
+
+Time Complexity: O((V + E) log V)
+
+Space Complexity: O(V + E)",2026-11-05,2026-11-06,,"#include <bits/stdc++.h>
+using namespace std;
+
+class Solution {
+public:
+    double maxProbability(int n, vector<vector<int>>& edges, vector<double>& succProb, int start_node, int end_node) {
+        vector<vector<pair<int, double>>> adj(n);
+        for (int i = 0; i < edges.size(); i++) {
+            int u = edges[i][0];
+            int v = edges[i][1];
+            double prob = succProb[i];
+            adj[u].push_back({v, prob});
+            adj[v].push_back({u, prob});
+        }
+        vector<double> prob(n, 0.0);
+
+        priority_queue<pair<double, int>> pq; //{prob, node} - maxHeap
+        pq.push({1, start_node});
+
+        while(!pq.empty()){
+            auto [nodeProb, node] = pq.top();
+            pq.pop();
+
+            if(node == end_node) return nodeProb;
+
+            for(auto& [nbr, nbrProb] : adj[node]){
+                double p = nodeProb*nbrProb;
+                if(prob[nbr] < p){
+                    prob[nbr] = p;
+                    pq.push({p, nbr});
+                }
+            }
+        }
+        return 0;
+    }
+};"
+8095ba31,Network delay time,https://leetcode.com/problems/network-delay-time/,leetcode,medium,Graph,solved,"Since the graph has weighted edges, we use Dijkstra's algorithm instead of normal BFS. Maintain a dist array initialized to 1e9, where dist[i] stores the minimum time required to reach node i. Use a min-heap to always process the node with the smallest current distance. For every neighbour, calculate the new time and update its distance if it is smaller than the previously recorded value. Once the entire graph has been processed, traverse the dist array. If any node is still unreachable (distance is 1e9), return -1; otherwise, return the maximum distance, since the network delay is determined by the time taken to reach the farthest node.
+
+Time Complexity: O((V + E) log V)
+
+Space Complexity: O(V + E",2026-11-05,2026-11-06,,"class Solution {
+public:
+    int networkDelayTime(vector<vector<int>>& times, int n, int k) {
+        //we will do dijkstra
+        vector<vector<pair<int,int>>> adj(n+1);
+        for(auto& edge : times){
+            adj[edge[0]].push_back({edge[1], edge[2]});
+        }
+
+        vector<int> dist(n+1, 1e9);
+        dist[k] = 0;
+
+        priority_queue<
+            pair<int,int>,
+            vector<pair<int,int>>,
+            greater<pair<int,int>>
+        > pq; //{time, node}
+
+        pq.push({0, k});
+
+        while(!pq.empty()){
+            auto [time, node] = pq.top();
+            pq.pop();
+
+            //skip outdated entries
+            if(time > dist[node]) continue;
+
+            for(auto& [nbr, t] : adj[node]){
+                int newTime = time + t;
+
+                if(dist[nbr] > newTime){
+                    dist[nbr] = newTime;
+                    pq.push({newTime, nbr});
+                }
+            }
+        }
+
+        //check if every node is reachable and find the maximum time
+        int ans = 0;
+        for(int i = 1; i<=n; i++){
+            if(dist[i] == 1e9) return -1;
+            ans = max(ans, dist[i]);
+        }
+
+        return ans;
+    }
+};"
