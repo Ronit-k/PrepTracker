@@ -8037,3 +8037,52 @@ public:
     }
 };
 "
+30eaff69,Job Sequencing Problem,https://www.geeksforgeeks.org/problems/job-sequencing-problem-1587115620/1,gfg,hard,Greedy,solved,"The main observation is that we should prioritise jobs with higher profits, so first sort jobs in decreasing order of profit. For every job, we want to schedule it on the latest available day that is less than or equal to its deadline. Maintain a set containing all available days. Use upper_bound(deadline) to find the first available day strictly greater than the deadline, then decrement the iterator to get the latest available day within the deadline. If such a day exists, schedule the job and erase that day from the set. This ensures that earlier days remain available for jobs with tighter deadlines.
+
+TC: O(n log n + n log D), where D = maximum deadline.
+
+SC: O(D), for the set.",2026-11-24,2026-11-24,,"class Solution {
+public:
+    vector<int> jobSequencing(vector<int> &deadline, vector<int> &profit) {
+        int n = deadline.size();
+
+        vector<pair<int,int>> jobs(n);
+        int maxDeadline = 0;
+
+        for(int i = 0; i<n; i++) {
+            jobs[i] = {profit[i], deadline[i]};
+            maxDeadline = max(maxDeadline, deadline[i]);
+        }
+
+        sort(jobs.begin(), jobs.end(), greater<pair<int,int>>());
+
+        int maxProfit = 0;
+        int cnt = 0;
+
+        set<int> daysUsed;
+
+        // initially all days are available
+        for(int d = 1; d<=maxDeadline; d++) {
+            daysUsed.insert(d);
+        }
+
+        for(int i = 0; i<n; i++) {
+            int currProfit = jobs[i].first;
+            int day = jobs[i].second;
+
+            auto it = daysUsed.upper_bound(day);
+
+            if(it != daysUsed.begin()) {
+                --it;
+
+                maxProfit += currProfit;
+                cnt++;
+
+                daysUsed.erase(it);
+            }
+        }
+
+        return {cnt, maxProfit};
+    }
+};
+"
