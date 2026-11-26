@@ -8086,3 +8086,62 @@ public:
     }
 };
 "
+0e4d1cc1,Find The Sum of the Power of all Subsequences,https://leetcode.com/problems/find-the-sum-of-the-power-of-all-subsequences/description/,leetcode,hard,DP,solved,"Teradata OA
+The main observation is that we need to count all subsequences whose sum is exactly k. For every valid subsequence of length seqLen, its contribution is 2^(n - seqLen), since every element not selected in that subsequence can independently be either selected or not selected in the remaining subset.
+
+We use recursion with two choices at every index:
+- Take the current element: decrease k by nums[i] and increase seqLen.
+- Don't take the current element: keep k and seqLen unchanged.
+When we reach the end of the array, if k == 0, return 2^(n - seqLen), otherwise return 0.
+
+Memoization: We need a 3D DP because our state depends on three variables: i, remaining k, and seqLen. We cannot just use dp[i][k] because different subsequence lengths can reach the same (i, k) state but contribute different values.
+
+Take and notTake are added, taking modulo 10^9 + 7.
+
+TC: O(n²k)
+SC: O(n²k) for DP, plus recursion stack O(n).
+",2026-11-24,2026-11-26,,"
+class Solution {
+private:
+    const int MOD = 1e9 + 7;
+
+    long long power(long long a, int b) {
+        long long ans = 1;
+        while(b) {
+            if(b & 1) ans = (ans * a) % MOD;
+            a = (a * a) % MOD;
+            b >>= 1;
+        }
+        return ans;
+    }
+
+    long long getSubSeq(int i, int k, int seqLen, vector<int>& nums, vector<vector<vector<long long>>>& dp) {
+        int n = nums.size();
+
+        if(i == n) {
+            if(k == 0) return power(2, n - seqLen);
+            return 0;
+        }
+
+        if(dp[i][k][seqLen] != -1) return dp[i][k][seqLen];
+
+        long long take = 0;
+        if(nums[i] <= k) take = getSubSeq(i+1, k-nums[i], seqLen+1, nums, dp);
+
+        long long notTake = getSubSeq(i+1, k, seqLen, nums, dp);
+
+        return dp[i][k][seqLen] = (take + notTake) % MOD;
+    }
+
+public:
+    int sumOfPower(vector<int>& nums, int k) {
+        int n = nums.size();
+
+        vector<vector<vector<long long>>> dp(n, 
+                                            vector<vector<long long>>(k+1,
+                                            vector<long long>(n+1, -1))
+                                            );
+        return getSubSeq(0, k, 0, nums, dp);
+    }
+};
+"
